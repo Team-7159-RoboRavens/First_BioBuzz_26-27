@@ -44,14 +44,14 @@ public class BasicBM {
             leftStickDistance -= LEFT_STICK_TRIGGER;
             leftStickDistance /= 0.9;
             leftStickDistance = Math.pow(leftStickDistance, 2);
-            double angle = Math.atan(g1.left_stick_y/g1.left_stick_x);
+            double angle = Math.atan(-g1.left_stick_y/g1.left_stick_x);
             if (g1.left_stick_x < 0){
                 angle += Math.PI;
             }
             forward += Math.sin(angle) * leftStickDistance;
             right += Math.cos(angle) * leftStickDistance;
         }
-        if (g1.right_stick_x > RIGHT_STICK_TRIGGER){
+        if (g1.right_stick_x > RIGHT_STICK_TRIGGER || g1.right_stick_x < -RIGHT_STICK_TRIGGER){
             double distance = g1.right_stick_x - LEFT_STICK_TRIGGER;
             distance /= 0.9;
             distance = Math.pow(distance, 2);

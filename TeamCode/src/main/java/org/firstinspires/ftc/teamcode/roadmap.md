@@ -6,6 +6,8 @@
 
 3. Faster aceleration
 
+4. Intake
+
 ## Pinpoint Odometry 
 
 oakiskia is in charge
@@ -26,3 +28,8 @@ in robot so that when every a power is set
 to a motor if it is not at the target speed it 
 goes faster than it would to keep that speed and if it
 is to fast it goes slower than it would to keep the target speed
+
+note the motors are going to have to be changed to dcmotorEX
+
+## intake
+

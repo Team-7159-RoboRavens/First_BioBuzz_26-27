@@ -31,13 +31,24 @@ public class Robot {
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        leftFront.setDirection(DcMotor.Direction.REVERSE);
+        rightBack.setDirection(DcMotor.Direction.REVERSE);
+
         pinpoint.setOffsets(pinpointX, pinpointY, DistanceUnit.MM);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
         pinpoint.resetPosAndIMU();
+
     }
 
     public void setPowers(MotorPowers mp) {
+        leftFront.setPower(mp.lf);
+        rightFront.setPower(mp.rf);
+        leftBack.setPower(mp.lb);
+        rightBack.setPower(mp.rb);
+    }
+
+    public void setAcleratePowers(MotorPowers mp){
         leftFront.setPower(mp.lf);
         rightFront.setPower(mp.rf);
         leftBack.setPower(mp.lb);
