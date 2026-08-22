@@ -11,6 +11,7 @@ public class Robot {
     DcMotor rightFront;
     DcMotor leftBack;
     DcMotor rightBack;
+    DcMotor intakeMotor1;
 
     GoBildaPinpointDriver pinpoint;
 
@@ -23,6 +24,7 @@ public class Robot {
         rightFront = hmap.get(DcMotor.class, "rightFront");
         leftBack = hmap.get(DcMotor.class, "leftBack");
         rightBack = hmap.get(DcMotor.class, "rightBack");
+        intakeMotor1 = hmap.get(DcMotor.class, "intakeMotor1");
 
         pinpoint = hmap.get(GoBildaPinpointDriver.class, "pinpoint");
 
@@ -30,6 +32,7 @@ public class Robot {
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         pinpoint.setOffsets(pinpointX, pinpointY, DistanceUnit.MM);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
@@ -37,6 +40,9 @@ public class Robot {
         pinpoint.resetPosAndIMU();
     }
 
+    public void setIntakePower(double power) {
+        intakeMotor1.setPower(power);
+    }
     public void setPowers(MotorPowers mp) {
         leftFront.setPower(mp.lf);
         rightFront.setPower(mp.rf);

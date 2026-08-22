@@ -22,6 +22,7 @@ public class TeleOpBase extends OpMode {
     public void loop() {
         MotorPowers mp = bm.getPowers();
         robot.setPowers(mp);
+        robot.setIntakePower(bm.getIntakePower());
         telemetry.addData("Motors", "left front(%.2f), right front(%.2f)", mp.lf, mp.rf);
         telemetry.addData("Motors", "left back(%.2f), right back(%.2f)", mp.lb, mp.rb);
     }

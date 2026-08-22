@@ -17,6 +17,15 @@ public class BasicBM {
         g1 = opmode.gamepad1;
         g2 = opmode.gamepad2;
     }
+    public double getIntakePower(){
+        double power = 0;
+        if (g1.right_trigger() > 0.1){)){
+            power = g1.right_trigger;
+            power -= 0.1;
+            power /= 0.9;
+        }
+        return power;
+    }
     public MotorPowers getPowers() {
         double lf = 0;
         double rf = 0;
