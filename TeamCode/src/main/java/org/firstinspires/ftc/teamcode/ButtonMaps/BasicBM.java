@@ -21,7 +21,7 @@ public class BasicBM {
     }
     public double getIntakePower(){
         double power = 0;
-        if (g1.right_trigger() > 0.1){)){
+        if (g1.right_trigger> 0.1){
             power = g1.right_trigger;
             power -= 0.1;
             power /= 0.9;

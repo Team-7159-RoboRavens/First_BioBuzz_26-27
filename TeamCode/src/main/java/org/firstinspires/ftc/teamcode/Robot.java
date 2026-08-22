@@ -24,7 +24,7 @@ public class Robot {
         rightFront = hmap.get(DcMotor.class, "rightFront");
         leftBack = hmap.get(DcMotor.class, "leftBack");
         rightBack = hmap.get(DcMotor.class, "rightBack");
-        intakeMotor1 = hmap.get(DcMotor.class, "intakeMotor1");
+        intakeMotor1 = hmap.get(DcMotor.class, "intakeMotor");
 
         pinpoint = hmap.get(GoBildaPinpointDriver.class, "pinpoint");
 
