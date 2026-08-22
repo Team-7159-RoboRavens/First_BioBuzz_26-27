@@ -7,6 +7,8 @@ import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
 
 public class BasicBM {
+    private final double LEFT_STICK_TRIGGER = 0.1;
+    private final double RIGHT_STICK_TRIGGER = 0.1;
     private OpMode opmode;
     private Robot robot;
     private Gamepad g1;
@@ -18,49 +20,47 @@ public class BasicBM {
         g2 = opmode.gamepad2;
     }
     public MotorPowers getPowers() {
-        double lf = 0;
-        double rf = 0;
-        double lb = 0;
-        double rb = 0;
+        double forward = 0;
+        double right = 0;
+        double rotateClockwise = 0;
         if (g1.dpad_up) {
-            lf++;
-            rf++;
-            lb++;
-            rb++;
+            forward ++;
         } else if (g1.dpad_down) {
-            lf--;
-            rf--;
-            lb--;
-            rb--;
+            forward --;
         }
         if (g1.dpad_left) {
-            lf++;
-            rf--;
-            lb--;
-            rb++;
+            right --;
         } else if (g1.dpad_right) {
-            lf--;
-            rf++;
-            lb++;
-            rb--;
+            right ++;
         }
 
         if (g1.left_bumper) {
-            lf++;
-            rf--;
-            lb++;
-            rf--;
+            rotateClockwise --;
         } else if (g1.right_bumper) {
-            lf--;
-            rf++;
-            lb--;
-            rb++;
+            rotateClockwise ++;
+        }
+        double leftStickDistance = Math.sqrt(Math.pow(g1.left_stick_y, 2) + Math.pow(g1.left_stick_x, 2));
+        if (leftStickDistance > LEFT_STICK_TRIGGER){
+            leftStickDistance -= LEFT_STICK_TRIGGER;
+            leftStickDistance /= 0.9;
+            leftStickDistance = Math.pow(leftStickDistance, 2);
+            double angle = Math.atan(g1.left_stick_y/g1.left_stick_x);
+            if (g1.left_stick_x < 0){
+                angle += Math.PI;
+            }
+            forward += Math.sin(angle) * leftStickDistance;
+            right += Math.cos(angle) * leftStickDistance;
+        }
+        if (g1.right_stick_x > RIGHT_STICK_TRIGGER){
+            double distance = g1.right_stick_x - LEFT_STICK_TRIGGER;
+            distance /= 0.9;
+            distance = Math.pow(distance, 2);
+            if (g1.right_stick_x < 0){
+                distance *= -1;
+            }
+            rotateClockwise += distance;
         }
 
-        lf /= 3;
-        rf /= 3;
-        lb /= 3;
-        rb /= 3;
-        return new MotorPowers(lf, rf, lb, rb);
+        return Mechanumdrive.setMotorPowers(forward, right, rotateClockwise);
     }
 }

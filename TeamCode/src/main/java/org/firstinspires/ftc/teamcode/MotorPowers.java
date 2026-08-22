@@ -11,4 +11,8 @@ public class MotorPowers {
         this.lb = lb;
         this.rb = rb;
     }
+
+    public MotorPowers() {
+
+    }
 }
