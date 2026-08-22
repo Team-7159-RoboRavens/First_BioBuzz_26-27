@@ -4,6 +4,7 @@ import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Robot {
@@ -16,8 +17,9 @@ public class Robot {
     GoBildaPinpointDriver pinpoint;
 
     // x and y positions of pinpoint relative to robot center in mm
-    private final int pinpointX = 0;
-    private final int pinpointY = 0;
+    private final int startPinpointX = -155;
+    private final int startPinpointY = -60;
+
 
     public Robot(HardwareMap hmap) {
         leftFront = hmap.get(DcMotor.class, "leftFront");
@@ -37,7 +39,7 @@ public class Robot {
         leftFront.setDirection(DcMotor.Direction.REVERSE);
         rightBack.setDirection(DcMotor.Direction.REVERSE);
 
-        pinpoint.setOffsets(pinpointX, pinpointY, DistanceUnit.MM);
+        pinpoint.setOffsets(startPinpointX, startPinpointY, DistanceUnit.MM);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
         pinpoint.resetPosAndIMU();
@@ -52,6 +54,19 @@ public class Robot {
         rightFront.setPower(mp.rf);
         leftBack.setPower(mp.lb);
         rightBack.setPower(mp.rb);
+    }
+    public double pinpointAngle() {
+        return pinpoint.getHeading(AngleUnit.RADIANS);
+    }
+    public double getPinpointX() {
+        return pinpoint.getPosX(DistanceUnit.MM);
+    }
+    public double getPinpointY(){
+        return pinpoint.getPosY(DistanceUnit.MM);
+    }
+
+    public void pinpointUpdate(){
+        pinpoint.update();
     }
 
     public void setAcleratePowers(MotorPowers mp){
