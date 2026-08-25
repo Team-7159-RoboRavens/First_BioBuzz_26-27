@@ -8,8 +8,8 @@ import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
 
 public class PinpointBM {
-    private final double LEFT_STICK_TRIGGER = 0.1;
-    private final double RIGHT_STICK_TRIGGER = 0.1;
+    private static final double LEFT_STICK_TRIGGER = 0.1;
+    private static final double RIGHT_STICK_TRIGGER = 0.1;
     private OpMode opmode;
     private Robot robot;
     private Gamepad g1;
@@ -72,6 +72,36 @@ public class PinpointBM {
             rotateClockwise += distance;
         }
 
+
         return Mechanumdrive.setMotorPowers(forward, right, rotateClockwise);
+
+    }
+
+    public static double[] getMovement( double x, double y){
+        double leftStickDistance = Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
+        if (leftStickDistance > LEFT_STICK_TRIGGER){
+            leftStickDistance -= LEFT_STICK_TRIGGER;
+            leftStickDistance /= 0.9;
+            leftStickDistance = Math.pow(leftStickDistance, 2);
+            double angle = Math.atan(-y/x);
+            if (x < 0){
+                angle += Math.PI;
+            }
+
+            return new double[]{Math.sin(angle) * leftStickDistance, Math.cos(angle) * leftStickDistance};
+        }
+        return new double[]{0, 0};
+    }
+    public static double getRotation(double rightx){
+        if (rightx > RIGHT_STICK_TRIGGER || rightx < -RIGHT_STICK_TRIGGER){
+            double distance = rightx - LEFT_STICK_TRIGGER;
+            distance /= 0.9;
+            distance = Math.pow(distance, 2);
+            if (rightx < 0){
+                distance *= -1;
+            }
+            return distance;
+        }
+        return 0;
     }
 }

@@ -10,6 +10,12 @@ public class Mechanumdrive {
         double y = Math.sin(angle) * forward + Math.cos(angle) * right;
         double x = Math.sin(angle) * right - Math.cos(angle) * forward;
         MotorPowers motorPower = new MotorPowers();
+        double max = Math.max(Math.max(Math.abs(y), Math.abs(x)), Math.abs(r));
+        if (max > 1){
+            y /= max;
+            x /= max;
+            r /= max;
+        }
         motorPower.lf = y + x + r;
         motorPower.rf = y - x - r;
         motorPower.lb = y - x + r;
