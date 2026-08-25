@@ -69,7 +69,7 @@ public class Robot {
         pinpoint.update();
     }
 
-    public void setAcleratePowers(MotorPowers mp){
+    public void setAcceleratePowers(MotorPowers mp){
         leftFront.setPower(mp.lf);
         rightFront.setPower(mp.rf);
         leftBack.setPower(mp.lb);
