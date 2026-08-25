@@ -72,6 +72,6 @@ public class PinpointBM {
             rotateClockwise += distance;
         }
 
-        return Mechanumdrive.setMotorPowers(forward, right, rotateClockwise);
+        return Mechanumdrive.fieldOrientedDrive(forward, right, rotateClockwise, Math.PI/2+robot.pinpointAngle());
     }
 }
