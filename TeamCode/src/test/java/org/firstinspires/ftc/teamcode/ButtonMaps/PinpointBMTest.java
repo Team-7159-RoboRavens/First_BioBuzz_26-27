@@ -10,4 +10,15 @@ public class PinpointBMTest {
     public void getRotation() {
         assertEquals(0, PinpointBM.getRotation(0), 0);
     }
+
+
+
+
+
+    @Test
+    public void getMovementZeroZero() {
+        double[] xy = PinpointBM.getMovement(0, 0);
+        assertEquals(0, xy[0], 0);
+    }
+
 }

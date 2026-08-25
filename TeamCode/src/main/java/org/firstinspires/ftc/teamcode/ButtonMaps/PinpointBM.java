@@ -76,6 +76,22 @@ public class PinpointBM {
         return Mechanumdrive.setMotorPowers(forward, right, rotateClockwise);
 
     }
+
+    public static double[] getMovement( double x, double y){
+        double leftStickDistance = Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
+        if (leftStickDistance > LEFT_STICK_TRIGGER){
+            leftStickDistance -= LEFT_STICK_TRIGGER;
+            leftStickDistance /= 0.9;
+            leftStickDistance = Math.pow(leftStickDistance, 2);
+            double angle = Math.atan(-y/x);
+            if (x < 0){
+                angle += Math.PI;
+            }
+
+            return new double[]{Math.sin(angle) * leftStickDistance, Math.cos(angle) * leftStickDistance};
+        }
+        return new double[]{0, 0};
+    }
     public static double getRotation(double rightx){
         if (rightx > RIGHT_STICK_TRIGGER || rightx < -RIGHT_STICK_TRIGGER){
             double distance = rightx - LEFT_STICK_TRIGGER;
