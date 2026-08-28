@@ -8,6 +8,7 @@ import org.firstinspires.ftc.teamcode.ButtonMaps.PinpointBM;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
 
+// TeleOp op mode using the Pinpoint-aware button map, with odometry telemetry.
 @TeleOp(name="TeleOpBaseP")
 public class TeleOpBaseP extends OpMode {
     Robot robot;
