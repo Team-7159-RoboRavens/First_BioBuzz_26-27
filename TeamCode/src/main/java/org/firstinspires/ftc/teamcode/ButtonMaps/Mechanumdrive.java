@@ -14,7 +14,7 @@ public class Mechanumdrive {
      * @return per-wheel motor powers
      */
     public static MotorPowers setMotorPowers(double y, double x, double clockWise){
-        return fieldOrientedDrive(y, x, clockWise, 90);
+        return fieldOrientedDrive(y, x, clockWise, Math.PI/2);
     }
 
     /**
