@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+// Simple container for the four mecanum wheel power values.
 public class MotorPowers {
     public double lf;
     public double rf;
