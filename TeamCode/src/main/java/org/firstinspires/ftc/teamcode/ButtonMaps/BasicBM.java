@@ -15,13 +15,21 @@ public class BasicBM {
     private Robot robot;
     private Gamepad g1;
     private Gamepad g2;
+    /**
+     * @param op running op mode, used to read gamepad state
+     * @param r robot instance this button map drives
+     */
     public BasicBM(OpMode op, Robot r) {
         opmode = op;
         robot = r;
         g1 = opmode.gamepad1;
         g2 = opmode.gamepad2;
     }
-    // Rescales the trigger from [0.1, 1] to [0, 1] so power ramps up smoothly past the deadzone.
+    /**
+     * Rescales gamepad1's right trigger from [0.1, 1] to [0, 1] so power ramps up smoothly past the deadzone.
+     *
+     * @return intake motor power in [0, 1]
+     */
     public double getIntakePower(){
         double power = 0;
         if (g1.right_trigger> 0.1){
@@ -31,6 +39,12 @@ public class BasicBM {
         }
         return power;
     }
+    /**
+     * Reads gamepad1's d-pad, bumpers, and both sticks and combines them into a single
+     * drive command.
+     *
+     * @return per-wheel motor powers for the current gamepad1 input
+     */
     public MotorPowers getPowers() {
         double forward = 0;
         double right = 0;

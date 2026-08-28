@@ -23,6 +23,10 @@ public class Robot {
     private final int startPinpointY = -60;
 
 
+    /**
+     * @param hmap hardware map used to look up the drivetrain motors, intake motor,
+     *             and Pinpoint odometry computer by configuration name
+     */
     public Robot(HardwareMap hmap) {
         leftFront = hmap.get(DcMotor.class, "leftFront");
         rightFront = hmap.get(DcMotor.class, "rightFront");
@@ -53,21 +57,40 @@ public class Robot {
 
     }
 
+    /**
+     * @param power intake motor power, [-1, 1]
+     */
     public void setIntakePower(double power) {
         intakeMotor1.setPower(power);
     }
+
+    /**
+     * @param mp per-wheel motor powers to apply to the drivetrain
+     */
     public void setPowers(MotorPowers mp) {
         leftFront.setPower(mp.lf);
         rightFront.setPower(mp.rf);
         leftBack.setPower(mp.lb);
         rightBack.setPower(mp.rb);
     }
+
+    /**
+     * @return current Pinpoint heading, in radians
+     */
     public double pinpointAngle() {
         return pinpoint.getHeading(AngleUnit.RADIANS);
     }
+
+    /**
+     * @return current Pinpoint X position, in mm
+     */
     public double getPinpointX() {
         return pinpoint.getPosX(DistanceUnit.MM);
     }
+
+    /**
+     * @return current Pinpoint Y position, in mm
+     */
     public double getPinpointY(){
         return pinpoint.getPosY(DistanceUnit.MM);
     }
@@ -77,6 +100,9 @@ public class Robot {
         pinpoint.update();
     }
 
+    /**
+     * @param mp per-wheel motor powers to apply to the drivetrain
+     */
     public void setAcleratePowers(MotorPowers mp){
         leftFront.setPower(mp.lf);
         rightFront.setPower(mp.rf);

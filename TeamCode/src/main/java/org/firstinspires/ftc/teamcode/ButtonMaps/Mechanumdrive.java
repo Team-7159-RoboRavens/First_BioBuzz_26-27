@@ -4,13 +4,29 @@ import org.firstinspires.ftc.teamcode.MotorPowers;
 
 // Converts translation/rotation inputs into per-wheel mecanum motor powers.
 public class Mechanumdrive {
-    // Robot-centric drive: forward/right/clockwise map directly to wheel powers
-    // (angle 90 degrees means "forward" is treated as already field-aligned).
+    /**
+     * Robot-centric drive: forward/right/clockwise map directly to wheel powers
+     * (angle 90 degrees means "forward" is treated as already field-aligned).
+     *
+     * @param y forward power, [-1, 1]
+     * @param x rightward power, [-1, 1]
+     * @param clockWise clockwise rotation power, [-1, 1]
+     * @return per-wheel motor powers
+     */
     public static MotorPowers setMotorPowers(double y, double x, double clockWise){
         return fieldOrientedDrive(y, x, clockWise, 90);
     }
-    // Rotates the forward/right input vector by `angle` (field-oriented drive),
-    // then scales powers down proportionally if any wheel would exceed 1.
+
+    /**
+     * Rotates the forward/right input vector by {@code angle} (field-oriented drive),
+     * then scales powers down proportionally if any wheel would exceed 1.
+     *
+     * @param forward forward power, [-1, 1]
+     * @param right rightward power, [-1, 1]
+     * @param r clockwise rotation power, [-1, 1]
+     * @param angle field-relative angle to rotate the forward/right vector by, in radians
+     * @return per-wheel motor powers, scaled down if necessary to stay within [-1, 1]
+     */
     public static MotorPowers fieldOrientedDrive(double forward, double right, double r, double angle){
         double y = Math.sin(angle) * forward + Math.cos(angle) * right;
         double x = Math.sin(angle) * right - Math.cos(angle) * forward;
