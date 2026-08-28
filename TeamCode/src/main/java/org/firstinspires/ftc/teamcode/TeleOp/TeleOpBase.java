@@ -7,6 +7,7 @@ import org.firstinspires.ftc.teamcode.ButtonMaps.BasicBM;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
 
+// TeleOp op mode using the basic (non-Pinpoint) button map.
 @TeleOp(name="TeleOpBase")
 public class TeleOpBase extends OpMode {
     Robot robot;
