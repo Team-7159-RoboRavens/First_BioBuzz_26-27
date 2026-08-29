@@ -25,6 +25,7 @@ public class PinpointBMTest {
 
     @Test
     public void getRotationNEG1() {
+
         assertEquals(-1, PinpointBM.getRotation(-1), 0);
     }
 
@@ -42,7 +43,6 @@ public class PinpointBMTest {
     public void getRotationrandrandn() {
         assertEquals(-0.19753086419753088, PinpointBM.getRotation(-0.5), 0);
     }
-
     @Test
     public void getMovementZeroZero() {
         double[] xy = PinpointBM.getMovement(0, 0);
@@ -59,14 +59,16 @@ public class PinpointBMTest {
 
     @Test
     public void getMovementForwardOnly() {
-        double[] xy = PinpointBM.getMovement(0, 1);
+        // Gamepad up is y = -1
+        double[] xy = PinpointBM.getMovement(0, -1);
         assertEquals(1, xy[0], 1e-9);
         assertEquals(0, xy[1], 1e-9);
     }
 
     @Test
     public void getMovementBackwardOnly() {
-        double[] xy = PinpointBM.getMovement(0, -1);
+        // Gamepad down is y = 1
+        double[] xy = PinpointBM.getMovement(0, 1);
         assertEquals(-1, xy[0], 1e-9);
         assertEquals(0, xy[1], 1e-9);
     }
@@ -83,6 +85,44 @@ public class PinpointBMTest {
         double[] xy = PinpointBM.getMovement(-1, 0);
         assertEquals(0, xy[0], 1e-9);
         assertEquals(-1, xy[1], 1e-9);
+    }
+
+    private final double MAX_DIAGONAL = Math.sqrt(2)/2;
+
+    @Test
+    public void getMovementForwardRightDiagonal() {
+        // Gamepad UP and RIGHT (x = 1, y = -1)
+        double[] xy = PinpointBM.getMovement(MAX_DIAGONAL, -MAX_DIAGONAL);
+        double expectedPower = 1.0 / Math.sqrt(2); // ~0.7071
+        assertEquals(0.7071067811865476, xy[0], 1e-9); // Forward components
+        assertEquals(expectedPower, xy[1], 1e-9); // Right components
+    }
+
+    @Test
+    public void getMovementForwardLeftDiagonal() {
+        // Gamepad UP and LEFT (x = -1, y = -1)
+        double[] xy = PinpointBM.getMovement(-MAX_DIAGONAL/2, -MAX_DIAGONAL);
+        double expectedPower = 1.0 / Math.sqrt(2);
+        assertEquals(0.5265924815402927, xy[0], 1e-9);  // Forward
+        assertEquals(-0.26329624077014635, xy[1], 1e-9); // Left (Negative Right)
+    }
+
+    @Test
+    public void getMovementBackwardRightDiagonal() {
+        // Gamepad DOWN and RIGHT (x = 1, y = 1)
+        double[] xy = PinpointBM.getMovement(MAX_DIAGONAL, MAX_DIAGONAL/3);
+        double expectedPower = 1.0 / Math.sqrt(2);
+        assertEquals(-0.1625974293983233, xy[0], 1e-9); // Backward (Negative Forward)
+        assertEquals(0.4877922881949699, xy[1], 1e-9);  // Right
+    }
+
+    @Test
+    public void getMovementBackwardLeftDiagonal() {
+        // Gamepad DOWN and LEFT (x = -1, y = 1)
+        double[] xy = PinpointBM.getMovement(-MAX_DIAGONAL/3, MAX_DIAGONAL);
+        double expectedPower = 1.0 / Math.sqrt(2);
+        assertEquals(-0.4877922881949699, xy[0], 1e-9); // Backward
+        assertEquals(-0.1625974293983233, xy[1], 1e-9); // Left
     }
 
     @Test

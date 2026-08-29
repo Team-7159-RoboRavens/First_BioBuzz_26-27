@@ -133,17 +133,19 @@ public class PinpointBM {
      * @return {forward, right} power components
      */
     public static double[] getMovement( double x, double y){
+        y *= -1;
         double leftStickDistance = Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
+        if (leftStickDistance > 1.0) {
+            leftStickDistance = 1.0;
+        }
         if (leftStickDistance > LEFT_STICK_TRIGGER){
-            leftStickDistance -= LEFT_STICK_TRIGGER;
-            leftStickDistance /= 0.9;
-            leftStickDistance = Math.pow(leftStickDistance, 2);
-            double angle = Math.atan(-y/x);
-            if (x < 0){
-                angle += Math.PI;
-            }
+            double scaledDistance = leftStickDistance - LEFT_STICK_TRIGGER;
+            scaledDistance /= 0.9;
+            scaledDistance = Math.pow(scaledDistance, 2);
+            double forward = y * scaledDistance / leftStickDistance;
+            double right = x * scaledDistance / leftStickDistance;
 
-            return new double[]{Math.sin(angle) * leftStickDistance, Math.cos(angle) * leftStickDistance};
+            return new double[]{forward, right};
         }
         return new double[]{0, 0};
     }
@@ -164,6 +166,6 @@ public class PinpointBM {
             return distance;
         }
 
-        return Mechanumdrive.fieldOrientedDrive(forward, right, rotateClockwise, Math.PI/2+robot.pinpointAngle());
+        return 0;
     }
 }
