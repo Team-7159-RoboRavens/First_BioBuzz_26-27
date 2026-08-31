@@ -1,11 +1,10 @@
-package org;
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
-import org.firstinspires.ftc.teamcode.Robot;
 
 import java.util.List;
 
@@ -105,23 +104,37 @@ public class Limelight {
      * @return straight-line distance from the camera to the first detected AprilTag, in inches,
      *         or -1 if none is visible
      */
-    public double getAprilTagDistance() {
+    public double getAprilTagDistance3D() {
         if (fiducialResults == null || fiducialResults.isEmpty()) {
             return -1;
         }
         Position pos = fiducialResults.get(0).getTargetPoseCameraSpace().getPosition();
         return Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
     }
+    public double getAprilTagDistance2D() {
+        if (fiducialResults == null || fiducialResults.isEmpty()) {
+            return -1;
+        }
+        Position pos = fiducialResults.get(0).getTargetPoseCameraSpace().getPosition();
+        return Math.sqrt(pos.x * pos.x + pos.y * pos.y);
+    }
+
 
     /**
      * @return horizontal angle offset to the first detected AprilTag, in degrees,
      *         or 0 if none is visible
      */
-    public double getAprilTagAngleOffset() {
+    public double getAprilTagAngleXOffset() {
         if (fiducialResults == null || fiducialResults.isEmpty()) {
             return 0.0;
         }
         return fiducialResults.get(0).getTargetXDegrees();
+    }
+    public double getAprilTagAngleYOffset() {
+        if (fiducialResults == null || fiducialResults.isEmpty()) {
+            return 0.0;
+        }
+        return fiducialResults.get(0).getTargetYDegrees();
     }
 
     /**
@@ -135,22 +148,34 @@ public class Limelight {
      * @return horizontal angle offset to the first detected color blob, in degrees,
      *         or 0 if none is visible
      */
-    public double getColorBlobXOffset() {
+    public double getColorBlobXOffset(int id) {
         if (colorResults == null || colorResults.isEmpty()) {
             return 0.0;
         }
-        return colorResults.get(0).getTargetXDegrees();
+        return colorResults.get(id).getTargetXDegrees();
     }
 
     /**
      * @return vertical angle offset to the first detected color blob, in degrees,
      *         or 0 if none is visible
      */
-    public double getColorBlobYOffset() {
+    public double getColorBlobYOffset(int id) {
         if (colorResults == null || colorResults.isEmpty()) {
             return 0.0;
         }
-        return colorResults.get(0).getTargetYDegrees();
+        return colorResults.get(id).getTargetYDegrees();
+    }
+    public double getColorBlobXSize(int id) {
+        if (colorResults == null || colorResults.isEmpty()) {
+            return 0.0;
+        }
+        return colorResults.get(id).getTargetXPixels();
+    }
+    public double getColorBlobYSize(int id) {
+        if (colorResults == null || colorResults.isEmpty()) {
+            return 0.0;
+        }
+        return colorResults.get(id).getTargetYPixels();
     }
 
     /**
