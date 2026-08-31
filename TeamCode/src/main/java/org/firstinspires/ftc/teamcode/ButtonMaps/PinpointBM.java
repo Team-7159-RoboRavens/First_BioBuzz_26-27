@@ -164,6 +164,6 @@ public class PinpointBM {
             return distance;
         }
 
-        return Mechanumdrive.fieldOrientedDrive(forward, right, rotateClockwise, Math.PI/2+robot.pinpointAngle());
+        return 0;
     }
 }
