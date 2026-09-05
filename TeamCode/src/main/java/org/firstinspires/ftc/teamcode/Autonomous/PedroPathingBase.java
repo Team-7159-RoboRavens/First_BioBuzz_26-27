@@ -23,13 +23,14 @@ public class PedroPathingBase extends OpMode {
     private Robot robot;
     private final Pose startPose = new Pose(0, 0, 0);
 
-    private final Pose endPose = new Pose(20, 20, Math.PI);
+    private final Pose endPose = new Pose(20, 0, Math.PI);
 
     private PathChain chain1;
 
     public void buildPaths() {
         chain1 = follower.pathBuilder()
                 .addPath(new BezierLine(startPose, endPose))
+                .setLinearHeadingInterpolation(startPose.getHeading(), endPose.getHeading())
                 .build();
         telemetry.addLine("path built");
     }
@@ -37,10 +38,12 @@ public class PedroPathingBase extends OpMode {
     public void updateStates() {
         switch (pathState) {
             case START_POS:
+                telemetry.addLine("start pos");
                 follower.followPath(chain1, true);
                 pathState = PathState.END_POS;
                 break;
             case END_POS:
+                telemetry.addLine("end pos");
                 if (!follower.isBusy()) {
                     telemetry.addLine("finished chain1");
                 }

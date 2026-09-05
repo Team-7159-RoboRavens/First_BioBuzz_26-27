@@ -23,13 +23,14 @@ public class PedroTuningHeading extends OpMode {
     private Robot robot;
     private final Pose startPose = new Pose(0, 0, 0);
 
-    private final Pose endPose = new Pose(0, 0, Math.PI/2);
+    private final Pose endPose = new Pose(1, 0, 2);
 
     private PathChain chain1;
 
     public void buildPaths() {
         chain1 = follower.pathBuilder()
                 .addPath(new BezierLine(startPose, endPose))
+                .setLinearHeadingInterpolation(startPose.getHeading(), endPose.getHeading())
                 .build();
         telemetry.addLine("path built");
     }
