@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 // Wraps the drivetrain motors, intake motor, and Pinpoint odometry computer,
 // exposing simple methods used by the button maps and TeleOp op modes.
@@ -17,6 +18,8 @@ public class Robot {
     DcMotor intakeMotor1;
 
     GoBildaPinpointDriver pinpoint;
+
+    VoltageSensor voltageSensor;
 
     private final HardwareMap hardwareMap;
 
@@ -31,6 +34,8 @@ public class Robot {
      */
     public Robot(HardwareMap hmap) {
         hardwareMap = hmap;
+
+        voltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
 
         leftFront = hmap.get(DcMotor.class, "leftFront");
         rightFront = hmap.get(DcMotor.class, "rightFront");
