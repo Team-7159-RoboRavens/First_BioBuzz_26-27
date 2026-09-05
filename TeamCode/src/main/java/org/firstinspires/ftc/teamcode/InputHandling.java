@@ -110,7 +110,7 @@ public class InputHandling {
     }
 
     private Double calculateMotorVoltage(double acel, double RPM){
-        
+
         return null;
     }
     private double maxRPMAcel(double RPM, int motor, boolean isAcelerating){
