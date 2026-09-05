@@ -18,6 +18,7 @@ public class TeleOpBaseP extends OpMode {
     public void init() {
         robot = new Robot(hardwareMap);
         pm = new PinpointBM(this, robot);
+
     }
 
     @Override

@@ -46,24 +46,27 @@ public class Constants {
             .maxPower(1)
             .xVelocity(65.4)
             .yVelocity(45)
+//            .maxPower(0.5)
+//            .xVelocity(45)
+//            .yVelocity(45)
             .rightFrontMotorName("rightFront")
             .leftFrontMotorName("leftFront")
             .rightRearMotorName("rightBack")
             .leftRearMotorName("leftBack")
-            .leftFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
+            .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
             .leftRearMotorDirection(DcMotorSimple.Direction.FORWARD)
-            .rightFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
+            .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
             .rightRearMotorDirection(DcMotorSimple.Direction.REVERSE);
 
 
     //This is just instantiating the normal driving
     public static PinpointConstants localizerConstants = new PinpointConstants()
-            .forwardPodY(2.5)
-            .strafePodX(-7.5)
-            .distanceUnit(DistanceUnit.INCH)
+            .forwardPodY(-60)
+            .strafePodX(-155)
+            .distanceUnit(DistanceUnit.MM)
             .hardwareMapName("pinpoint")
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
-            .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
+            .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED)
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED);
 
 //    public static TwoWheelConstants localizerConstants = new TwoWheelConstants()
