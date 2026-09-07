@@ -7,19 +7,23 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+import org.firstinspires.ftc.teamcode.TeleOp.TeleOpBase;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 // Wraps the drivetrain motors, intake motor, and Pinpoint odometry computer,
 // exposing simple methods used by the button maps and TeleOp op modes.
 public class Robot {
-    DcMotor leftFront;
-    DcMotor rightFront;
-    DcMotor leftBack;
-    DcMotor rightBack;
+    DcMotorEx leftFront;
+    DcMotorEx rightFront;
+    DcMotorEx leftBack;
+    DcMotorEx rightBack;
     DcMotor intakeMotor1;
 
     GoBildaPinpointDriver pinpoint;
 
     VoltageSensor voltageSensor;
+
+    InputHandling inputHandler = null;
 
     private final HardwareMap hardwareMap;
 
@@ -32,15 +36,18 @@ public class Robot {
      * @param hmap hardware map used to look up the drivetrain motors, intake motor,
      *             and Pinpoint odometry computer by configuration name
      */
-    public Robot(HardwareMap hmap) {
+    public Robot(HardwareMap hmap, TeleOpBase teleOpBase) {
         hardwareMap = hmap;
+        if (teleOpBase != null){
+        inputHandler = new InputHandling(this, teleOpBase);
+        }
 
         voltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
 
-        leftFront = hmap.get(DcMotor.class, "leftFront");
-        rightFront = hmap.get(DcMotor.class, "rightFront");
-        leftBack = hmap.get(DcMotor.class, "leftBack");
-        rightBack = hmap.get(DcMotor.class, "rightBack");
+        leftFront = hmap.get(DcMotorEx.class, "leftFront");
+        rightFront = hmap.get(DcMotorEx.class, "rightFront");
+        leftBack = hmap.get(DcMotorEx.class, "leftBack");
+        rightBack = hmap.get(DcMotorEx.class, "rightBack");
         intakeMotor1 = hmap.get(DcMotor.class, "intakeMotor");
 
         pinpoint = hmap.get(GoBildaPinpointDriver.class, "pinpoint");

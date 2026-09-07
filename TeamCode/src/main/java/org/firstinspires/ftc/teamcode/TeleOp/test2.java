@@ -33,7 +33,7 @@ public class test2 extends OpMode {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        robot = new Robot(hardwareMap);
+        robot = new Robot(hardwareMap, null);
         Log.i("motorPowers", "logMessage");
     }
 
