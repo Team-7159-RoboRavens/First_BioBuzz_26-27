@@ -21,15 +21,19 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Constants {
+        //TODO: how are these parameters derived
+        //TODO: who in the Control team is in charge of these
     public static FollowerConstants followerConstants = new FollowerConstants()
             .translationalPIDFCoefficients(new PIDFCoefficients(0.135, 0, 0.011, 0.012))
             .headingPIDFCoefficients(new PIDFCoefficients(0.76, 0, 0.02, 0.055))
             .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.1,0.0,0.01,0.4,0.05))
+        //TODO: who in the Control/Mech team has verified the following 3 parameters
             .forwardZeroPowerAcceleration(-60.14)
             .lateralZeroPowerAcceleration(-61.79)
             .mass(9);
+    //TODO: as these parameters will likely be different from the two robots our team has, it's better to have at least two different children classes for each of them
 
-
+    //TODO: when default values are not used, it'll be good to describe the ratoinale briefly, e.g, use 0.9 to apply brake sooner to avoid overshooting
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 0.9, 0.9);
 
 
@@ -42,6 +46,9 @@ public class Constants {
                 .build();
     }
 
+    //TODO: how are the first 3 parameters derived?
+    //TODO: who in the Control team is in charge of these
+    //TODO: who in the Mech team has verified these, especially the xVelocity and yVelocity
     public static MecanumConstants mecanumConstants = new MecanumConstants()
             .maxPower(1)
             .xVelocity(65.4)
@@ -59,6 +66,9 @@ public class Constants {
             .rightRearMotorDirection(DcMotorSimple.Direction.REVERSE);
 
 
+    // TODO: what platform does this apply to?
+    // TODO: who confirmed this in Control team?
+    // TODO: who confirmed this in Mech team?
     //This is just instantiating the normal driving
     public static PinpointConstants localizerConstants = new PinpointConstants()
             .forwardPodY(-60)

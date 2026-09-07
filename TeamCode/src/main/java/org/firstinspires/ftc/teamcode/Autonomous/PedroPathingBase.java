@@ -45,6 +45,7 @@ public class PedroPathingBase extends OpMode {
             case END_POS:
                 telemetry.addLine("end pos");
                 if (!follower.isBusy()) {
+                    //TODO: what if a robot got stuck somewhere and never gets here?
                     telemetry.addLine("finished chain1");
                 }
                 break;
