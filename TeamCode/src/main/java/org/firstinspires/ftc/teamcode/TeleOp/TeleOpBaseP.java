@@ -28,7 +28,7 @@ public class TeleOpBaseP extends OpMode {
     public void loop() {
         MotorPowers mp = pm.getPowers();
         robot.setPowers(mp);
-        robot.setIntakePower(pm.getIntakePower());
+//        robot.setIntakePower(pm.getIntakePower());
         ll.update();
         if (ll.hasValidResult()) {
             int id = ll.getAprilTagId();
@@ -45,8 +45,8 @@ public class TeleOpBaseP extends OpMode {
         else {
             telemetry.addData("Limelight", "no result");
         }
-        telemetry.addData("Pinpoint Angle", robot.pinpointAngle());
-        telemetry.addData("Pinpoint X", robot.getPinpointX());
-        telemetry.addData("Pinpoint Y", robot.getPinpointY());
+//        telemetry.addData("Pinpoint Angle", robot.pinpointAngle());
+//        telemetry.addData("Pinpoint X", robot.getPinpointX());
+//        telemetry.addData("Pinpoint Y", robot.getPinpointY());
     }
 }

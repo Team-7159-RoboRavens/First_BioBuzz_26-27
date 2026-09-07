@@ -17,20 +17,32 @@ public class Robot {
     DcMotorEx rightFront;
     DcMotorEx leftBack;
     DcMotorEx rightBack;
-    DcMotor intakeMotor1;
+//    DcMotor intakeMotor1;
 
-    GoBildaPinpointDriver pinpoint;
+    public double rightBackCurrentPos;
+    public double leftBackCurrentPos;
+    public double rightFrontCurrentPos;
+    public double leftFrontCurrentPos;
+
+    public double leftFrontVelocity;
+    public double rightFrontVelocity;
+    public double leftBackVelocity;
+    public double rightBackVelocity;
+//    GoBildaPinpointDriver pinpoint;
 
     VoltageSensor voltageSensor;
 
-    InputHandling inputHandler = null;
+//    InputHandling inputHandler = null;
 
     private final HardwareMap hardwareMap;
 
     // x and y positions of pinpoint relative to robot center in mm
-    private final int startPinpointX = -155;
-    private final int startPinpointY = -60;
+//    private final int startPinpointX = -155;
+//    private final int startPinpointY = -60;
 
+//     x and y positions of pinpoint relative to robot center in mm
+//    private final int pinpointX = 0;
+//    private final int pinpointY = 0;
 
     /**
      * @param hmap hardware map used to look up the drivetrain motors, intake motor,
@@ -38,9 +50,9 @@ public class Robot {
      */
     public Robot(HardwareMap hmap, TeleOpBase teleOpBase) {
         hardwareMap = hmap;
-        if (teleOpBase != null){
-        inputHandler = new InputHandling(this, teleOpBase);
-        }
+//        if (teleOpBase != null){
+//        inputHandler = new InputHandling(this, teleOpBase);
+//        }
 
         voltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
 
@@ -48,16 +60,21 @@ public class Robot {
         rightFront = hmap.get(DcMotorEx.class, "rightFront");
         leftBack = hmap.get(DcMotorEx.class, "leftBack");
         rightBack = hmap.get(DcMotorEx.class, "rightBack");
-        intakeMotor1 = hmap.get(DcMotor.class, "intakeMotor");
+//        intakeMotor1 = hmap.get(DcMotor.class, "intakeMotor");
 
-        pinpoint = hmap.get(GoBildaPinpointDriver.class, "pinpoint");
+//        pinpoint = hmap.get(GoBildaPinpointDriver.class, "pinpoint");
 
         // Hold position when no power is applied instead of coasting.
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//
+//        pinpoint.setOffsets(pinpointX, pinpointY, DistanceUnit.MM);
+//        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+//        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+//        pinpoint.resetPosAndIMU();
+//        intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Left front/right back motors are mounted mirrored, so their direction
         // must be reversed for all wheels to drive the same way for a given power sign.
@@ -66,10 +83,10 @@ public class Robot {
 
         // Configure the Pinpoint with its physical offset from the robot's center
         // and the odometry pod type/direction, then zero out position and heading.
-        pinpoint.setOffsets(startPinpointX, startPinpointY, DistanceUnit.MM);
-        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
-        pinpoint.resetPosAndIMU();
+//        pinpoint.setOffsets(startPinpointX, startPinpointY, DistanceUnit.MM);
+//        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+//        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
+//        pinpoint.resetPosAndIMU();
 
     }
 
@@ -84,9 +101,9 @@ public class Robot {
     /**
      * @param power intake motor power, [-1, 1]
      */
-    public void setIntakePower(double power) {
-        intakeMotor1.setPower(power);
-    }
+//    public void setIntakePower(double power) {
+//        intakeMotor1.setPower(power);
+//    }
 
     /**
      * @param mp per-wheel motor powers to apply to the drivetrain
@@ -97,32 +114,45 @@ public class Robot {
         leftBack.setPower(mp.lb);
         rightBack.setPower(mp.rb);
     }
+    public void getPositions() {
+        leftFrontCurrentPos = leftFront.getCurrentPosition();
+        rightFrontCurrentPos = rightFront.getCurrentPosition();
+        leftBackCurrentPos = leftBack.getCurrentPosition();
+        rightBackCurrentPos = rightBack.getCurrentPosition();
+    }
+    public void getVelocities() {
+        leftFrontVelocity = leftFront.getVelocity();
+        rightFrontVelocity = rightFront.getVelocity();
+        leftBackVelocity = leftBack.getVelocity();
+        rightBackVelocity = rightBack.getVelocity();
+
+    }
 
     /**
      * @return current Pinpoint heading, in radians
      */
-    public double pinpointAngle() {
-        return pinpoint.getHeading(AngleUnit.RADIANS);
-    }
-
-    /**
-     * @return current Pinpoint X position, in mm
-     */
-    public double getPinpointX() {
-        return pinpoint.getPosX(DistanceUnit.MM);
-    }
-
-    /**
-     * @return current Pinpoint Y position, in mm
-     */
-    public double getPinpointY(){
-        return pinpoint.getPosY(DistanceUnit.MM);
-    }
-
-    // Must be called once per loop before reading any Pinpoint position/heading data.
-    public void pinpointUpdate(){
-        pinpoint.update();
-    }
+//    public double pinpointAngle() {
+////        return pinpoint.getHeading(AngleUnit.RADIANS);
+//    }
+//
+//    /**
+//     * @return current Pinpoint X position, in mm
+//     */
+//    public double getPinpointX() {
+////        return pinpoint.getPosX(DistanceUnit.MM);
+//    }
+//
+//    /**
+//     * @return current Pinpoint Y position, in mm
+//     */
+//    public double getPinpointY(){
+////        return pinpoint.getPosY(DistanceUnit.MM);
+//    }
+//
+//    // Must be called once per loop before reading any Pinpoint position/heading data.
+//    public void pinpointUpdate(){
+////        pinpoint.update();
+//    }
 
     /**
      * @param mp per-wheel motor powers to apply to the drivetrain

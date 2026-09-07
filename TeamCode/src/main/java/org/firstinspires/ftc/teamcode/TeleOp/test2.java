@@ -1,12 +1,18 @@
 package org.firstinspires.ftc.teamcode.TeleOp;
 
+import java.lang.String;
+
 import android.util.Log;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.internal.files.DataLogger;
+import org.firstinspires.ftc.teamcode.ButtonMaps.BasicBM;
+import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
 
 import java.io.IOException;
@@ -14,12 +20,16 @@ import java.io.IOException;
 @TeleOp(name="TestData2")
 public class test2 extends OpMode {
 
-    DcMotor leftFront;
-    DcMotor rightFront;
-    DcMotor leftBack;
-    DcMotor rightBack;
+    DcMotorEx leftFront;
+    DcMotorEx rightFront;
+    DcMotorEx leftBack;
+    DcMotorEx rightBack;
     DataLogger dataLogger;
     Robot robot;
+    BasicBM bm;
+
+
+
 
     /**
      * User-defined init method
@@ -34,7 +44,17 @@ public class test2 extends OpMode {
             throw new RuntimeException(e);
         }
         robot = new Robot(hardwareMap, null);
-        Log.i("motorPowers", "logMessage");
+        bm = new BasicBM(this, robot);
+
+        MotorPowers mp = bm.getPowers();
+        robot.setPowers(mp);
+
+        String logMessage;
+        logMessage = String.format("leftFront: (%.2f)", mp.lf, "rightFront: (%.2f)", mp.rf);
+        String logBack;
+        logBack = String.format("leftBack: (%.2f)", mp.lb, "rightBack: (%.2f)", mp.rb);
+        Log.i("motorPowers", logMessage);
+        Log.i("motor powers", logBack);
     }
 
     /**
@@ -45,9 +65,47 @@ public class test2 extends OpMode {
      */
     @Override
     public void loop() {
-        String logMessage = String.format("leftFront: (%.2f)", leftFront, "rightFront: (%.2f)", rightFront);
+        robot = new Robot(hardwareMap, null);
+        bm = new BasicBM(this, robot);
+
+        MotorPowers mp = bm.getPowers();
+        robot.setPowers(mp);
+        robot.getPositions();
+        robot.getVelocities();
+
+
+        telemetry.addData("motor powers", "left front(%.2f), right front(%.2f)", mp.lf, mp.rf);
+        telemetry.addData("motor powers", "left back(%.2f), right back(%.2f)", mp.lb, mp.rb);
+
+        String logMessage;
+        logMessage = String.format("leftFront: (%.2f)", robot.leftFrontCurrentPos);
+        String logRight;
+        logRight = String.format("rightFront: (%.2f)", robot.rightFrontCurrentPos);
+        String logBack;
+        logBack = String.format("leftBack: (%.2f)", robot.leftBackCurrentPos);
+        String RightBack;
+        RightBack = String.format("rightBack: (%.2f)", robot.rightBackCurrentPos);
         Log.i("motorPowers", logMessage);
-        //moveMotors();
+        Log.i("motor powers", logBack);
+        Log.i("motor", logRight);
+        Log.i("motor", RightBack);
+
+        String lfVelocity;
+        lfVelocity = String.format("leftFront: (%.2f)", robot.leftFrontVelocity);
+        String rfVelocity;
+        rfVelocity = String.format("rightFront: (%.2f)", robot.rightFrontVelocity);
+        String lbVelocity;
+        lbVelocity = String.format("leftBack: (%.2f)", robot.leftBackVelocity);
+        String rbVelocity;
+        rbVelocity = String.format("rightBack: (%.2f)", robot.rightBackVelocity);
+        Log.i("velocity", lfVelocity);
+        Log.i("velocity", rfVelocity);
+        Log.i("velocity", lbVelocity);
+        Log.i("velocity", rbVelocity);
+
+
+
+
     }
 }
     

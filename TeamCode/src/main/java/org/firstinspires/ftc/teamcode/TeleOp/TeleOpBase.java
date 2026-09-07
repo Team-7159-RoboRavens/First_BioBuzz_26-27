@@ -32,7 +32,7 @@ public class TeleOpBase extends OpMode {
     public void loop() {
         MotorPowers mp = bm.getPowers();
         robot.setPowers(mp);
-        robot.setIntakePower(bm.getIntakePower());
+//        robot.setIntakePower(bm.getIntakePower());
         ll.update();
 
         averageFrameTime = averageFrameTime * frameCount + lastFrameTime.milliseconds();
