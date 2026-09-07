@@ -92,6 +92,9 @@ public class Robot {
      * @param mp per-wheel motor powers to apply to the drivetrain
      */
     public void setPowers(MotorPowers mp) {
+        if (Math.max(Math.max(mp.lf, mp.rf), Math.max(mp.lb, mp.rb)) > 1e-5) {
+            inputHandler.getMotorPowers(mp);
+        }
         leftFront.setPower(mp.lf);
         rightFront.setPower(mp.rf);
         leftBack.setPower(mp.lb);

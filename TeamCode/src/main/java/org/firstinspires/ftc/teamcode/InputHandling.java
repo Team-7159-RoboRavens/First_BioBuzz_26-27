@@ -68,13 +68,13 @@ public class InputHandling {
 
 
     public MotorPowers getMotorPowers(MotorPowers power){
+
         frameTime = teleOp.averageFrameTime;
         double[] targetRPM = new double[4];
         targetRPM[0] = power.lf * maxRPM;
         targetRPM[1] = power.rf * maxRPM;
         targetRPM[2] = power.lb * maxRPM;
         targetRPM[3] = power.rb * maxRPM;
-
         //if opposite wheels are doing the same thing the robot is not trying to rotate;
         if (targetRPM[0] == targetRPM[4] && targetRPM[2] == targetRPM[3]){
             if (lockHeading < 5) {
