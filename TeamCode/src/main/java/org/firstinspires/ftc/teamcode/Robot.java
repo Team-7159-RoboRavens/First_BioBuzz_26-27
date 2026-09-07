@@ -100,6 +100,8 @@ public class Robot {
         pinpoint.update();
     }
 
+    public double limelightAngle() { return pinpointAngle();}
+
     /**
      * @param mp per-wheel motor powers to apply to the drivetrain
      */

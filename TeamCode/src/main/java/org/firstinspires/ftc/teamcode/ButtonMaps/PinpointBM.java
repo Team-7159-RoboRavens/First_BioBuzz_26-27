@@ -4,6 +4,7 @@ import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
+import org.firstinspires.ftc.teamcode.Helpers.HeadingHelper;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
 
@@ -17,6 +18,7 @@ public class PinpointBM {
     private Robot robot;
     private Gamepad g1;
     private Gamepad g2;
+    private HeadingHelper h;
     /**
      * @param op running op mode, used to read gamepad state
      * @param r robot instance this button map drives
@@ -26,6 +28,7 @@ public class PinpointBM {
         robot = r;
         g1 = opmode.gamepad1;
         g2 = opmode.gamepad2;
+        h = new HeadingHelper(r);
     }
     /**
      * @return intake motor power for gamepad1's current right trigger value, in [0, 1]
@@ -110,6 +113,7 @@ public class PinpointBM {
     public MotorPowers getPowers() {
         // Refresh odometry each loop before using any pinpoint-derived data.
         robot.pinpointUpdate();
+        h.update();
         double forward = getDpadForward(g1.dpad_up, g1.dpad_down);
         double right = getDpadRight(g1.dpad_left, g1.dpad_right);
         double rotateClockwise = getBumperRotateClockwise(g1.left_bumper, g1.right_bumper);
@@ -120,7 +124,7 @@ public class PinpointBM {
 
         rotateClockwise += getRotation(g1.right_stick_x);
 
-        return Mechanumdrive.setMotorPowers(forward, right, rotateClockwise);
+        return Mechanumdrive.fieldOrientedDrive(forward, right, rotateClockwise, Math.PI/2+h.heading);
 
     }
 
