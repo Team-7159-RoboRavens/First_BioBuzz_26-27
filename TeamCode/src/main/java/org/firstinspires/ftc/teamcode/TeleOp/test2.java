@@ -9,7 +9,9 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 
+import org.firstinspires.ftc.ftccommon.internal.manualcontrol.commands.AnalogCommands;
 import org.firstinspires.ftc.robotcore.internal.files.DataLogger;
 import org.firstinspires.ftc.teamcode.ButtonMaps.BasicBM;
 import org.firstinspires.ftc.teamcode.MotorPowers;
@@ -27,6 +29,8 @@ public class test2 extends OpMode {
     DataLogger dataLogger;
     Robot robot;
     BasicBM bm;
+    VoltageSensor voltageSensor;
+    public double power = 0;
 
 
 
@@ -68,7 +72,7 @@ public class test2 extends OpMode {
         robot = new Robot(hardwareMap, null);
         bm = new BasicBM(this, robot);
 
-        MotorPowers mp = bm.getPowers();
+        MotorPowers mp = new MotorPowers(1, 1, 1, 1);
         robot.setPowers(mp);
         robot.getPositions();
         robot.getVelocities();
@@ -102,6 +106,17 @@ public class test2 extends OpMode {
         Log.i("velocity", rfVelocity);
         Log.i("velocity", lbVelocity);
         Log.i("velocity", rbVelocity);
+
+        String voltage;
+        voltage = String.format("voltage: (%.2f)", voltageSensor.getVoltage());
+        Log.i("voltage", voltage);
+
+
+        while (robot.leftBackVelocity == 0 && robot.leftFrontVelocity == 0 && robot.rightBackVelocity == 0 && robot.rightFrontVelocity == 0) {
+            robot.smp += 0.001;
+            robot.setStartingPowers();
+            Log.i("motor increments", String.valueOf(robot.smp));
+        }
 
 
 

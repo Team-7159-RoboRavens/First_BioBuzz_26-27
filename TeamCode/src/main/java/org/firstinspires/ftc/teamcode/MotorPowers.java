@@ -6,6 +6,10 @@ public class MotorPowers {
     public double rf;
     public double lb;
     public double rb;
+
+    ;
+
+
     /**
      * @param lf left front wheel power
      * @param rf right front wheel power
@@ -18,8 +22,8 @@ public class MotorPowers {
         this.lb = lb;
         this.rb = rb;
     }
-
     public MotorPowers() {
 
     }
+
 }

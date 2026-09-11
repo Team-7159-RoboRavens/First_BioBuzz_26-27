@@ -29,6 +29,8 @@ public class Robot {
     public double leftBackVelocity;
     public double rightBackVelocity;
 //    GoBildaPinpointDriver pinpoint;
+    public double smp = 0;
+
 
     VoltageSensor voltageSensor;
 
@@ -114,6 +116,12 @@ public class Robot {
         leftBack.setPower(mp.lb);
         rightBack.setPower(mp.rb);
     }
+    public void setStartingPowers() {
+        leftFront.setPower(smp);
+        rightFront.setPower(smp);
+        leftBack.setPower(smp);
+        rightBack.setPower(smp);
+    }
     public void getPositions() {
         leftFrontCurrentPos = leftFront.getCurrentPosition();
         rightFrontCurrentPos = rightFront.getCurrentPosition();
@@ -126,6 +134,10 @@ public class Robot {
         leftBackVelocity = leftBack.getVelocity();
         rightBackVelocity = rightBack.getVelocity();
 
+    }
+
+    public void getMaxSpeed() {
+        leftFrontMax = leftFront.get
     }
 
     /**
