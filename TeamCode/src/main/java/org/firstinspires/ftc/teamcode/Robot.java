@@ -25,6 +25,8 @@ public class Robot {
 
     InputHandling inputHandler = null;
 
+    List<LynxModule> hubs;
+
     private final HardwareMap hardwareMap;
 
     // x and y positions of pinpoint relative to robot center in mm
@@ -38,6 +40,10 @@ public class Robot {
      */
     public Robot(HardwareMap hmap, TeleOpBase teleOpBase) {
         hardwareMap = hmap;
+        hubs = hardwareMap.getAll(LynxModule.class);
+        for (LynxModule hub : hubs) {
+            hub.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
+        }
         if (teleOpBase != null){
         inputHandler = new InputHandling(this, teleOpBase);
         }
@@ -93,6 +99,9 @@ public class Robot {
      */
     public void setPowers(MotorPowers mp) {
         if (Math.max(Math.max(mp.lf, mp.rf), Math.max(mp.lb, mp.rb)) > 1e-5) {
+            for (LynxModule hub : robot.hubs) {
+                hub.clearBulkCache();
+            }
             inputHandler.getMotorPowers(mp);
         }
         leftFront.setPower(mp.lf);
