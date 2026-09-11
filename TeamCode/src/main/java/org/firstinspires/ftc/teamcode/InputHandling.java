@@ -3,55 +3,83 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import org.firstinspires.ftc.teamcode.TeleOp.TeleOpBase;
-public class InputHandling {
-    private final double MAX_RPM = 1500;
-
-    private final double INITIAL_VOLTAGE = 12;
-
-    private final double[] MOTOR_TORQUE_CONSTANT = {1, 1, 1, 1};
-
-    private final double[] FRICTIONAL_TORQUE = {1, 1, 1, 1};
-
-    private final double[] GEAR_RATIO = {1, 1, 1, 1};
-    private final double[] TOTAL_ROTAIONAL_INIRTIA = {1, 1, 1, 1};
-
-    private final double RADIAN_TO_RPS = Math.PI/30;
-
-    //ticks per revolution of motor
+public cublic class InputHandling {
+ 
+    private final double MAX_RPM = 345;
+ 
+    // Voltage the max rpm was measured at; used to scale maxRPM to current battery voltage
+    private final double INITIAL_VOLTAGE = 12.5;
+ 
+    // Volts per RPM/s; only ratios matter
+    private final double[] KA = {0.002398, 0.002058, 0.001870, 0.002433};
+ 
+    // Volts per RPM, from steady-state RPM at fixed power
+    private final double[] KV = {0.034303, 0.033910, 0.032635, 0.035025};
+ 
+    // Static friction volts, placeholder; needs a break-away test
+    private final double[] KS = {0.35, 0.35, 0.35, 0.35};
+ 
+    // Heading correction, fraction of maxRPM per radian of error
+    private final double TURN_ADJUST_SCALE = 1.0;
+ 
+    // Heading correction, fraction of maxRPM per rad/s of drift
+    private final double TURN_ADJUST_DERIVATIVE = 0.10;
+ 
+    // Heading errors below this are ignored, radians
+    private final double HEADING_DEADBAND = 0.02;
+ 
+    // Heading correction clamp, fraction of maxRPM
+    private final double MAX_TURN_CORRECTION = 0.3;
+ 
+    // Frames averaged before heading lock engages
+    private final int LOCK_SAMPLES = 5;
+ 
+    // Encoder CPR at the output shaft
     private final double TICKS = 383.6;
-
-    private final double[] ENERGY_TOTAL = {1, 1, 1, 1};
-
-    private final double[] MOTOR_VELOCITY_CONSTANT = {1, 1, 1, 1};
-
+ 
     private final int SECONDS_PER_MINUTE = 60;
-
+ 
+    // Fraction of remaining error closed per frame; lower this first if it buzzes
     private final double FRACTION_UNDER_SHOOT = 0.7;
-
-    private final double TURN_AJUST_SCALE = 0.1;
+ 
+    // Threshold for "driver is turning"
+    private final double POWER_EPSILON = 1e-3;
+ 
+    // Friction sign blend width, RPM
+    private final double FRICTION_RAMP_RPM = 20.0;
+ 
+    // Friction sign fade width vs error
+    private final double FRICTION_RAMP_DIFF = 10.0;
+ 
+    // Voltage filter coefficient, ~1s time constant at 50Hz
+    private final double VOLTAGE_FILTER = 0.02;
+ 
+    private final double MIN_VALID_VOLTAGE = 6.0;
+ 
     private double maxRPM = MAX_RPM;
-
     private double frameTime = 0.02;
+ 
     private Robot robot;
-
-    private DcMotorEx lf;
-    private DcMotorEx rf;
-    private DcMotorEx lb;
-    private DcMotorEx rb;
-
     private TeleOpBase teleOp;
-
     private VoltageSensor voltageSensor;
-
+ 
+    private DcMotorEx lf, rf, lb, rb;
+    private DcMotorEx[] motors;
+ 
     private int lockHeading;
     private double lockAngle;
-
-    private double[] angles = new double[5];
-
+    private double lastHeadingError;
+    private double[] sinSamples = new double[LOCK_SAMPLES];
+    private double[] cosSamples = new double[LOCK_SAMPLES];
     private boolean disableLockHeading;
-
-    private double batteryVoltage;
-    public InputHandling(Robot a, TeleOpBase b){
+ 
+    // Instantaneous reading, used for volts -> power conversion
+    private double batteryVoltage = 12.0;
+ 
+    // Slow-filtered reading, used to scale maxRPM so sag doesn't shrink the target
+    private double filteredVoltage = 12.0;
+ 
+    public InputHandling(Robot a, TeleOpBase b) {
         robot = a;
         teleOp = b;
         voltageSensor = robot.voltageSensor;
@@ -59,187 +87,190 @@ public class InputHandling {
         rf = robot.rightFront;
         lb = robot.leftBack;
         rb = robot.rightBack;
-    }
-
-    public void updateVoltage(){
-        batteryVoltage = voltageSensor.getVoltage();
-        maxRPM = MAX_RPM * batteryVoltage / INITIAL_VOLTAGE;
-    }
-
-
-    public MotorPowers getMotorPowers(MotorPowers power){
-
-        frameTime = teleOp.averageFrameTime;
-        double[] targetRPM = new double[4];
-        targetRPM[0] = power.lf * maxRPM;
-        targetRPM[1] = power.rf * maxRPM;
-        targetRPM[2] = power.lb * maxRPM;
-        targetRPM[3] = power.rb * maxRPM;
-        //if opposite wheels are doing the same thing the robot is not trying to rotate;
-        if (targetRPM[0] == targetRPM[4] && targetRPM[2] == targetRPM[3]){
-            if (lockHeading < 5) {
-                angles[lockHeading] = robot.pinpointAngle();
-                lockHeading++;
-                if (lockHeading == 5){
-                    double sum = 0;
-                    for (int i = 0; i < 5; i++){
-                        sum += angles[i];
-                    }
-                    lockAngle = sum / 5;
-                    while (lockAngle > Math.PI){
-                        lockAngle -= Math.PI;
-                    }
-                }
-            }
+        motors = new DcMotorEx[]{lf, rf, lb, rb};
+ 
+        double v = voltageSensor.getVoltage();
+        if (v > MIN_VALID_VOLTAGE) {
+            batteryVoltage = v;
+            filteredVoltage = v;
         }
-        else {
+        maxRPM = MAX_RPM * filteredVoltage / INITIAL_VOLTAGE;
+    }
+ 
+    // Call once per loop, before getMotorPowers
+    public void updateVoltage() {
+        double v = voltageSensor.getVoltage();
+        if (v > MIN_VALID_VOLTAGE) {
+            batteryVoltage = v;
+            filteredVoltage += VOLTAGE_FILTER * (v - filteredVoltage);
+        }
+        maxRPM = MAX_RPM * filteredVoltage / INITIAL_VOLTAGE;
+    }
+ 
+    public void setDisableLockHeading(boolean disable) {
+        disableLockHeading = disable;
+        if (disable) {
             lockHeading = 0;
         }
-        if (!disableLockHeading) {
-            if (lockHeading == 5) {
-                double angleErrorRight = robot.pinpointAngle() - lockAngle;
-                double angleErrorLeft = 2 * Math.PI - angleErrorRight;
+    }
+ 
+    public MotorPowers getMotorPowers(MotorPowers power) {
+        updateVoltage();
 
-                if (angleErrorLeft < 0) {
-                    double temp = angleErrorRight;
-                    angleErrorRight = angleErrorLeft;
-                    angleErrorLeft = temp;
-                }
-
-                double turnCorrection = 0;
-
-                if (angleErrorLeft < angleErrorRight) {
-                    turnCorrection = -TURN_AJUST_SCALE * angleErrorLeft;
-                } else {
-                    turnCorrection = TURN_AJUST_SCALE * angleErrorRight;
-                }
-                targetRPM[0] += turnCorrection * maxRPM;
-                targetRPM[2] += turnCorrection * maxRPM;
-                targetRPM[1] -= turnCorrection * maxRPM;
-                targetRPM[3] -= turnCorrection * maxRPM;
-                double max = targetRPM[maxIndex(targetRPM)];
-                if (max > maxRPM){
-                    for (int i = 0; i < 4; i ++){
-                        targetRPM[i] *= maxRPM / max;
-                    }
-                }
-            }
+        frameTime = teleOp.averageFrameTime;
+        if (frameTime < 1e-3 || frameTime > 0.2) {
+            frameTime = 0.02;
         }
-
+ 
+        double[] targetRPM = {
+            power.lf * maxRPM,
+            power.rf * maxRPM,
+            power.lb * maxRPM,
+            power.rb * maxRPM
+        };
+ 
+        applyHeadingHold(power, targetRPM);
+ 
+        // Set BulkCachingMode.MANUAL in Robot or this is 4 separate USB round trips
         double[] RPM = new double[4];
-        RPM[0] = lf.getVelocity() * SECONDS_PER_MINUTE / TICKS;
-        RPM[1] = rf.getVelocity() * SECONDS_PER_MINUTE / TICKS;
-        RPM[2] = lb.getVelocity() * SECONDS_PER_MINUTE / TICKS;
-        RPM[3] = rb.getVelocity() * SECONDS_PER_MINUTE / TICKS;
-
-        double[] diff = new double[4];
-        for (int i = 0; i < 4; i++){
-            diff[i] = targetRPM[i] - RPM[i];
+        for (int i = 0; i < 4; i++) {
+            RPM[i] = motors[i].getVelocity() * SECONDS_PER_MINUTE / TICKS;
         }
-
-        int maxIndex = maxIndex(diff);
-
-        boolean isAccelerating = (RPM[maxIndex] > 0 && targetRPM[maxIndex] > RPM[maxIndex]) || (RPM[maxIndex] < 0 && targetRPM[maxIndex] < RPM[maxIndex]);
-        //calculates the acceleration of the motor that needs the greatest change in rpm
-        double maxAcel = maxRPMAcel(RPM[maxIndex], targetRPM[maxIndex], maxIndex, isAccelerating);
-
-        double[] inputVoltages = calculateInputVoltages(maxAcel, maxIndex, RPM, targetRPM, diff, 0);
-
-        return calculateMotorPowers(inputVoltages);
+ 
+        return solve(RPM, targetRPM);
     }
-
-    private MotorPowers calculateMotorPowers(double[] inputVoltages){
-        MotorPowers powers = new MotorPowers();
-        double max = Math.abs(inputVoltages[maxIndex(inputVoltages)]);
-        if (max > batteryVoltage){
-            for (int i = 0; i < 4; i++){
-                inputVoltages[i] *= batteryVoltage / max;
-            }
-        }
-        powers.lf = inputVoltages[0] / batteryVoltage;
-        powers.rf = inputVoltages[1] / batteryVoltage;
-        powers.lb = inputVoltages[2] / batteryVoltage;
-        powers.rb = inputVoltages[3] / batteryVoltage;
-        return powers;
-    }
-    private double[] calculateInputVoltages(double maxAcel, int motor, double[] RPM, double[] targetRPM, double[] diff, int recursionCycles){
-        double[] voltages = new double[4];
-        double denominator = diff[motor];
-        denominator = Math.abs(denominator);
-        if (denominator < 1e-5){
-            denominator = 1e-5;
-        }
-        for (int i = 0; i < 4; i ++){
-            if (i != motor) {
-                double motorAcel = maxAcel * diff[i] / denominator;
-                double voltage = calculateMotorVoltage(motorAcel, RPM[i], i);
-                if (voltage > batteryVoltage + 1e-3 || voltage < -batteryVoltage - 1e-3){
-                    if (recursionCycles <= 2) {
-                        recursionCycles ++;
-                        boolean isAccelerating = (RPM[i] > 0 && targetRPM[i] > RPM[i]) || (RPM[i] < 0 && targetRPM[i] < RPM[i]);
-                        maxAcel = maxRPMAcel(RPM[i], targetRPM[i], i, isAccelerating);
-                        return calculateInputVoltages(maxAcel, i, RPM, targetRPM, diff, recursionCycles);
+ 
+    private void applyHeadingHold(MotorPowers power, double[] targetRPM) {
+ 
+        // Mecanum rotation component of the driver's request
+        double turnComponent = (power.lf + power.lb) - (power.rf + power.rb);
+ 
+        if (Math.abs(turnComponent) < POWER_EPSILON) {
+            if (lockHeading < LOCK_SAMPLES) {
+                double a = robot.pinpointAngle();
+                sinSamples[lockHeading] = Math.sin(a);
+                cosSamples[lockHeading] = Math.cos(a);
+                lockHeading++;
+                if (lockHeading == LOCK_SAMPLES) {
+                    double s = 0, c = 0;
+                    for (int i = 0; i < LOCK_SAMPLES; i++) {
+                        s += sinSamples[i];
+                        c += cosSamples[i];
                     }
+                    lockAngle = Math.atan2(s, c);
+                    lastHeadingError = 0;
                 }
-                voltages[i] = voltage;
             }
-        }
-        if (diff[motor] < 0){
-            maxAcel = -maxAcel;
-        }
-        voltages[motor] = calculateMotorVoltage(maxAcel, RPM[motor], motor);
-        return voltages;
-    }
-
-    private double calculateMotorVoltage(double acel, double RPM, int motor){
-        int sign = 1;
-        if (acel < 0){
-            sign = -1;
-        }
-        double a = acel * (ENERGY_TOTAL[motor] * Math.PI / 30 / MOTOR_TORQUE_CONSTANT[motor] / GEAR_RATIO[motor]);
-        double b = RPM / MOTOR_VELOCITY_CONSTANT[motor];
-        double c = sign * FRICTIONAL_TORQUE[motor] / MOTOR_TORQUE_CONSTANT[motor] / GEAR_RATIO[motor];
-        double voltage = a + b + c;
-        return voltage;
-    }
-    private double maxRPMAcel(double RPM, double targetRPM, int motor, boolean isAcelerating){
-        int sign = 1;
-        if (!isAcelerating){
-            sign = -1;
-        }
-        RPM = Math.abs(RPM);
-        double numerator = batteryVoltage - (RPM) / MOTOR_TORQUE_CONSTANT[motor] - sign * FRICTIONAL_TORQUE[motor] / MOTOR_TORQUE_CONSTANT[motor] / GEAR_RATIO[motor];
-        double denominator = TOTAL_ROTAIONAL_INIRTIA[motor] * RADIAN_TO_RPS / MOTOR_TORQUE_CONSTANT[motor] / GEAR_RATIO[motor];
-        double acel = numerator/denominator;
-        double velocity;
-        if (motor == 0){
-            velocity = lf.getVelocity();
-        } else if (motor == 1){
-            velocity = rf.getVelocity();
-        } else if (motor == 2){
-            velocity = lb.getVelocity();
         } else {
-            velocity = rb.getVelocity();
+            lockHeading = 0;
         }
-        velocity = velocity / TICKS * SECONDS_PER_MINUTE;
-        if (acel > 0){
-            if (acel * frameTime / FRACTION_UNDER_SHOOT + velocity > targetRPM){
-                acel = (targetRPM - velocity) * FRACTION_UNDER_SHOOT / frameTime;
+ 
+        if (disableLockHeading || lockHeading < LOCK_SAMPLES) {
+            return;
+        }
+ 
+        double error = wrapAngle(robot.pinpointAngle() - lockAngle);
+ 
+        double correction = 0;
+        if (Math.abs(error) > HEADING_DEADBAND) {
+            double derivative = wrapAngle(error - lastHeadingError) / frameTime;
+            correction = -(TURN_ADJUST_SCALE * error + TURN_ADJUST_DERIVATIVE * derivative);
+            correction = clamp(correction, -MAX_TURN_CORRECTION, MAX_TURN_CORRECTION);
+        }
+        lastHeadingError = error;
+ 
+        targetRPM[0] += correction * maxRPM;
+        targetRPM[2] += correction * maxRPM;
+        targetRPM[1] -= correction * maxRPM;
+        targetRPM[3] -= correction * maxRPM;
+ 
+        double max = Math.abs(targetRPM[maxIndex(targetRPM)]);
+        if (max > maxRPM) {
+            double scale = maxRPM / max;
+            for (int i = 0; i < 4; i++) {
+                targetRPM[i] *= scale;
             }
         }
-        else if (acel < 0){
-            if (acel * frameTime / FRACTION_UNDER_SHOOT + velocity < targetRPM){
-                acel = (targetRPM - velocity) * FRACTION_UNDER_SHOOT / frameTime;
-            }
-        }
-        return acel;
     }
-    private int maxIndex(double[] a){
+ 
+    // Largest shared s such that every motor stays inside the battery voltage
+    private MotorPowers solve(double[] RPM, double[] targetRPM) {
+        
+
+        //volts required to accelerate for given motor
+        double[] m = new double[4];
+        // voltage required to maintain current RPM
+        double[] b = new double[4];
+ 
+        for (int i = 0; i < 4; i++) {
+            double diff = targetRPM[i] - RPM[i];
+            m[i] = KA[i] * diff;
+            b[i] = KV[i] * RPM[i] + KS[i] * frictionSign(RPM[i], diff);
+        }
+ 
+        double s = FRACTION_UNDER_SHOOT / frameTime;
+ 
+        for (int i = 0; i < 4; i++) {
+            if (Math.abs(m[i]) < 1e-9) {
+                continue;
+            }
+            double rail = (m[i] > 0) ? batteryVoltage : -batteryVoltage;
+            double limit = (rail - b[i]) / m[i];
+            if (limit < s) {
+                s = limit;
+            }
+        }
+ 
+        if (s < 0) {
+            s = 0;
+        }
+ 
+        MotorPowers p = new MotorPowers();
+        double[] v = new double[4];
+        for (int i = 0; i < 4; i++) {
+            v[i] = clamp(m[i] * s + b[i], -batteryVoltage, batteryVoltage);
+        }
+ 
+        p.lf = clamp(v[0] / batteryVoltage, -1, 1);
+        p.rf = clamp(v[1] / batteryVoltage, -1, 1);
+        p.lb = clamp(v[2] / batteryVoltage, -1, 1);
+        p.rb = clamp(v[3] / batteryVoltage, -1, 1);
+        return p;
+    }
+ 
+    // Friction direction in [-1,1]; sign(RPM) when moving, fades toward diff near rest
+    private double frictionSign(double RPM, double diff) {
+        double moving = clamp(Math.abs(RPM) / FRICTION_RAMP_RPM, 0, 1);
+        double breakaway = clamp(diff / FRICTION_RAMP_DIFF, -1, 1);
+        return moving * Math.signum(RPM) + (1 - moving) * breakaway;
+    }
+ 
+    private static double wrapAngle(double a) {
+        while (a > Math.PI) {
+            a -= 2 * Math.PI;
+        }
+        while (a < -Math.PI) {
+            a += 2 * Math.PI;
+        }
+        return a;
+    }
+ 
+    private static double clamp(double v, double lo, double hi) {
+        if (v < lo) {
+            return lo;
+        }
+        if (v > hi) {
+            return hi;
+        }
+        return v;
+    }
+ 
+    private int maxIndex(double[] a) {
         double max = Math.abs(a[0]);
         int index = 0;
-        for(int i = 1; i < a.length; i++){
+        for (int i = 1; i < a.length; i++) {
             double c = Math.abs(a[i]);
-            if (c > max){
+            if (c > max) {
                 index = i;
                 max = c;
             }
