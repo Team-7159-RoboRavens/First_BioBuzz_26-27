@@ -7,6 +7,7 @@ import org.firstinspires.ftc.teamcode.ButtonMaps.PinpointBM;
 import org.firstinspires.ftc.teamcode.Limelight;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
+import com.qualcomm.hardware.lynx.LynxModule;
 
 // TeleOp op mode using the Pinpoint-aware button map, with odometry telemetry.
 @TeleOp(name="TeleOpBaseP")

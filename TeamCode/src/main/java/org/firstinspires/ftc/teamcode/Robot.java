@@ -38,6 +38,8 @@ public class Robot {
     private final int startPinpointX = -155;
     private final int startPinpointY = -60;
 
+    public boolean inputHandlingEnabled = false;
+
 
     /**
      * @param hmap hardware map used to look up the drivetrain motors, intake motor,
@@ -51,10 +53,6 @@ public class Robot {
         }
 
         voltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
-
-        if (teleOpBase != null){
-            inputHandler = new InputHandling(this, teleOpBase);
-        }
 
 
         leftFront = hmap.get(DcMotorEx.class, "leftFront");
@@ -84,6 +82,11 @@ public class Robot {
         pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
         pinpoint.resetPosAndIMU();
 
+
+        if (teleOpBase != null){
+            inputHandler = new InputHandling(this, teleOpBase);
+        }
+
     }
 
     public Robot(TeleOpBaseNewBot teleOpBase, HardwareMap hmap) {
@@ -94,10 +97,6 @@ public class Robot {
         }
 
         voltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
-
-        if (teleOpBase != null){
-            inputHandler = new InputHandling(this, teleOpBase);
-        }
 
 
         leftFront = hmap.get(DcMotorEx.class, "leftFront");
@@ -115,10 +114,14 @@ public class Robot {
         // Left front/right back motors are mounted mirrored, so their direction
         // must be reversed for all wheels to drive the same way for a given power sign.
         leftFront.setDirection(DcMotor.Direction.REVERSE);
-        rightBack.setDirection(DcMotor.Direction.REVERSE);
+        leftBack.setDirection(DcMotor.Direction.REVERSE);
 
         // Configure the Pinpoint with its physical offset from the robot's center
         // and the odometry pod type/direction, then zero out position and heading.
+
+        if (teleOpBase != null){
+            inputHandler = new InputHandling(this, teleOpBase);
+        }
 
     }
 
@@ -143,11 +146,11 @@ public class Robot {
      * @param mp per-wheel motor powers to apply to the drivetrain
      */
     public void setPowers(MotorPowers mp) {
-//        if (inputHandler == null) {
-//            if (Math.max(Math.max(Math.abs(mp.lf), Math.abs(mp.rf)), Math.max(Math.abs(mp.lb), Math.abs(mp.rb))) > 1e-5) {
-//                mp = inputHandler.getMotorPowers(mp);
-//            }
-//        }
+        if (inputHandler != null && inputHandlingEnabled) {
+            if (Math.max(Math.max(Math.abs(mp.lf), Math.abs(mp.rf)), Math.max(Math.abs(mp.lb), Math.abs(mp.rb))) > 1e-2) {
+                mp = inputHandler.getMotorPowers(mp);
+            }
+        }
         leftFront.setPower(mp.lf);
         rightFront.setPower(mp.rf);
         leftBack.setPower(mp.lb);

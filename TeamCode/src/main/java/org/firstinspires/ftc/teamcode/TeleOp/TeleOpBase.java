@@ -7,6 +7,7 @@ import org.firstinspires.ftc.teamcode.ButtonMaps.BasicBM;
 import org.firstinspires.ftc.teamcode.Limelight;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
+import com.qualcomm.hardware.lynx.LynxModule;
 
 import com.qualcomm.robotcore.util.ElapsedTime;
 

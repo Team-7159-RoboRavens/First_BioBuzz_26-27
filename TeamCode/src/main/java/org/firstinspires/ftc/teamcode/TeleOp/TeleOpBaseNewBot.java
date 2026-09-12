@@ -8,6 +8,7 @@ import org.firstinspires.ftc.teamcode.ButtonMaps.BasicBM;
 import org.firstinspires.ftc.teamcode.Limelight;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
+import com.qualcomm.hardware.lynx.LynxModule;
 
 
 // TeleOp op mode using the basic (non-Pinpoint) button map.
@@ -34,7 +35,9 @@ public class TeleOpBaseNewBot extends OpMode {
             hub.clearBulkCache();
         }
         MotorPowers mp = bm.getPowers();
+        robot.setPowers(mp);
         ll.update();
+
 
         averageFrameTime = averageFrameTime * frameCount + lastFrameTime.milliseconds();
         averageFrameTime /= frameCount + 1;
@@ -56,5 +59,6 @@ public class TeleOpBaseNewBot extends OpMode {
         }
         telemetry.addData("Motors", "left front(%.2f), right front(%.2f)", mp.lf, mp.rf);
         telemetry.addData("Motors", "left back(%.2f), right back(%.2f)", mp.lb, mp.rb);
+        telemetry.addData("Motors", "enabled(%b)", robot.inputHandlingEnabled);
     }
 }
