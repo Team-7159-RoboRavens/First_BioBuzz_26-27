@@ -7,6 +7,7 @@ import org.firstinspires.ftc.teamcode.ButtonMaps.BasicBM;
 import org.firstinspires.ftc.teamcode.Limelight;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
+
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
@@ -30,6 +31,9 @@ public class TeleOpBase extends OpMode {
 
     @Override
     public void loop() {
+        for (LynxModule hub : robot.hubs) {
+            hub.clearBulkCache();
+        }
         MotorPowers mp = bm.getPowers();
         robot.setPowers(mp);
         robot.setIntakePower(bm.getIntakePower());

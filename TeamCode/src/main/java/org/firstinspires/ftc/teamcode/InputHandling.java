@@ -3,9 +3,11 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import org.firstinspires.ftc.teamcode.TeleOp.TeleOpBase;
-public cublic class InputHandling {
+import org.firstinspires.ftc.teamcode.TeleOp.TeleOpBaseNewBot;
+
+public class InputHandling {
  
-    private final double MAX_RPM = 345;
+    private final double MAX_RPM = 300;
  
     // Voltage the max rpm was measured at; used to scale maxRPM to current battery voltage
     private final double INITIAL_VOLTAGE = 12.5;
@@ -61,6 +63,7 @@ public cublic class InputHandling {
  
     private Robot robot;
     private TeleOpBase teleOp;
+    private TeleOpBaseNewBot teleOpNew;
     private VoltageSensor voltageSensor;
  
     private DcMotorEx lf, rf, lb, rb;
@@ -78,17 +81,38 @@ public cublic class InputHandling {
  
     // Slow-filtered reading, used to scale maxRPM so sag doesn't shrink the target
     private double filteredVoltage = 12.0;
- 
+
+    private boolean isNewBot;
+
     public InputHandling(Robot a, TeleOpBase b) {
         robot = a;
         teleOp = b;
+        isNewBot = false;
         voltageSensor = robot.voltageSensor;
         lf = robot.leftFront;
         rf = robot.rightFront;
         lb = robot.leftBack;
         rb = robot.rightBack;
         motors = new DcMotorEx[]{lf, rf, lb, rb};
- 
+
+        double v = voltageSensor.getVoltage();
+        if (v > MIN_VALID_VOLTAGE) {
+            batteryVoltage = v;
+            filteredVoltage = v;
+        }
+        maxRPM = MAX_RPM * filteredVoltage / INITIAL_VOLTAGE;
+    }
+    public InputHandling(Robot a, TeleOpBaseNewBot b) {
+        robot = a;
+        teleOpNew = b;
+        isNewBot = true;
+        voltageSensor = robot.voltageSensor;
+        lf = robot.leftFront;
+        rf = robot.rightFront;
+        lb = robot.leftBack;
+        rb = robot.rightBack;
+        motors = new DcMotorEx[]{lf, rf, lb, rb};
+
         double v = voltageSensor.getVoltage();
         if (v > MIN_VALID_VOLTAGE) {
             batteryVoltage = v;
@@ -116,8 +140,12 @@ public cublic class InputHandling {
  
     public MotorPowers getMotorPowers(MotorPowers power) {
         updateVoltage();
-
-        frameTime = teleOp.averageFrameTime;
+        if (isNewBot){
+            frameTime = teleOpNew.averageFrameTime;
+        }
+        else {
+            frameTime = teleOp.averageFrameTime;
+        }
         if (frameTime < 1e-3 || frameTime > 0.2) {
             frameTime = 0.02;
         }
@@ -129,7 +157,7 @@ public cublic class InputHandling {
             power.rb * maxRPM
         };
  
-        applyHeadingHold(power, targetRPM);
+        //applyHeadingHold(power, targetRPM);
  
         // Set BulkCachingMode.MANUAL in Robot or this is 4 separate USB round trips
         double[] RPM = new double[4];

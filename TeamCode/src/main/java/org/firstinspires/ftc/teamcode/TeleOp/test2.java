@@ -5,9 +5,9 @@ import android.util.Log;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import org.firstinspires.ftc.teamcode.Robot;
 
 import org.firstinspires.ftc.robotcore.internal.files.DataLogger;
-import org.firstinspires.ftc.teamcode.Robot;
 
 import java.io.IOException;
 

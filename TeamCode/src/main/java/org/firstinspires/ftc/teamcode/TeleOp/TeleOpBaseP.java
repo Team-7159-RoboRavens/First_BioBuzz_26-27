@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.ButtonMaps.BasicBM;
 import org.firstinspires.ftc.teamcode.ButtonMaps.PinpointBM;
 import org.firstinspires.ftc.teamcode.Limelight;
 import org.firstinspires.ftc.teamcode.MotorPowers;
@@ -26,6 +25,9 @@ public class TeleOpBaseP extends OpMode {
 
     @Override
     public void loop() {
+        for (LynxModule hub : robot.hubs) {
+            hub.clearBulkCache();
+        }
         MotorPowers mp = pm.getPowers();
         robot.setPowers(mp);
         robot.setIntakePower(pm.getIntakePower());
