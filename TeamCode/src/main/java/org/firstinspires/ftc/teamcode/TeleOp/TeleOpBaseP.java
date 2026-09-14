@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.ButtonMaps.BasicBM;
 import org.firstinspires.ftc.teamcode.ButtonMaps.PinpointBM;
+import org.firstinspires.ftc.teamcode.Helpers.HeadingHelper;
 import org.firstinspires.ftc.teamcode.Limelight;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
@@ -14,6 +15,7 @@ import org.firstinspires.ftc.teamcode.Robot;
 public class TeleOpBaseP extends OpMode {
     Robot robot;
     PinpointBM pm;
+    HeadingHelper h;
     Limelight ll;
 
     @Override
@@ -22,6 +24,7 @@ public class TeleOpBaseP extends OpMode {
         ll = new Limelight(robot);
         ll.switchPipeline(1);
         pm = new PinpointBM(this, robot);
+        h = new HeadingHelper(robot);
     }
 
     @Override
@@ -48,5 +51,6 @@ public class TeleOpBaseP extends OpMode {
         telemetry.addData("Pinpoint Angle", robot.pinpointAngle());
         telemetry.addData("Pinpoint X", robot.getPinpointX());
         telemetry.addData("Pinpoint Y", robot.getPinpointY());
+        telemetry.addData("Avg heading:", h.heading);
     }
 }
