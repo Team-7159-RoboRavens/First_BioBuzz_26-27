@@ -18,6 +18,8 @@ public class Robot {
 
     GoBildaPinpointDriver pinpoint;
 
+    private final HardwareMap hardwareMap;
+
     // x and y positions of pinpoint relative to robot center in mm
     //TODO: try to use the values defined from Constants.java, instead of creating two sources of the same values
     private final int startPinpointX = -155;
@@ -29,6 +31,8 @@ public class Robot {
      *             and Pinpoint odometry computer by configuration name
      */
     public Robot(HardwareMap hmap) {
+        hardwareMap = hmap;
+
         leftFront = hmap.get(DcMotor.class, "leftFront");
         rightFront = hmap.get(DcMotor.class, "rightFront");
         leftBack = hmap.get(DcMotor.class, "leftBack");
@@ -57,6 +61,14 @@ public class Robot {
         pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
         pinpoint.resetPosAndIMU();
 
+    }
+
+    /**
+     * @return hardware map this Robot was constructed with, for classes (e.g. Limelight)
+     *         that need to look up their own hardware devices
+     */
+    public HardwareMap getHardwareMap() {
+        return hardwareMap;
     }
 
     /**
