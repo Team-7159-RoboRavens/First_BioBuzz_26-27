@@ -163,5 +163,9 @@ public class BasicBM {
 
         return 0;
     }
+
+    public Robot getRobot(){
+        return robot;
+    }
 }
 

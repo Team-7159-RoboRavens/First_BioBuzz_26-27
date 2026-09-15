@@ -18,7 +18,7 @@ public class TeleOpBaseP extends OpMode {
 
     @Override
     public void init() {
-        robot = new Robot(hardwareMap, null);
+        robot = new Robot(hardwareMap, 3);
         ll = new Limelight(robot);
         ll.switchPipeline(1);
         pm = new PinpointBM(this, robot);
@@ -52,4 +52,5 @@ public class TeleOpBaseP extends OpMode {
         telemetry.addData("Pinpoint X", robot.getPinpointX());
         telemetry.addData("Pinpoint Y", robot.getPinpointY());
     }
+
 }

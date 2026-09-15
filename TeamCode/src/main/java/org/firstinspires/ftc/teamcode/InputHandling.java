@@ -4,6 +4,9 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import org.firstinspires.ftc.teamcode.TeleOp.TeleOpBase;
 import org.firstinspires.ftc.teamcode.TeleOp.TeleOpBaseNewBot;
+import org.firstinspires.ftc.teamcode.TeleOp.TeleOpData;
+
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 public class InputHandling {
  
@@ -62,8 +65,6 @@ public class InputHandling {
     private double frameTime = 0.02;
  
     private Robot robot;
-    private TeleOpBase teleOp;
-    private TeleOpBaseNewBot teleOpNew;
     private VoltageSensor voltageSensor;
  
     private DcMotorEx lf, rf, lb, rb;
@@ -74,7 +75,7 @@ public class InputHandling {
     private double lastHeadingError;
     private double[] sinSamples = new double[LOCK_SAMPLES];
     private double[] cosSamples = new double[LOCK_SAMPLES];
-    private boolean disableLockHeading;
+    private boolean holdHeading;
  
     // Instantaneous reading, used for volts -> power conversion
     private double batteryVoltage = 12.0;
@@ -82,30 +83,8 @@ public class InputHandling {
     // Slow-filtered reading, used to scale maxRPM so sag doesn't shrink the target
     private double filteredVoltage = 12.0;
 
-    private boolean isNewBot;
-
-    public InputHandling(Robot a, TeleOpBase b) {
+    public InputHandling(Robot a) {
         robot = a;
-        teleOp = b;
-        isNewBot = false;
-        voltageSensor = robot.voltageSensor;
-        lf = robot.leftFront;
-        rf = robot.rightFront;
-        lb = robot.leftBack;
-        rb = robot.rightBack;
-        motors = new DcMotorEx[]{lf, rf, lb, rb};
-
-        double v = voltageSensor.getVoltage();
-        if (v > MIN_VALID_VOLTAGE) {
-            batteryVoltage = v;
-            filteredVoltage = v;
-        }
-        maxRPM = MAX_RPM * filteredVoltage / INITIAL_VOLTAGE;
-    }
-    public InputHandling(Robot a, TeleOpBaseNewBot b) {
-        robot = a;
-        teleOpNew = b;
-        isNewBot = true;
         voltageSensor = robot.voltageSensor;
         lf = robot.leftFront;
         rf = robot.rightFront;
@@ -131,21 +110,17 @@ public class InputHandling {
         maxRPM = MAX_RPM * filteredVoltage / INITIAL_VOLTAGE;
     }
  
-    public void setDisableLockHeading(boolean disable) {
-        disableLockHeading = disable;
-        if (disable) {
+    public void setLockHeading(boolean enable) {
+        holdHeading = enable;
+        if (!enable) {
             lockHeading = 0;
         }
     }
  
     public MotorPowers getMotorPowers(MotorPowers power) {
         updateVoltage();
-        if (isNewBot){
-            frameTime = teleOpNew.averageFrameTime;
-        }
-        else {
-            frameTime = teleOp.averageFrameTime;
-        }
+        frameTime = TeleOpData.frameTime;
+
         if (frameTime < 1e-3 || frameTime > 0.2) {
             frameTime = 0.02;
         }
@@ -157,7 +132,7 @@ public class InputHandling {
             power.rb * maxRPM
         };
  
-        //applyHeadingHold(power, targetRPM);
+        applyHeadingHold(power, targetRPM);
  
         // Set BulkCachingMode.MANUAL in Robot or this is 4 separate USB round trips
         double[] RPM = new double[4];
@@ -193,7 +168,7 @@ public class InputHandling {
             lockHeading = 0;
         }
  
-        if (disableLockHeading || lockHeading < LOCK_SAMPLES) {
+        if (!holdHeading || lockHeading < LOCK_SAMPLES) {
             return;
         }
  

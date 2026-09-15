@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -9,9 +10,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import org.firstinspires.ftc.teamcode.TeleOp.TeleOpBase;
 import org.firstinspires.ftc.teamcode.TeleOp.TeleOpBaseNewBot;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.hardware.lynx.LynxModule;
+import com.qualcomm.robotcore.hardware.CRServo;
 
 import java.util.List;
 
@@ -22,6 +25,7 @@ public class Robot {
     DcMotorEx rightFront;
     DcMotorEx leftBack;
     DcMotorEx rightBack;
+    DcMotorEx shootMotor;
     DcMotor intakeMotor1;
 
     GoBildaPinpointDriver pinpoint;
@@ -29,6 +33,12 @@ public class Robot {
     VoltageSensor voltageSensor;
 
     InputHandling inputHandler = null;
+
+    CRServo shootFeedServo;
+
+    CRServo intakeServoLeft;
+    CRServo intakeServoRight;
+
 
     public List<LynxModule> hubs;
 
@@ -45,7 +55,7 @@ public class Robot {
      * @param hmap hardware map used to look up the drivetrain motors, intake motor,
      *             and Pinpoint odometry computer by configuration name
      */
-    public Robot(HardwareMap hmap, TeleOpBase teleOpBase) {
+    public Robot(HardwareMap hmap, int robotId) {
         hardwareMap = hmap;
         hubs = hardwareMap.getAll(LynxModule.class);
         for (LynxModule hub : hubs) {
@@ -59,16 +69,12 @@ public class Robot {
         rightFront = hmap.get(DcMotorEx.class, "rightFront");
         leftBack = hmap.get(DcMotorEx.class, "leftBack");
         rightBack = hmap.get(DcMotorEx.class, "rightBack");
-        intakeMotor1 = hmap.get(DcMotor.class, "intakeMotor");
-
-        pinpoint = hmap.get(GoBildaPinpointDriver.class, "pinpoint");
 
         // Hold position when no power is applied instead of coasting.
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Left front/right back motors are mounted mirrored, so their direction
         // must be reversed for all wheels to drive the same way for a given power sign.
@@ -77,50 +83,32 @@ public class Robot {
 
         // Configure the Pinpoint with its physical offset from the robot's center
         // and the odometry pod type/direction, then zero out position and heading.
-        pinpoint.setOffsets(startPinpointX, startPinpointY, DistanceUnit.MM);
-        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
-        pinpoint.resetPosAndIMU();
-
-
-        if (teleOpBase != null){
-            inputHandler = new InputHandling(this, teleOpBase);
+        if (robotId == 0 || robotId == 4) {
+            intakeMotor1 = hmap.get(DcMotor.class, "intakeMotor");
+            intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        }
+        if (robotId == 0 || robotId == 3 || robotId == 4) {
+            pinpoint = hmap.get(GoBildaPinpointDriver.class, "pinpoint");
+            pinpoint.setOffsets(startPinpointX, startPinpointY, DistanceUnit.MM);
+            pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+            pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
+            pinpoint.resetPosAndIMU();
         }
 
-    }
-
-    public Robot(TeleOpBaseNewBot teleOpBase, HardwareMap hmap) {
-        hardwareMap = hmap;
-        hubs = hardwareMap.getAll(LynxModule.class);
-        for (LynxModule hub : hubs) {
-            hub.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
+        if (robotId != 3){
+            inputHandler = new InputHandling(this);
         }
 
-        voltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
+        if (robotId == 4){
+            shootFeedServo = hardwareMap.get(CRServo.class, "shootFeedServo");
+            intakeServoRight = hardwareMap.get(CRServo.class, "intakeServoRight");
+            intakeServoLeft = hardwareMap.get(CRServo.class, "intakeServoLeft");
+            shootMotor = hmap.get(DcMotorEx.class, "shootMotor");
+            leftFront.setDirection(DcMotor.Direction.REVERSE);
+            rightFront.setDirection(DcMotor.Direction.FORWARD);
+            leftBack.setDirection(DcMotor.Direction.REVERSE);
+            rightBack.setDirection(DcMotor.Direction.FORWARD);
 
-
-        leftFront = hmap.get(DcMotorEx.class, "leftFront");
-        rightFront = hmap.get(DcMotorEx.class, "rightFront");
-        leftBack = hmap.get(DcMotorEx.class, "leftBack");
-        rightBack = hmap.get(DcMotorEx.class, "rightBack");
-
-
-        // Hold position when no power is applied instead of coasting.
-        leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        // Left front/right back motors are mounted mirrored, so their direction
-        // must be reversed for all wheels to drive the same way for a given power sign.
-        leftFront.setDirection(DcMotor.Direction.REVERSE);
-        leftBack.setDirection(DcMotor.Direction.REVERSE);
-
-        // Configure the Pinpoint with its physical offset from the robot's center
-        // and the odometry pod type/direction, then zero out position and heading.
-
-        if (teleOpBase != null){
-            inputHandler = new InputHandling(this, teleOpBase);
         }
 
     }
@@ -140,17 +128,34 @@ public class Robot {
         if (intakeMotor1 != null) {
             intakeMotor1.setPower(power);
         }
+        if (intakeServoRight != null && intakeServoLeft != null){
+            intakeServoRight.setPower(-power);
+            intakeServoLeft.setPower(power);
+        }
     }
 
-    /**
-     * @param mp per-wheel motor powers to apply to the drivetrain
-     */
-    public void setPowers(MotorPowers mp) {
+    public void setShootFeedPower(double power){
+        if (shootFeedServo != null) {
+            shootFeedServo.setPower(1.0);
+        }
+    }
+    public void setShootPower(double power){
+        if (shootMotor != null) {
+            shootMotor.setPower(power);
+        }
+    }
+
+    public void tuneMotorPowers(MotorPowers mp){
         if (inputHandler != null && inputHandlingEnabled) {
             if (Math.max(Math.max(Math.abs(mp.lf), Math.abs(mp.rf)), Math.max(Math.abs(mp.lb), Math.abs(mp.rb))) > 1e-2) {
                 mp = inputHandler.getMotorPowers(mp);
             }
         }
+    }
+    /**
+     * @param mp per-wheel motor powers to apply to the drivetrain
+     */
+    public void setPowers(MotorPowers mp) {
         leftFront.setPower(mp.lf);
         rightFront.setPower(mp.rf);
         leftBack.setPower(mp.lb);
@@ -191,5 +196,8 @@ public class Robot {
         rightFront.setPower(mp.rf);
         leftBack.setPower(mp.lb);
         rightBack.setPower(mp.rb);
+    }
+    public void setHeadingHold(boolean headingHold){
+        inputHandler.setLockHeading(headingHold);
     }
 }

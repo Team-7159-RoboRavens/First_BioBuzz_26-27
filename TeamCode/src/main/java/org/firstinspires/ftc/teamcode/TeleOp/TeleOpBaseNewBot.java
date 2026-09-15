@@ -12,7 +12,7 @@ import com.qualcomm.hardware.lynx.LynxModule;
 
 
 // TeleOp op mode using the basic (non-Pinpoint) button map.
-@TeleOp(name="TeleOpBase")
+@TeleOp(name="TeleOpBaseNewBot")
 public class TeleOpBaseNewBot extends OpMode {
     Robot robot;
     BasicBM bm;
@@ -24,7 +24,7 @@ public class TeleOpBaseNewBot extends OpMode {
 
     @Override
     public void init() {
-        robot = new Robot(this, hardwareMap);
+        robot = new Robot(hardwareMap, 2);
         ll = new Limelight(robot);
         bm = new BasicBM(this, robot);
     }
@@ -43,6 +43,7 @@ public class TeleOpBaseNewBot extends OpMode {
         averageFrameTime /= frameCount + 1;
         lastFrameTime.reset();
         frameCount ++;
+        TeleOpData.frameTime = averageFrameTime;
 
         if (ll.hasValidResult()) {
             int count = ll.getColorBlobCount();

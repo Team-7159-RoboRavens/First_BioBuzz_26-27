@@ -25,7 +25,7 @@ public class TeleOpBase extends OpMode {
 
     @Override
     public void init() {
-        robot = new Robot(hardwareMap, this);
+        robot = new Robot(hardwareMap, 1);
         ll = new Limelight(robot);
         bm = new BasicBM(this, robot);
     }
@@ -44,6 +44,7 @@ public class TeleOpBase extends OpMode {
         averageFrameTime /= frameCount + 1;
         lastFrameTime.reset();
         frameCount ++;
+        TeleOpData.frameTime = averageFrameTime;
 
         if (ll.hasValidResult()) {
             int count = ll.getColorBlobCount();
