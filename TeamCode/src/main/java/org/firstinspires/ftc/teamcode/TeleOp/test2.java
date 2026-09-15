@@ -30,7 +30,6 @@ public class test2 extends OpMode {
     Robot robot;
     BasicBM bm;
     VoltageSensor voltageSensor;
-    public double power = 0;
 
 
 
@@ -49,6 +48,42 @@ public class test2 extends OpMode {
         }
         robot = new Robot(hardwareMap, null);
         bm = new BasicBM(this, robot);
+        voltageSensor = new VoltageSensor() {
+            @Override
+            public double getVoltage() {
+                return 0;
+            }
+
+            @Override
+            public Manufacturer getManufacturer() {
+                return null;
+            }
+
+            @Override
+            public String getDeviceName() {
+                return "";
+            }
+
+            @Override
+            public String getConnectionInfo() {
+                return "";
+            }
+
+            @Override
+            public int getVersion() {
+                return 0;
+            }
+
+            @Override
+            public void resetDeviceConfigurationForOpMode() {
+
+            }
+
+            @Override
+            public void close() {
+
+            }
+        };
 
         MotorPowers mp = bm.getPowers();
         robot.setPowers(mp);
@@ -71,11 +106,13 @@ public class test2 extends OpMode {
     public void loop() {
         robot = new Robot(hardwareMap, null);
         bm = new BasicBM(this, robot);
+        robot.getPositions();
+        robot.getVelocities();
+
 
         MotorPowers mp = new MotorPowers(1, 1, 1, 1);
         robot.setPowers(mp);
-        robot.getPositions();
-        robot.getVelocities();
+
 
 
         telemetry.addData("motor powers", "left front(%.2f), right front(%.2f)", mp.lf, mp.rf);
@@ -90,9 +127,9 @@ public class test2 extends OpMode {
         String RightBack;
         RightBack = String.format("rightBack: (%.2f)", robot.rightBackCurrentPos);
         Log.i("motorPowers", logMessage);
-        Log.i("motor powers", logBack);
-        Log.i("motor", logRight);
-        Log.i("motor", RightBack);
+        Log.i("motorPowers", logBack);
+        Log.i("motorPowers", logRight);
+        Log.i("motorPowers", RightBack);
 
         String lfVelocity;
         lfVelocity = String.format("leftFront: (%.2f)", robot.leftFrontVelocity);
@@ -112,11 +149,13 @@ public class test2 extends OpMode {
         Log.i("voltage", voltage);
 
 
-        while (robot.leftBackVelocity == 0 && robot.leftFrontVelocity == 0 && robot.rightBackVelocity == 0 && robot.rightFrontVelocity == 0) {
-            robot.smp += 0.001;
-            robot.setStartingPowers();
-            Log.i("motor increments", String.valueOf(robot.smp));
-        }
+
+
+        String volt;
+        volt = String.format("voltage: (%.2f)", voltageSensor.getVoltage());
+        Log.i("voltage", volt);
+
+
 
 
 

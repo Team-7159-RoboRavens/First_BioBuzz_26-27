@@ -29,7 +29,11 @@ public class Robot {
     public double leftBackVelocity;
     public double rightBackVelocity;
 //    GoBildaPinpointDriver pinpoint;
-    public double smp = 0;
+    public double LFsmp = 0.000;
+    public double LBsmp = 0.000;
+    public double RFsmp = 0.000;
+    public double RBsmp = 0.000;
+
 
 
     VoltageSensor voltageSensor;
@@ -117,10 +121,10 @@ public class Robot {
         rightBack.setPower(mp.rb);
     }
     public void setStartingPowers() {
-        leftFront.setPower(smp);
-        rightFront.setPower(smp);
-        leftBack.setPower(smp);
-        rightBack.setPower(smp);
+        leftFront.setPower(LFsmp);
+        rightFront.setPower(RFsmp);
+        leftBack.setPower(LBsmp);
+        rightBack.setPower(RBsmp);
     }
     public void getPositions() {
         leftFrontCurrentPos = leftFront.getCurrentPosition();
@@ -136,9 +140,7 @@ public class Robot {
 
     }
 
-    public void getMaxSpeed() {
-        leftFrontMax = leftFront.get
-    }
+
 
     /**
      * @return current Pinpoint heading, in radians
