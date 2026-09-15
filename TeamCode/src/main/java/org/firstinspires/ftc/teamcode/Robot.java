@@ -59,7 +59,7 @@ public class Robot {
 
 
 
-        flywheelMotor = hmap.get(DcMotorEx.class,"motor");
+        flywheelMotor = hmap.get(DcMotorEx.class,"shootMotor");
         flywheelMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         flywheelMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P,0,0,F);
