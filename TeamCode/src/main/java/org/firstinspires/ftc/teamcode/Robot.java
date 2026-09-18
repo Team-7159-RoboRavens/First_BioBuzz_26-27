@@ -34,6 +34,12 @@ public class Robot {
     public double RFsmp = 0.000;
     public double RBsmp = 0.000;
 
+    public double resetPower = 0.000;
+    public double LFback = -LFsmp - 0.001;
+    public double RFback = -RFsmp - 0.001;
+    public double LBback = -LBsmp - 0.001;
+    public double RBback = -RBsmp - 0.001;
+
 
 
     VoltageSensor voltageSensor;
@@ -75,7 +81,8 @@ public class Robot {
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//
+
+
 //        pinpoint.setOffsets(pinpointX, pinpointY, DistanceUnit.MM);
 //        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
 //        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
@@ -126,6 +133,13 @@ public class Robot {
         leftBack.setPower(LBsmp);
         rightBack.setPower(RBsmp);
     }
+
+    public void setResetPower() {
+        leftFront.setPower(resetPower);
+        rightFront.setPower(resetPower);
+        leftBack.setPower(resetPower);
+        rightBack.setPower(resetPower);
+    }
     public void getPositions() {
         leftFrontCurrentPos = leftFront.getCurrentPosition();
         rightFrontCurrentPos = rightFront.getCurrentPosition();
@@ -139,6 +153,13 @@ public class Robot {
         rightBackVelocity = rightBack.getVelocity();
 
     }
+    public void setBackPowers() {
+        leftFront.setPower(LFback);
+        rightFront.setPower(RFback);
+        leftBack.setPower(LBback);
+        rightBack.setPower(RBback);
+    }
+
 
 
 
