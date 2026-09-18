@@ -9,6 +9,7 @@ import org.firstinspires.ftc.teamcode.Limelight;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
 import com.qualcomm.hardware.lynx.LynxModule;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 
 
 // TeleOp op mode using the basic (non-Pinpoint) button map.

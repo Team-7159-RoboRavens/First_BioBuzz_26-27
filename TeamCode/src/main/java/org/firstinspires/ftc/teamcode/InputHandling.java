@@ -2,11 +2,8 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import org.firstinspires.ftc.teamcode.TeleOp.TeleOpBase;
-import org.firstinspires.ftc.teamcode.TeleOp.TeleOpBaseNewBot;
-import org.firstinspires.ftc.teamcode.TeleOp.TeleOpData;
 
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import org.firstinspires.ftc.teamcode.TeleOp.TeleOpData;
 
 public class InputHandling {
  

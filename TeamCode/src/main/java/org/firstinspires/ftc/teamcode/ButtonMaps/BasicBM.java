@@ -10,7 +10,7 @@ import org.firstinspires.ftc.teamcode.Robot;
 public class BasicBM {
     // Deadzone thresholds below which stick input is ignored.
     private static final double LEFT_STICK_TRIGGER = 0.1;
-    private static final double RIGHT_STICK_TRIGGER = 0.1;
+    private static final double RIGHT_STICK_TRIGGER = 0.25;
     private OpMode opmode;
     private Robot robot;
     public Gamepad g1;
