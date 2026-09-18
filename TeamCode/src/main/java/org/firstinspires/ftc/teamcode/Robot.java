@@ -42,6 +42,7 @@ public class Robot {
     private final HardwareMap hardwareMap;
 
     // x and y positions of pinpoint relative to robot center in mm
+    //TODO: try to use the values defined from Constants.java, instead of creating two sources of the same values
     private final int startPinpointX = -155;
     private final int startPinpointY = -60;
 
@@ -72,6 +73,8 @@ public class Robot {
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        // TODO: why do we need brake for the intake wheel instead of float?
+        intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Left front/right back motors are mounted mirrored, so their direction
         // must be reversed for all wheels to drive the same way for a given power sign.
@@ -185,6 +188,9 @@ public class Robot {
         pinpoint.update();
     }
 
+    public double limelightAngle() { return pinpointAngle();}
+
+    // TODO: how is this function different from setPowers above
     /**
      * @param mp per-wheel motor powers to apply to the drivetrain
      */
