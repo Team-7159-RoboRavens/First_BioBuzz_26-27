@@ -27,8 +27,15 @@ android {
     }
 }
 
+repositories {
+    mavenCentral()
+}
+
 dependencies {
     implementation project(':FtcRobotController')
     testImplementation 'junit:junit:4.13.2'
     implementation "com.bylazar:fullpanels:1.0.12"
+
+    // Gradle will pull this automatically from Maven Central
+    implementation 'edu.wpi.first.wpimath:wpimath-java:2026.1.1'
 }

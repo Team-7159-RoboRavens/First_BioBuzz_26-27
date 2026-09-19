@@ -17,7 +17,7 @@ public class Limelight {
 
     private final Limelight3A limelight;
 
-    public LLResult latestResult;
+    private LLResult latestResult;
     private List<LLResultTypes.FiducialResult> fiducialResults;
     private List<LLResultTypes.ColorResult> colorResults;
 
@@ -31,7 +31,9 @@ public class Limelight {
         limelight.pipelineSwitch(PIPELINE_COLOR);
         limelight.start();
     }
-
+    public List<LLResultTypes.FiducialResult> getFiducialResults(){
+        return fiducialResults;
+    }
     // Must be called once per loop before reading any AprilTag/color-blob data,
     // so the cached results reflect the latest poll from the Limelight.
     public void update() {
