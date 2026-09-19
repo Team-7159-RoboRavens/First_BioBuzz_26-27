@@ -1,10 +1,11 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.Limelight;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.teamcode.Robot;
 
 import java.util.List;
 
@@ -16,7 +17,7 @@ public class Limelight {
 
     private final Limelight3A limelight;
 
-    private LLResult latestResult;
+    public LLResult latestResult;
     private List<LLResultTypes.FiducialResult> fiducialResults;
     private List<LLResultTypes.ColorResult> colorResults;
 
