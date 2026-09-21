@@ -1,10 +1,11 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.Limelight;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.teamcode.Robot;
 
 import java.util.List;
 
@@ -30,7 +31,9 @@ public class Limelight {
         limelight.pipelineSwitch(PIPELINE_COLOR);
         limelight.start();
     }
-
+    public List<LLResultTypes.FiducialResult> getFiducialResults(){
+        return fiducialResults;
+    }
     // Must be called once per loop before reading any AprilTag/color-blob data,
     // so the cached results reflect the latest poll from the Limelight.
     public void update() {
