@@ -7,13 +7,11 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
-import org.firstinspires.ftc.teamcode.ButtonMaps.BasicBM;
 import org.firstinspires.ftc.teamcode.Robot;
 
 @TeleOp(name="FlywheelTuning")
 public class FlywheelTuning extends OpMode {
     Robot robot;
-    BasicBM bm;
 
     public double highVelocity = 1550;
     public double lowVelocity = 900;
@@ -23,7 +21,6 @@ public class FlywheelTuning extends OpMode {
     @Override
     public void init() {
         robot = new Robot(hardwareMap);
-        bm = new BasicBM(this, robot);
         telemetry.addLine("Init complete");
     }
 

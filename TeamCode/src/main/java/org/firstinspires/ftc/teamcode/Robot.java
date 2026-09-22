@@ -23,9 +23,9 @@ public class Robot {
     DcMotor intakeMotor1;
     public CRServo shootFeedServo;
     public DcMotorEx flywheelMotor;
-    public double F = 13;
-    public double P = 24;
-    public double I = 10;
+    public double F = 12;
+    public double P = 36;
+    public double I = 4;
 
     GoBildaPinpointDriver pinpoint;
 

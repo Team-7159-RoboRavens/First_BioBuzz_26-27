@@ -1,0 +1,83 @@
+package org.firstinspires.ftc.teamcode.TeleOp;
+
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+
+import org.firstinspires.ftc.teamcode.Robot;
+
+@TeleOp(name="FlywheelShooting")
+public class FlywheelShooting extends OpMode {
+    Robot robot;
+
+    // all units are m or radians
+    double shotAngle = Math.toRadians(70);
+    double hiveHeight = 1;
+    double dist = 1;
+    static double shootConstant = 300;
+    static double servoConstant = 130;
+    static double servoPower = 0.6;
+
+    @Override
+    public void init() {
+        robot = new Robot(hardwareMap);
+    }
+
+    @Override
+    public void loop() {
+        double v = velocityShot(dist, hiveHeight, shotAngle);
+        if (gamepad1.x) {
+            robot.flywheelMotor.setVelocity(v);
+            robot.shootFeedServo.setPower(servoPower);
+        } else {
+            robot.flywheelMotor.setVelocity(0);
+            robot.shootFeedServo.setPower(0);
+        }
+        if (gamepad1.dpad_up) {
+            hiveHeight += 0.002;
+        }
+        if (gamepad1.dpad_down) {
+            hiveHeight -= 0.002;
+        }
+        if (gamepad1.dpad_left) {
+            dist -= 0.002;
+        }
+        if (gamepad1.dpad_right) {
+            dist += 0.002;
+        }
+        if (gamepad1.left_bumper) {
+            shootConstant -= 1;
+        }
+        if (gamepad1.right_bumper) {
+            shootConstant += 1;
+        }
+        if (gamepad1.y) {
+            servoPower += 0.01;
+        }
+        if (gamepad1.a) {
+            servoPower -= 0.01;
+        }
+        if (Math.abs(gamepad1.left_stick_x) > 0.1) {
+            servoConstant += gamepad1.left_stick_x/10;
+        }
+        if (Math.abs(gamepad1.left_stick_y) > 0.1) {
+            shotAngle += gamepad1.left_stick_y/100;
+        }
+        telemetry.addData("Hive height:", hiveHeight);
+        telemetry.addData("Distance to hive:", dist);
+        telemetry.addData("Shoot constant:", shootConstant);
+        telemetry.addData("Servo power:", servoPower);
+        telemetry.addData("Servo constant:", servoConstant);
+        telemetry.addData("Velocity:", v);
+        telemetry.addData("Angle:", Math.toDegrees(shotAngle));
+        telemetry.addData("Actual velocity:", robot.flywheelMotor.getVelocity());
+    }
+
+    /**
+     * @param dist Horizontal distance from launcher to target (m)
+     * @param height Vertical distance from launcher to target (m)
+     * @param pitch angle above the ground of the launcher (rad)
+     */
+    public static double velocityShot(double dist, double height, double pitch) {
+        return shootConstant * dist * Math.sqrt(9.8/(2*(dist*Math.tan(pitch)-height))) / Math.cos(pitch) - servoConstant * servoPower;
+    }
+}
