@@ -30,10 +30,7 @@ public class test3 extends OpMode {
     Robot robot;
     BasicBM bm;
     VoltageSensor voltageSensor;
-    public double RFback = -robot.RFsmp - 0.01;
-    public double LFback = -robot.LFsmp - 0.01;
-    public double RBback = -robot.RBsmp - 0.01;
-    public double LBback = -robot.LBsmp - 0.01;
+
 
 
 
@@ -107,45 +104,48 @@ public class test3 extends OpMode {
 
         robot.getPositions();
         robot.getVelocities();
-        if (robot.rightFrontVelocity == 0) {
+        if (robot.rightFrontVelocity != 0) {
+            Log.i("rf end motor", "stop");
+
+        } else {
+
             Log.i("rf motor increments", String.valueOf(robot.RFsmp));
-            robot.setBackPowers();
-            Log.i("rf motor increments after", String.valueOf(Math.abs(RFback)));
-            robot.RFsmp += 0.002;
+            robot.RFsmp += 0.001;
 
             Log.i("rf motor increments after", String.valueOf(robot.RFsmp));
             robot.setStartingPowers();
-
         }
-        if (robot.rightBackVelocity == 0) {
+        if (robot.rightBackVelocity != 0) {
+            Log.i("rb end motor", "stop");
 
+
+        } else {
             Log.i("rb motor increments", String.valueOf(robot.RBsmp));
-            robot.setBackPowers();
-            Log.i("rb motor increments after", String.valueOf(Math.abs(RBback)));
-            robot.RBsmp += 0.002;
+            robot.RBsmp += 0.001;
             Log.i("rb motor increments after", String.valueOf(robot.RBsmp));
             robot.setStartingPowers();
-
         }
-        if (robot.leftBackVelocity == 0) {
+        if (robot.leftBackVelocity != 0) {
+            Log.i("lb end motor", "stop");
+
+
+
+        } else {
             Log.i("lb motor increments", String.valueOf(robot.LBsmp));
-            robot.setBackPowers();
-            Log.i("lb motor increments after", String.valueOf(Math.abs(LBback)));
-            robot.LBsmp += 0.002;
+            robot.LBsmp += 0.001;
             Log.i("lb motor increments after", String.valueOf(robot.LBsmp));
             robot.setStartingPowers();
 
-
-
         }
-        if (robot.leftFrontVelocity == 0) {
+        if (robot.leftFrontVelocity != 0) {
+            Log.i("lf end motor", "stop");
+
+
+        } else {
             Log.i("lf motor increments", String.valueOf(robot.LFsmp));
-            robot.setBackPowers();
-            Log.i("lf motor increments after", String.valueOf(Math.abs(LFback)));
-            robot.LFsmp += 0.002;
+            robot.LFsmp += 0.001;
             Log.i("lf motor increments after", String.valueOf(robot.LFsmp));
             robot.setStartingPowers();
-
         }
 
 

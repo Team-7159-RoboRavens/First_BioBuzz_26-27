@@ -35,10 +35,7 @@ public class Robot {
     public double RBsmp = 0.000;
 
     public double resetPower = 0.000;
-    public double LFback = -LFsmp - 0.001;
-    public double RFback = -RFsmp - 0.001;
-    public double LBback = -LBsmp - 0.001;
-    public double RBback = -RBsmp - 0.001;
+
 
 
 
@@ -152,12 +149,6 @@ public class Robot {
         leftBackVelocity = leftBack.getVelocity();
         rightBackVelocity = rightBack.getVelocity();
 
-    }
-    public void setBackPowers() {
-        leftFront.setPower(LFback);
-        rightFront.setPower(RFback);
-        leftBack.setPower(LBback);
-        rightBack.setPower(RBback);
     }
 
 
