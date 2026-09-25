@@ -59,6 +59,9 @@ public class Robot {
         for (LynxModule hub : hubs) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
         }
+        if (robotId == 7){
+            return;
+        }
 
         voltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
 
