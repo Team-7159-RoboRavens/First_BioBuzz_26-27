@@ -19,7 +19,7 @@ public abstract class calculatePosition {
 
     //rotation of the limelight on the x-axis of the robot relative to the ground
     final double LIMELIGHT_OFFSET_X_ANGLE = 90;
-    final double LIMELIGHT_OFFSET_Z_ANGLE = 90;
+    final double LIMELIGHT_OFFSET_Z_ANGLE = 0;
 
     double robotAngleZ;
     public Limelight limelight;

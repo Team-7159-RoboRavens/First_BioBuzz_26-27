@@ -58,7 +58,7 @@ public class PedroTuningHeading extends OpMode {
     public void init() {
         pathState = PathState.START_POS;
         follower = Constants.createFollower(hardwareMap);
-        robot = new Robot(hardwareMap);
+        robot = new Robot(hardwareMap, 0);//might be wrong id
         buildPaths();
         follower.setPose(startPose);
 
