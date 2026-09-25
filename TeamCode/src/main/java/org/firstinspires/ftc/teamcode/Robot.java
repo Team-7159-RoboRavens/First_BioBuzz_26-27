@@ -26,7 +26,7 @@ public class Robot {
     public double F = 12;
     public double P = 36;
     public double I = 4;
-
+    public double D = 0;
     GoBildaPinpointDriver pinpoint;
 
     private final HardwareMap hardwareMap;
@@ -66,7 +66,7 @@ public class Robot {
 
         flywheelMotor = hmap.get(DcMotorEx.class,"shootMotor");
         flywheelMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P,0,0,F);
+        PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P,I,D,F);
         flywheelMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
 
         // Left front/right back motors are mounted mirrored, so their direction

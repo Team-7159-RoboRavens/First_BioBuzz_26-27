@@ -68,6 +68,14 @@ public class FlywheelTuning extends OpMode {
             robot.I += stepSizes[stepIndex];
         }
 
+        if (gamepad1.y) {
+            robot.D += stepSizes[stepIndex];
+        }
+
+        if (gamepad1.a) {
+            robot.D -= stepSizes[stepIndex];
+        }
+
         if (Math.abs(gamepad1.left_stick_y) > 0.1) {
             curTargetVelocity -= 10 * gamepad1.left_stick_y;
         }
@@ -87,6 +95,7 @@ public class FlywheelTuning extends OpMode {
         telemetry.addLine("------------------------------------------");
         telemetry.addData("Tuning P", "%.4f (D-Pad U/D)", robot.P);
         telemetry.addData("Tuning I", "%.4f (Bumper L/R)", robot.I);
+        telemetry.addData("Tuning D:", "%.4f (Y/A)", robot.D);
         telemetry.addData("Tuning F", "%.4f (D-Pad L/R)", robot.F);
         telemetry.addData("Step Size", "%.4f (B Button)", stepSizes[stepIndex]);
 

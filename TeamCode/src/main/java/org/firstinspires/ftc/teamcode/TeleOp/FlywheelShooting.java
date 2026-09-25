@@ -62,13 +62,13 @@ public class FlywheelShooting extends OpMode {
         if (Math.abs(gamepad1.left_stick_y) > 0.1) {
             shotAngle += gamepad1.left_stick_y/100;
         }
-        telemetry.addData("Hive height:", hiveHeight);
-        telemetry.addData("Distance to hive:", dist);
-        telemetry.addData("Shoot constant:", shootConstant);
-        telemetry.addData("Servo power:", servoPower);
-        telemetry.addData("Servo constant:", servoConstant);
-        telemetry.addData("Velocity:", v);
-        telemetry.addData("Angle:", Math.toDegrees(shotAngle));
+        telemetry.addData("Hive height (dpad up/down):", hiveHeight);
+        telemetry.addData("Distance to hive (dpad left/right):", dist);
+        telemetry.addData("Shoot constant (L/R bumper):", shootConstant);
+        telemetry.addData("Servo power (y/a):", servoPower);
+        telemetry.addData("Servo constant (left joystick x):", servoConstant);
+        telemetry.addData("Exit angle (left joystick y):", Math.toDegrees(shotAngle));
+        telemetry.addData("Target Velocity:", v);
         telemetry.addData("Actual velocity:", robot.flywheelMotor.getVelocity());
     }
 
