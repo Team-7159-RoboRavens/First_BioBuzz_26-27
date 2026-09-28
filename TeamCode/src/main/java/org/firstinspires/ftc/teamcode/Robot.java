@@ -76,8 +76,6 @@ public class Robot {
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        // TODO: why do we need brake for the intake wheel instead of float?
-        intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Left front/right back motors are mounted mirrored, so their direction
         // must be reversed for all wheels to drive the same way for a given power sign.
@@ -113,7 +111,9 @@ public class Robot {
             rightBack.setDirection(DcMotor.Direction.REVERSE);
 
         }
-
+        // TODO: why do we need brake for the intake wheel instead of float?
+        intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intakeMotor1.setDirection(DcMotor.Direction.REVERSE);
     }
 
     /**
