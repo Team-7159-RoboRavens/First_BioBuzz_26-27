@@ -44,6 +44,7 @@ public class FlywheelTuning extends OpMode {
             stepIndex = (stepIndex + 1) % stepSizes.length;
         }
 
+
         if (gamepad1.dpadLeftWasPressed()){
             robot.F -= stepSizes[stepIndex];
         }
@@ -80,7 +81,7 @@ public class FlywheelTuning extends OpMode {
             curTargetVelocity -= 10 * gamepad1.left_stick_y;
         }
         // set new PIDF coefficients
-        PIDFCoefficients pidfCoefficients = new PIDFCoefficients(robot.P,robot.I,0,robot.F);
+        PIDFCoefficients pidfCoefficients = new PIDFCoefficients(robot.P,robot.I,robot.D,robot.F);
         robot.flywheelMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
 
         // set velocity
@@ -89,7 +90,7 @@ public class FlywheelTuning extends OpMode {
         double curVelocity = robot.flywheelMotor.getVelocity();
         double error = curTargetVelocity - curVelocity;
 
-        telemetry.addData("Target Velocity", curTargetVelocity);
+        telemetry.addData("Target Velocity (left stick y)", curTargetVelocity);
         telemetry.addData("Current Velocity", "%.2f", curVelocity);
         telemetry.addData("Error", "%.2f", error);
         telemetry.addLine("------------------------------------------");

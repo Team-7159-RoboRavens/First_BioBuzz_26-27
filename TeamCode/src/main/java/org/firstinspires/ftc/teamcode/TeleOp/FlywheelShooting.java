@@ -11,10 +11,10 @@ public class FlywheelShooting extends OpMode {
 
     // all units are m or radians
     double shotAngle = Math.toRadians(70);
-    double hiveHeight = 1;
-    double dist = 1;
-    static double shootConstant = 300;
-    static double servoConstant = 130;
+    double hiveHeight = 1.2;
+    double dist = 1.25;
+    static double shootConstant = 279;
+    static double servoConstant = 135.7;
     static double servoPower = 0.6;
 
     @Override
@@ -27,9 +27,12 @@ public class FlywheelShooting extends OpMode {
         double v = velocityShot(dist, hiveHeight, shotAngle);
         if (gamepad1.x) {
             robot.flywheelMotor.setVelocity(v);
-            robot.shootFeedServo.setPower(servoPower);
         } else {
             robot.flywheelMotor.setVelocity(0);
+        }
+        if (gamepad1.b) {
+            robot.shootFeedServo.setPower(servoPower);
+        } else {
             robot.shootFeedServo.setPower(0);
         }
         if (gamepad1.dpad_up) {
@@ -62,14 +65,15 @@ public class FlywheelShooting extends OpMode {
         if (Math.abs(gamepad1.left_stick_y) > 0.1) {
             shotAngle += gamepad1.left_stick_y/100;
         }
-        telemetry.addData("Hive height (dpad up/down):", hiveHeight);
-        telemetry.addData("Distance to hive (dpad left/right):", dist);
-        telemetry.addData("Shoot constant (L/R bumper):", shootConstant);
-        telemetry.addData("Servo power (y/a):", servoPower);
-        telemetry.addData("Servo constant (left joystick x):", servoConstant);
-        telemetry.addData("Exit angle (left joystick y):", Math.toDegrees(shotAngle));
-        telemetry.addData("Target Velocity:", v);
-        telemetry.addData("Actual velocity:", robot.flywheelMotor.getVelocity());
+        telemetry.addLine("Press x to shoot, b to use servo");
+        telemetry.addData("Hive height (dpad up/down)", hiveHeight);
+        telemetry.addData("Distance to hive (dpad left/right)", dist);
+        telemetry.addData("Shoot constant (L/R bumper)", shootConstant);
+        telemetry.addData("Servo power (y/a)", servoPower);
+        telemetry.addData("Servo constant (left joystick x)", servoConstant);
+        telemetry.addData("Exit angle (left joystick y)", Math.toDegrees(shotAngle));
+        telemetry.addData("Target Velocity", v);
+        telemetry.addData("Actual velocity", robot.flywheelMotor.getVelocity());
     }
 
     /**
