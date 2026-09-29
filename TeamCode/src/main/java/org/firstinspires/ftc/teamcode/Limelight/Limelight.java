@@ -12,12 +12,12 @@ import java.util.List;
 // Wraps a Limelight3A vision sensor, exposing pipeline switching and simple
 // getters for AprilTag (fiducial) and color-blob results.
 public class Limelight {
-    public static final int PIPELINE_COLOR = 0;
-    public static final int PIPELINE_APRILTAG = 1;
+    public static final int PIPELINE_COLOR = 1;
+    public static final int PIPELINE_APRILTAG = 0;
 
-    private final Limelight3A limelight;
+    public final Limelight3A limelight;
 
-    private LLResult latestResult;
+    public LLResult latestResult;
     private List<LLResultTypes.FiducialResult> fiducialResults;
     private List<LLResultTypes.ColorResult> colorResults;
 
@@ -28,23 +28,33 @@ public class Limelight {
     public Limelight(Robot robot) {
         limelight = robot.getHardwareMap().get(Limelight3A.class, "limelight");
 
-        limelight.pipelineSwitch(PIPELINE_COLOR);
+        // 1. CRITICAL MISSING STEP: Set the polling speed (100 times per second)
+        limelight.setPollRateHz(100);
+
+        limelight.pipelineSwitch(PIPELINE_APRILTAG);
         limelight.start();
+
+        // Give the network connection a moment to flush and stabilize
+        long startTime = System.currentTimeMillis();
+        while (!limelight.isConnected() && (System.currentTimeMillis() - startTime < 2000)) {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
     public List<LLResultTypes.FiducialResult> getFiducialResults(){
         return fiducialResults;
     }
-    // Must be called once per loop before reading any AprilTag/color-blob data,
-    // so the cached results reflect the latest poll from the Limelight.
     public void update() {
         latestResult = limelight.getLatestResult();
-
         if (latestResult != null && latestResult.isValid()) {
             fiducialResults = latestResult.getFiducialResults();
             colorResults = latestResult.getColorResults();
         } else {
-            fiducialResults = null;
-            colorResults = null;
+            if (fiducialResults != null) fiducialResults.clear();
+            if (colorResults != null) colorResults.clear();
         }
     }
 

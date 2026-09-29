@@ -45,6 +45,9 @@ public abstract class calculatePosition {
     //returns 2d coordinate of robot in field
     public double[] getPosition(){
         List<LLResultTypes.FiducialResult> limelightResults = limelight.getFiducialResults();
+        if (limelightResults == null){
+            return new double[]{};
+        }
         int length = limelightResults.size();
         if (length == 0) {
             return new double[]{};
