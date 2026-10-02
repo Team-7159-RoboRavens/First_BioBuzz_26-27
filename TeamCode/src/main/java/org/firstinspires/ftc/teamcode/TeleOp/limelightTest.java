@@ -98,7 +98,7 @@ public class limelightTest extends OpMode {
             double d3D = ll.getAprilTagDistance3D();
             telemetry.addData("Limelight Targets", "id: %d", id);
             telemetry.addData("Limelight Offset", "X: %.1f , Y: %.1f", x, y);
-            telemetry.addData("Limelight ID", "ID: %.1f", id);
+            telemetry.addData("Limelight ID", "ID: %d", id);
             telemetry.addData("Limelight Distance", "2D: %.1f , 3D: %.1f", d2D, d3D);
         }
         else {
