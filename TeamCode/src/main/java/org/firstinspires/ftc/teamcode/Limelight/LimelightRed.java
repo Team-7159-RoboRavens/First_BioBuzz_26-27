@@ -1,4 +1,5 @@
 package org.firstinspires.ftc.teamcode.Limelight;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 
@@ -9,8 +10,8 @@ public class LimelightRed extends calculatePosition{
     boolean[] idVisible = new boolean[16];
     int[] idUp = new int[16];
 
-    public LimelightRed(Limelight ll) {
-        super(ll);
+    public LimelightRed(Limelight ll, Telemetry t) {
+        super(ll, t);
     }
 
     @Override
