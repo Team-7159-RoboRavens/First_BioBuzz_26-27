@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.Limelight;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class LimelightBlue extends calculatePosition{
@@ -24,7 +25,6 @@ public class LimelightBlue extends calculatePosition{
         return false;
     }
 
-    //returns 0 for no targets detected 1 for moving 2 for down and 3 for up
     @Override
     public boolean canSeeTargetEnemy() {
         for (int i = 0; i < 8; i++) {
@@ -69,7 +69,7 @@ public class LimelightBlue extends calculatePosition{
 
     @Override
     public int enemyUp() {
-        if (!canSeeTargetFriendly()){
+        if (!canSeeTargetEnemy()){
             return 0;
         }
         int countUp = 0;
@@ -100,16 +100,22 @@ public class LimelightBlue extends calculatePosition{
     @Override
     public void updateTagPosition() {
         List<LLResultTypes.FiducialResult> limelightResults = limelight.getFiducialResults();
+        if (limelightResults == null) {
+            limelightResults = new ArrayList<>();
+        }
         int[] ids = getVisibleIds(limelightResults);
         for (int i = 0; i < 16; i ++){
             idVisible[i] = false;
         }
         for (int id : ids){
-            if (id - 30 > 0 && id - 30 < 16) {
+            if (isHiveTag(id)) {
                 idVisible[id - 30] = true;
             }
         }
         for (LLResultTypes.FiducialResult tag : limelightResults){
+            if (!isHiveTag(tag.getFiducialId())) {
+                continue;
+            }
             Double up = getTagFieldZ(tag);
             int val = 0;// 0 is moving
             if (up != null){

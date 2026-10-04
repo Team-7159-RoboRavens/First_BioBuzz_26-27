@@ -7,6 +7,7 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.teamcode.Robot;
 
+import java.util.ArrayList;
 import java.util.List;
 
 // Wraps a Limelight3A vision sensor, exposing pipeline switching and simple
@@ -18,8 +19,8 @@ public class Limelight {
     public final Limelight3A limelight;
 
     public LLResult latestResult;
-    private List<LLResultTypes.FiducialResult> fiducialResults;
-    private List<LLResultTypes.ColorResult> colorResults;
+    private List<LLResultTypes.FiducialResult> fiducialResults = new ArrayList<>();
+    private List<LLResultTypes.ColorResult> colorResults = new ArrayList<>();
 
     /**
      * @param robot robot used to look up the Limelight3A device from its hardware map
@@ -53,8 +54,8 @@ public class Limelight {
             fiducialResults = latestResult.getFiducialResults();
             colorResults = latestResult.getColorResults();
         } else {
-            if (fiducialResults != null) fiducialResults.clear();
-            if (colorResults != null) colorResults.clear();
+            fiducialResults = new ArrayList<>();
+            colorResults = new ArrayList<>();
         }
     }
 
@@ -114,7 +115,7 @@ public class Limelight {
     }
 
     /**
-     * @return straight-line distance from the camera to the first detected AprilTag, in inches,
+     * @return straight-line distance from the camera to the first detected AprilTag, in meters,
      *         or -1 if none is visible
      */
     public double getAprilTagDistance3D() {
@@ -124,12 +125,13 @@ public class Limelight {
         Position pos = fiducialResults.get(0).getTargetPoseCameraSpace().getPosition();
         return Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
     }
+    // horizontal distance (ignoring height) from the camera to the first detected AprilTag, in meters, or -1 if none is visible
     public double getAprilTagDistance2D() {
         if (fiducialResults == null || fiducialResults.isEmpty()) {
             return -1;
         }
         Position pos = fiducialResults.get(0).getTargetPoseCameraSpace().getPosition();
-        return Math.sqrt(pos.x * pos.x + pos.y * pos.y);
+        return Math.sqrt(pos.x * pos.x + pos.z * pos.z);
     }
 
 
@@ -162,7 +164,7 @@ public class Limelight {
      *         or 0 if none is visible
      */
     public double getColorBlobXOffset(int id) {
-        if (colorResults == null || colorResults.isEmpty()) {
+        if (id < 0 || id >= colorResults.size()) {
             return 0.0;
         }
         return colorResults.get(id).getTargetXDegrees();
@@ -173,19 +175,19 @@ public class Limelight {
      *         or 0 if none is visible
      */
     public double getColorBlobYOffset(int id) {
-        if (colorResults == null || colorResults.isEmpty()) {
+        if (id < 0 || id >= colorResults.size()) {
             return 0.0;
         }
         return colorResults.get(id).getTargetYDegrees();
     }
     public double getColorBlobXSize(int id) {
-        if (colorResults == null || colorResults.isEmpty()) {
+        if (id < 0 || id >= colorResults.size()) {
             return 0.0;
         }
         return colorResults.get(id).getTargetXPixels();
     }
     public double getColorBlobYSize(int id) {
-        if (colorResults == null || colorResults.isEmpty()) {
+        if (id < 0 || id >= colorResults.size()) {
             return 0.0;
         }
         return colorResults.get(id).getTargetYPixels();
