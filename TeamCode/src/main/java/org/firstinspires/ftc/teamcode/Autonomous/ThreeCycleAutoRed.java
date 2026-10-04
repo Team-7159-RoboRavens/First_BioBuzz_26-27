@@ -7,13 +7,14 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 import org.firstinspires.ftc.teamcode.Autonomous.Essentials.Constants;
 
-@TeleOp
+@Autonomous(name = "ThreeCycleAutoRed")
 public class ThreeCycleAutoRed extends OpMode{
     private Follower follower;
+    private AutoMechanisms mechanisms;
     private Timer pathTimer, opModeTimer;
 
     public enum PathState {
@@ -28,7 +29,8 @@ public class ThreeCycleAutoRed extends OpMode{
         SHOOT_PRELOAD2,
         SHOOT_PRELOAD3,
         INTAKE1,
-        INTAKE2
+        INTAKE2,
+        DONE
     }
 
     PathState pathState;
@@ -73,58 +75,80 @@ public class ThreeCycleAutoRed extends OpMode{
         switch(pathState){
             case DRIVE_STARTPOS_SHOOT_POS1:
                 follower.followPath(driveStartPosShootPos1, true);
-                pathState = PathState.SHOOT_PRELOAD1;
+                setPathState(PathState.SHOOT_PRELOAD1);
                 telemetry.addLine("Done Start to shoot1");
                 break;
             case SHOOT_PRELOAD1:
                 //check if follower has done it's path
                 if (!follower.isBusy()){
-                    // TODO add logic to flywheel shooter
-                    pathState = PathState.SHOOT_POS1_INTAKE_POS;
-                    telemetry.addLine("Done Shooting 1");
+                    mechanisms.shoot();
+                    if (pathTimer.getElapsedTimeSeconds() >= 0.6) {
+                        mechanisms.resetFeeder();
+                        setPathState(PathState.SHOOT_POS1_INTAKE_POS);
+                        telemetry.addLine("Done Shooting 1");
+                    }
                 }
+                break;
             case SHOOT_POS1_INTAKE_POS:
                 follower.followPath(driveShootPos1IntakePos, true);
-                pathState = PathState.INTAKE1;
+                setPathState(PathState.INTAKE1);
                 telemetry.addLine("Done Shoot1 to intake");
                 break;
             case INTAKE1:
                 //check if follower has done it's path
                 if(!follower.isBusy()){
-                    //TODO add logic to intake servo
-                    pathState = PathState.INTAKE_POS_SHOOT_POS2;
-                    telemetry.addLine("Done with intake1");
+                    mechanisms.intake();
+                    if (pathTimer.getElapsedTimeSeconds() >= 0.25) {
+                        setPathState(PathState.INTAKE_POS_SHOOT_POS2);
+                        telemetry.addLine("Done with intake1");
+                    }
                 }
+                break;
             case INTAKE_POS_SHOOT_POS2:
                 follower.followPath(driveIntakePoseShootPos2, true);
-                pathState = PathState.SHOOT_PRELOAD2;
+                setPathState(PathState.SHOOT_PRELOAD2);
                 telemetry.addLine("Done Intake to shoot2");
                 break;
             case SHOOT_PRELOAD2:
                 //check if follower has done it's path
                 if (!follower.isBusy()){
-                    // TODO add logic to flywheel shooter
-                    pathState = PathState.INTAKE2;
-                    telemetry.addLine("Done Shooting 2");
+                    mechanisms.shoot();
+                    if (pathTimer.getElapsedTimeSeconds() >= 0.6) {
+                        mechanisms.resetFeeder();
+                        setPathState(PathState.INTAKE2);
+                        telemetry.addLine("Done Shooting 2");
+                    }
                 }
+                break;
             case INTAKE2:
                 //check if follower has done it's path
                 if(!follower.isBusy()){
-                    //TODO add logic to intake servo
-                    pathState = PathState.SHOOT_PRELOAD3;
-                    telemetry.addLine("Done with intake2");
+                    mechanisms.intake();
+                    if (pathTimer.getElapsedTimeSeconds() >= 0.25) {
+                        setPathState(PathState.SHOOT_PRELOAD3);
+                        telemetry.addLine("Done with intake2");
+                    }
                 }
+                break;
             case SHOOT_PRELOAD3:
                 //check if follower has done it's path
                 if (!follower.isBusy()){
-                    // TODO add logic to flywheel shooter
-                    pathState = PathState.SHOOT_POS2_PARK_POS;
-                    telemetry.addLine("Done Shooting 2");
+                    mechanisms.shoot();
+                    if (pathTimer.getElapsedTimeSeconds() >= 0.6) {
+                        mechanisms.resetFeeder();
+                        setPathState(PathState.SHOOT_POS2_PARK_POS);
+                        telemetry.addLine("Done Shooting 3");
+                    }
                 }
+                break;
             case SHOOT_POS2_PARK_POS:
                 follower.followPath(driveShootPos2ParkPos, true);
+                setPathState(PathState.DONE);
                 telemetry.addLine("Done Shoot2 to park");
                 telemetry.addLine("Done with Auto");
+                break;
+            case DONE:
+                mechanisms.stopFlywheel();
                 break;
 
         }
@@ -140,7 +164,7 @@ public class ThreeCycleAutoRed extends OpMode{
         opModeTimer = new Timer();
         opModeTimer.resetTimer();
         follower = Constants.createFollower(hardwareMap);
-        // TODO add in any other init mechanisms
+        mechanisms = new AutoMechanisms(hardwareMap);
 
         buildPaths();
         follower.setPose(startPose);
