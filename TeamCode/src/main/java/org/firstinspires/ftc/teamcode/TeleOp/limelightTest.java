@@ -39,7 +39,7 @@ public class limelightTest extends OpMode {
         robot = new Robot(hardwareMap, 7);
         ll = new Limelight(robot);
         bm = new WheelTestBM(this, robot);
-        llB = new LimelightBlue(ll);
+        llB = new LimelightBlue(ll, telemetry);
         ll.useAprilTagPipeline();
         ll.useColorPipeline();
         telemetry.setMsTransmissionInterval(11);
@@ -65,58 +65,23 @@ public class limelightTest extends OpMode {
         ll.update();
         double[] botPos = llB.getPosition();
 
-
-        LLStatus status = ll.limelight.getStatus();
-        telemetry.addData("Name", "%s",
-                status.getName());
-        telemetry.addData("LL", "Temp: %.1fC, CPU: %.1f%%, FPS: %d",
-                status.getTemp(), status.getCpu(),(int)status.getFps());
-        telemetry.addData("Pipeline", "Index: %d, Type: %s",
-                status.getPipelineIndex(), status.getPipelineType());
-
-
-        if (ll.hasValidResult() && status.getPipelineIndex() == 1) {
-            int count = ll.getColorBlobCount();
-            double y = ll.getColorBlobYOffset(0);
-            double x = ll.getColorBlobXOffset(0);
-            double xSize = ll.getColorBlobXSize(0);
-            double ySize = ll.getColorBlobYSize(0);
-            telemetry.addData("Limelight Targets", "Count: %d", count);
-            telemetry.addData("Limelight Offset", "X: %.1f , Y: %.1f", x, y);
-            telemetry.addData("Limelight Size", "W: %.1f , H: %.1f", xSize, ySize);
-        }
-        else {
-            telemetry.addData("Limelight", "no color result");
-        }
-
-        if (ll.hasValidResult() && status.getPipelineIndex() == 0 ) {
-
-            int id = ll.getAprilTagId();
-            double y = ll.getAprilTagAngleYOffset();
-            double d2D = ll.getAprilTagDistance2D();
-            double x = ll.getAprilTagAngleXOffset();
-            double d3D = ll.getAprilTagDistance3D();
-            telemetry.addData("Limelight Targets", "id: %d", id);
-            telemetry.addData("Limelight Offset", "X: %.1f , Y: %.1f", x, y);
-            telemetry.addData("Limelight ID", "ID: %d", id);
-            telemetry.addData("Limelight Distance", "2D: %.1f , 3D: %.1f", d2D, d3D);
-        }
-        else {
-            telemetry.addData("Limelight", "no limelight result");
-        }
-
         telemetry.addData("Limelight Connected", ll.limelight.isConnected());
         LLResult latestResult = ll.latestResult;
         if (latestResult == null || !latestResult.isValid()){
             telemetry.addData("nothing detected" , 0);
         }
         else {
+            llB.updateTagPosition();
             boolean canSeeFriendly = llB.canSeeTargetFriendly();
             boolean canSeeEnemy = llB.canSeeTargetEnemy();
             telemetry.addData("Limelight can see friendly: ", canSeeFriendly);
             telemetry.addData("Limelight can see enemy: ", canSeeEnemy);
             if (botPos.length < 3) {
-                telemetry.addData("no limelight results", botPos.length);
+                telemetry.addData("no limelight results length: ", botPos.length);
+                if (botPos.length == 1) {
+                    telemetry.addData("fale type: ", botPos[0]);
+                }
+
             } else {
                 telemetry.addData("Limelight x: ", botPos[0]);
                 telemetry.addData("Limelight y: ", botPos[1]);

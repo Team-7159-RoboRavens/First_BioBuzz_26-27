@@ -5,6 +5,7 @@ import java.util.List;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
@@ -21,11 +22,13 @@ public abstract class calculatePosition {
     final double LIMELIGHT_OFFSET_X_ANGLE = 90;
     final double LIMELIGHT_OFFSET_Z_ANGLE = 0;
 
-    double robotAngleZ;
     public Limelight limelight;
 
-    public calculatePosition(Limelight ll){
+    public Telemetry telemetry;
+
+    public calculatePosition(Limelight ll, Telemetry telemetry){
         limelight = ll;
+        this.telemetry = telemetry;
     }
     //overid by the color limelights
 
@@ -46,26 +49,39 @@ public abstract class calculatePosition {
     public double[] getPosition(){
         List<LLResultTypes.FiducialResult> limelightResults = limelight.getFiducialResults();
         if (limelightResults == null){
-            return new double[]{};
+            return new double[]{0};
         }
         int length = limelightResults.size();
         if (length == 0) {
-            return new double[]{};
+            return new double[]{1};
         }
         //list of coordinates x, y, anlge z axis
         List<double[]> coordinates = new ArrayList<>();
+        int countFail1 = 0;
+        int countFail2 = 0;
         for (int i = 0; i < length; i++){
             Double tagZ = getTagFieldZ(limelightResults.get(i));
             if (tagZ != null) {
-                coordinates.add(getExpectedCoordinate(tagZ, limelightResults.get(i)));
+                double[] coordinate = getExpectedCoordinate(tagZ, limelightResults.get(i));
+                if (coordinate != null) {
+                    coordinates.add(coordinate);
+                }
+                else{
+                    countFail2++;
+                }
+            }
+            else {
+                countFail1 ++;
             }
         }
+        telemetry.addData("caculate Position Fail Count 1: ", countFail1);
+        telemetry.addData("caculate Position Fail Count 2: ", countFail2);
         double sumX = 0;
         double sumY = 0;
         double sumAngle = 0;
         double count = coordinates.size();
         if (count == 0) {
-            return new double[]{};
+            return new double[]{2};
         }
         for (double[] coordinate : coordinates){
             sumX += coordinate[0];
@@ -79,9 +95,10 @@ public abstract class calculatePosition {
     }
 
     private double[] getRobotCoordinate(double limelightX, double limelightY, double limelightAngle) {
-        double robotX = limelightX - LIMELIGHT_OFFSET_DISTANCE * Math.cos(robotAngleZ + LIMELIGHT_OFFSET_Z_ANGLE);
-        double robotY = limelightY - LIMELIGHT_OFFSET_DISTANCE * Math.sin(robotAngleZ + LIMELIGHT_OFFSET_Z_ANGLE);
-        return new double[] {robotX, robotY};
+        double robotAngleZ = limelightAngle + Math.toRadians(LIMELIGHT_OFFSET_Z_ANGLE);
+        double robotX = limelightX - LIMELIGHT_OFFSET_DISTANCE * Math.cos(robotAngleZ);
+        double robotY = limelightY - LIMELIGHT_OFFSET_DISTANCE * Math.sin(robotAngleZ);
+        return new double[] {robotX, robotY, robotAngleZ};
     }
 
     //returns all visiblie ids;
@@ -175,12 +192,12 @@ public abstract class calculatePosition {
     }
     private double getTagFieldX(int id) {
         // Exact center locations of the two Hive Cell assemblies on the X-axis
-        final double LEFT_CELL_CENTER = -22.0 * 0.0254;  // -0.5588 meters
-        final double RIGHT_CELL_CENTER = 22.0 * 0.0254; //  0.5588 meters
+        final double LEFT_CELL_CENTER = -0.6768846;
+        final double RIGHT_CELL_CENTER = 0.6768846;
 
-        // Precise sticker offsets from the cell center to individual tag centers
-        final double OUTER_OFFSET = 6.5 * 0.0254;  // 0.1651 meters
-        final double INNER_OFFSET = 2.25 * 0.0254; // 0.05715 meters
+        // Precise sticker offsets from the cell center to individual tag CENTERS
+        final double OUTER_OFFSET = 5.5 * 0.0254;  // 0.1397 meters
+        final double INNER_OFFSET = 3.25 * 0.0254; // 0.08255 meters
 
         switch(id) {
             // RED ALLIANCE HIVES
@@ -189,10 +206,10 @@ public abstract class calculatePosition {
             case 32: return LEFT_CELL_CENTER + INNER_OFFSET;
             case 33: return LEFT_CELL_CENTER + OUTER_OFFSET;
 
-            case 34: return RIGHT_CELL_CENTER - OUTER_OFFSET;
-            case 35: return RIGHT_CELL_CENTER - INNER_OFFSET;
-            case 36: return RIGHT_CELL_CENTER + INNER_OFFSET;
-            case 37: return RIGHT_CELL_CENTER + OUTER_OFFSET;
+            case 34: return LEFT_CELL_CENTER - OUTER_OFFSET;
+            case 35: return LEFT_CELL_CENTER - INNER_OFFSET;
+            case 36: return LEFT_CELL_CENTER + INNER_OFFSET;
+            case 37: return LEFT_CELL_CENTER + OUTER_OFFSET;
 
             // BLUE ALLIANCE HIVES
             case 38: return RIGHT_CELL_CENTER + OUTER_OFFSET;
@@ -200,37 +217,37 @@ public abstract class calculatePosition {
             case 40: return RIGHT_CELL_CENTER - INNER_OFFSET;
             case 41: return RIGHT_CELL_CENTER - OUTER_OFFSET;
 
-            case 42: return LEFT_CELL_CENTER + OUTER_OFFSET;
-            case 43: return LEFT_CELL_CENTER + INNER_OFFSET;
-            case 44: return LEFT_CELL_CENTER - INNER_OFFSET;
-            case 45: return LEFT_CELL_CENTER - OUTER_OFFSET;
+            case 42: return RIGHT_CELL_CENTER + OUTER_OFFSET;
+            case 43: return RIGHT_CELL_CENTER + INNER_OFFSET;
+            case 44: return RIGHT_CELL_CENTER - INNER_OFFSET;
+            case 45: return RIGHT_CELL_CENTER - OUTER_OFFSET;
 
             default: return 0.0;
         }
     }
 
     private double getTagFieldY(int id) {
-        // Exact distance from center of field to the back face of the Hive Cell perimeters
-        final double RED_WALL_Y = 60.25 * 0.0254;  //  1.53035 meters
-        final double BLUE_WALL_Y = -60.25 * 0.0254; // -1.53035 meters
+        // Exact distance from center of field to the center of the tags depends on side of the field not color
+        final double FORWARD_Y = 0.289960;
+        final double BACK_Y = -0.289960;
 
         switch(id) {
             case 30: case 31: case 32: case 33:
-            case 34: case 35: case 36: case 37:
-                return RED_WALL_Y;
+            case 42: case 43: case 44: case 45:
+                return FORWARD_Y;
 
             case 38: case 39: case 40: case 41:
-            case 42: case 43: case 44: case 45:
-                return BLUE_WALL_Y;
+            case 34: case 35: case 36: case 37:
+                return BACK_Y;
 
             default: return 0.0;
         }
     }
-    final double TAG_HEIGHT_LOW_STATE = 11.5;
-    final double TAG_HEIGHT_HIGH_STATE = 23.5;
+    final double TAG_HEIGHT_LOW_STATE = 0.894549 - LIMELIGHT_HEIGHT;
+    final double TAG_HEIGHT_HIGH_STATE = 1.338096 - LIMELIGHT_HEIGHT;
 
     //in meters how far above or below limeight can think the target is from a stable state
-    final double EXCEPTABLE_OFFSET = 0.05;
+    final double EXCEPTABLE_OFFSET = 0.15;
 
     //returns null if the tag is moving aka not in a stable state
     Double getTagFieldZ(LLResultTypes.FiducialResult limelightResults){
@@ -243,22 +260,33 @@ public abstract class calculatePosition {
 
         // In Limelight Camera Space, index 1 is Y (Vertical distance).
         // Because Camera Y points DOWN, a tag above the camera has a negative Y value.
-        double targetCamZ = rawPosition.y;
+        double targetCamZ = -rawPosition.y;
         //forward distance to the tag
         double targetCamY = rawPosition.z;
+        if (targetCamY < 0){
+            targetCamY = -targetCamY;
+        }
 
         double targetXOffSet = limelight.getTargetYOffset();
 
         // 3. Extrapolate what the tag's field height must be based on where the camera sees it
-        double calculatedTagFieldZ1 = LIMELIGHT_HEIGHT - targetCamY / Math.cos(LIMELIGHT_OFFSET_X_ANGLE + targetXOffSet);
-        double calculatedTagFieldZ2 = LIMELIGHT_HEIGHT - targetCamZ / Math.sin(LIMELIGHT_OFFSET_X_ANGLE + targetXOffSet);
-        double calculatedTagFieldZ = (calculatedTagFieldZ1 + calculatedTagFieldZ2)/2;
+        double calculatedTagFieldZ;
+        if (LIMELIGHT_OFFSET_X_ANGLE < 90) {
+            double calculatedTagFieldDistance1 = targetCamY / Math.cos(Math.toRadians(LIMELIGHT_OFFSET_X_ANGLE));
+            double calculatedTagFieldDistance2 = targetCamZ / Math.sin(Math.toRadians(LIMELIGHT_OFFSET_X_ANGLE));
+            calculatedTagFieldZ = (calculatedTagFieldDistance1 + calculatedTagFieldDistance2)/2 * Math.cos(Math.toRadians(90-LIMELIGHT_OFFSET_X_ANGLE));
+        }
+        else {
+            calculatedTagFieldZ = targetCamZ;
+        }
 
         // 4. Check which of the two stable states the measurement is closer to
         double distanceToLowState = Math.abs(calculatedTagFieldZ - TAG_HEIGHT_LOW_STATE);
         double distanceToHighState = Math.abs(calculatedTagFieldZ - TAG_HEIGHT_HIGH_STATE);
 
+        telemetry.addData("vertical height: ", calculatedTagFieldZ);
         if (distanceToLowState < distanceToHighState) {
+
             if (distanceToLowState > EXCEPTABLE_OFFSET){
                 return null;
             }
