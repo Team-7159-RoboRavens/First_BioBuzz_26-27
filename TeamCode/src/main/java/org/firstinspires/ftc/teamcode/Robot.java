@@ -12,14 +12,22 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
+
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.hardware.lynx.LynxModule;
+import com.qualcomm.robotcore.hardware.CRServo;
+
+import java.util.List;
 
 // Wraps the drivetrain motors, intake motor, and Pinpoint odometry computer,
 // exposing simple methods used by the button maps and TeleOp op modes.
 public class Robot {
-    DcMotor leftFront;
-    DcMotor rightFront;
-    DcMotor leftBack;
-    DcMotor rightBack;
+    DcMotorEx leftFront;
+    DcMotorEx rightFront;
+    DcMotorEx leftBack;
+    DcMotorEx rightBack;
+    DcMotorEx shootMotor;
     DcMotor intakeMotor1;
     public CRServo shootFeedServo;
     public DcMotorEx flywheelMotor;
@@ -29,6 +37,18 @@ public class Robot {
     public double D = 0;
     GoBildaPinpointDriver pinpoint;
 
+    VoltageSensor voltageSensor;
+
+    InputHandling inputHandler = null;
+
+    CRServo shootFeedServo;
+
+    CRServo intakeServoLeft;
+    CRServo intakeServoRight;
+
+
+    public List<LynxModule> hubs;
+
     private final HardwareMap hardwareMap;
 
     // x and y positions of pinpoint relative to robot center in mm
@@ -36,20 +56,30 @@ public class Robot {
     private final int startPinpointX = -155;
     private final int startPinpointY = -60;
 
+    public boolean inputHandlingEnabled = false;
+
 
     /**
      * @param hmap hardware map used to look up the drivetrain motors, intake motor,
      *             and Pinpoint odometry computer by configuration name
      */
-    public Robot(HardwareMap hmap) {
+    public Robot(HardwareMap hmap, int robotId) {
         hardwareMap = hmap;
+        hubs = hardwareMap.getAll(LynxModule.class);
+        for (LynxModule hub : hubs) {
+            hub.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
+        }
+        if (robotId == 7){
+            return;
+        }
 
-        leftFront = hmap.get(DcMotor.class, "leftFront");
-        rightFront = hmap.get(DcMotor.class, "rightFront");
-        leftBack = hmap.get(DcMotor.class, "leftBack");
-        rightBack = hmap.get(DcMotor.class, "rightBack");
-        intakeMotor1 = hmap.get(DcMotor.class, "intakeMotor");
+        voltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
 
+
+        leftFront = hmap.get(DcMotorEx.class, "leftFront");
+        rightFront = hmap.get(DcMotorEx.class, "rightFront");
+        leftBack = hmap.get(DcMotorEx.class, "leftBack");
+        rightBack = hmap.get(DcMotorEx.class, "rightBack");
         shootFeedServo = hmap.get(CRServo.class, "shootFeedServo");
 
         pinpoint = hmap.get(GoBildaPinpointDriver.class, "pinpoint");
@@ -59,8 +89,6 @@ public class Robot {
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        // TODO: why do we need brake for the intake wheel instead of float?
-        intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
 
 
@@ -76,10 +104,33 @@ public class Robot {
 
         // Configure the Pinpoint with its physical offset from the robot's center
         // and the odometry pod type/direction, then zero out position and heading.
-        pinpoint.setOffsets(startPinpointX, startPinpointY, DistanceUnit.MM);
-        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
-        pinpoint.resetPosAndIMU();
+        if (robotId == 0 || robotId == 4) {
+            intakeMotor1 = hmap.get(DcMotor.class, "intakeMotor");
+            intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        }
+        if (robotId == 0 || robotId == 3 || robotId == 4) {
+            pinpoint = hmap.get(GoBildaPinpointDriver.class, "pinpoint");
+            pinpoint.setOffsets(startPinpointX, startPinpointY, DistanceUnit.MM);
+            pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+            pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
+            pinpoint.resetPosAndIMU();
+        }
+
+        if (robotId != 3){
+            inputHandler = new InputHandling(this);
+        }
+
+        if (robotId == 4){
+            shootFeedServo = hardwareMap.get(CRServo.class, "shootFeedServo");
+            intakeServoRight = hardwareMap.get(CRServo.class, "intakeServoRight");
+            intakeServoLeft = hardwareMap.get(CRServo.class, "intakeServoLeft");
+            shootMotor = hmap.get(DcMotorEx.class, "shootMotor");
+            leftFront.setDirection(DcMotor.Direction.REVERSE);
+            rightFront.setDirection(DcMotor.Direction.FORWARD);
+            leftBack.setDirection(DcMotor.Direction.FORWARD);
+            rightBack.setDirection(DcMotor.Direction.REVERSE);
+
+        }
 
     }
 
@@ -95,9 +146,33 @@ public class Robot {
      * @param power intake motor power, [-1, 1]
      */
     public void setIntakePower(double power) {
-        intakeMotor1.setPower(power);
+        if (intakeMotor1 != null) {
+            intakeMotor1.setPower(power);
+        }
+        if (intakeServoRight != null && intakeServoLeft != null){
+            intakeServoRight.setPower(-power);
+            intakeServoLeft.setPower(power);
+        }
     }
 
+    public void setShootFeedPower(double power){
+        if (shootFeedServo != null) {
+            shootFeedServo.setPower(1.0);
+        }
+    }
+    public void setShootPower(double power){
+        if (shootMotor != null) {
+            shootMotor.setPower(power);
+        }
+    }
+
+    public void tuneMotorPowers(MotorPowers mp){
+        if (inputHandler != null && inputHandlingEnabled) {
+            if (Math.max(Math.max(Math.abs(mp.lf), Math.abs(mp.rf)), Math.max(Math.abs(mp.lb), Math.abs(mp.rb))) > 1e-2) {
+                mp = inputHandler.getMotorPowers(mp);
+            }
+        }
+    }
     /**
      * @param mp per-wheel motor powers to apply to the drivetrain
      */
@@ -145,5 +220,8 @@ public class Robot {
         rightFront.setPower(mp.rf);
         leftBack.setPower(mp.lb);
         rightBack.setPower(mp.rb);
+    }
+    public void setHeadingHold(boolean headingHold){
+        inputHandler.setLockHeading(headingHold);
     }
 }
