@@ -1,7 +1,13 @@
 package org.firstinspires.ftc.teamcode;
 
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
+
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -15,7 +21,12 @@ public class Robot {
     DcMotor leftBack;
     DcMotor rightBack;
     DcMotor intakeMotor1;
-
+    public CRServo shootFeedServo;
+    public DcMotorEx flywheelMotor;
+    public double F = 12;
+    public double P = 36;
+    public double I = 4;
+    public double D = 0;
     GoBildaPinpointDriver pinpoint;
 
     private final HardwareMap hardwareMap;
@@ -39,6 +50,8 @@ public class Robot {
         rightBack = hmap.get(DcMotor.class, "rightBack");
         intakeMotor1 = hmap.get(DcMotor.class, "intakeMotor");
 
+        shootFeedServo = hmap.get(CRServo.class, "shootFeedServo");
+
         pinpoint = hmap.get(GoBildaPinpointDriver.class, "pinpoint");
 
         // Hold position when no power is applied instead of coasting.
@@ -47,7 +60,14 @@ public class Robot {
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         // TODO: why do we need brake for the intake wheel instead of float?
-        intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+
+
+
+        flywheelMotor = hmap.get(DcMotorEx.class,"shootMotor");
+        flywheelMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P,I,D,F);
+        flywheelMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
 
         // Left front/right back motors are mounted mirrored, so their direction
         // must be reversed for all wheels to drive the same way for a given power sign.
