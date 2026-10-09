@@ -41,8 +41,6 @@ public class Robot {
 
     InputHandling inputHandler = null;
 
-    CRServo shootFeedServo;
-
     CRServo intakeServoLeft;
     CRServo intakeServoRight;
 
@@ -136,6 +134,10 @@ public class Robot {
             rightBack.setDirection(DcMotor.Direction.FORWARD                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               );
         }
 
+    }
+
+    public Robot(HardwareMap hmap) {
+        this(hmap, 4);
     }
 
     /**

@@ -11,6 +11,7 @@ public class FlywheelShooting extends OpMode {
 
     // all units are m or radians
     double shotAngle = Math.toRadians(70);
+    double launchHeight = 0.3;
     double hiveHeight = 1.2;
     double dist = 1.25;
     static double shootConstant = 279;
@@ -24,7 +25,7 @@ public class FlywheelShooting extends OpMode {
 
     @Override
     public void loop() {
-        double v = velocityShot(dist, hiveHeight, shotAngle);
+        double v = velocityShot(dist, hiveHeight - launchHeight, shotAngle);
         if (gamepad1.x) {
             robot.flywheelMotor.setVelocity(v);
         } else {
@@ -72,6 +73,7 @@ public class FlywheelShooting extends OpMode {
         telemetry.addData("Servo power (y/a)", servoPower);
         telemetry.addData("Servo constant (left joystick x)", servoConstant);
         telemetry.addData("Exit angle (left joystick y)", Math.toDegrees(shotAngle));
+        telemetry.addData("Exit height", launchHeight);
         telemetry.addData("Target Velocity", v);
         telemetry.addData("Actual velocity", robot.flywheelMotor.getVelocity());
     }
