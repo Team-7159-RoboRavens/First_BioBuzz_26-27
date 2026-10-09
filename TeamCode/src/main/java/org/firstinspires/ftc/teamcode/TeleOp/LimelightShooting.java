@@ -22,7 +22,7 @@ public class LimelightShooting extends FlywheelShooting {
 
     @Override
     public void loop() {
-        dist = getDist(); // TODO: finish ts
+        dist = getDist(llb.aimState(llb.getPosition())); // TODO: finish ts
         double v = velocityShot(dist, hiveHeight - launchHeight, shotAngle);
         if (gamepad1.x) {
             robot.flywheelMotor.setVelocity(v);
