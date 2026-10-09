@@ -41,7 +41,6 @@ public class Robot {
 
     InputHandling inputHandler = null;
 
-
     CRServo intakeServoLeft;
     CRServo intakeServoRight;
 
@@ -135,6 +134,10 @@ public class Robot {
         // TODO: why do we need brake for the intake wheel instead of float?
         intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intakeMotor1.setDirection(DcMotor.Direction.REVERSE);
+    }
+
+    public Robot(HardwareMap hmap) {
+        this(hmap, 4);
     }
 
     /**
