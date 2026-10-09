@@ -66,7 +66,7 @@ public class limelightTest extends OpMode {
 
         ll.update();
         double[] botPos = llB.getPosition();
-
+        Pose pedroPos = llB.toPedroPose(botPos);
         telemetry.addData("Limelight Connected", ll.limelight.isConnected());
         LLResult latestResult = ll.latestResult;
         if (latestResult == null || !latestResult.isValid()){
@@ -88,6 +88,9 @@ public class limelightTest extends OpMode {
                 telemetry.addData("Limelight x: ", botPos[0]);
                 telemetry.addData("Limelight y: ", botPos[1]);
                 telemetry.addData("Limelight orientation: ", botPos[2]);
+                telemetry.addData("Limelight PedrX: ", pedroPos.getX());
+                telemetry.addData("Limelight PedroY: ", pedroPos.getY());
+                telemetry.addData("Limelight PedroOrientation: ", pedroPos.getHeading());
                 Pose pedroPose = calculatePosition.toPedroPose(botPos);
                 telemetry.addData("Pedro pose", "x: %.1f in, y: %.1f in, heading: %.1f deg",
                         pedroPose.getX(), pedroPose.getY(), Math.toDegrees(pedroPose.getHeading()));

@@ -20,7 +20,7 @@ public class FlywheelTuningPF extends OpMode {
     int stepIndex = 1;
     @Override
     public void init() {
-        robot = new Robot(hardwareMap);
+        robot = new Robot(hardwareMap, 0);
         telemetry.addLine("Init complete");
     }
 

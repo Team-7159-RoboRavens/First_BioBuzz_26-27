@@ -19,7 +19,7 @@ public class FlywheelShooting extends OpMode {
 
     @Override
     public void init() {
-        robot = new Robot(hardwareMap);
+        robot = new Robot(hardwareMap, 0);
     }
 
     @Override

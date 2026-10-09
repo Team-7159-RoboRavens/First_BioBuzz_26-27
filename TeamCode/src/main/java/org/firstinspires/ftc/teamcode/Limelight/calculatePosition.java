@@ -8,18 +8,6 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
-
-// Field frame used by this class (looking at the field from the audience):
-//   origin at the center of the field on the TILES
-//   +X points right (from the red HIVE toward the blue HIVE)
-//   +Y points away from the audience
-//   +Z points up
-// Distances are in METERS, angles in RADIANS (counter-clockwise positive, 0 = +X).
-// The Limelight SDK reports all poses in meters.
-//
-// Field numbers come from the BIOBUZZ competition manual section 9.6 (HIVE) and 9.9 (AprilTags).
-// The AprilTags are on the BOTTOM of each CELL facing DOWN at the tiles, and each HIVE tips 30 degrees
-// one way or the other, so where a tag is (and which way it faces) depends on whether its CELL is up or down.
 public abstract class calculatePosition {
     static final double INCH = 0.0254;
 
@@ -30,13 +18,9 @@ public abstract class calculatePosition {
     // Height of the limelight lens above the floor, in meters
     final double LIMELIGHT_HEIGHT = 0;
 
-    // Degrees the limelight is tilted up from horizontal (0 = looking straight forward, parallel to the floor)
     final double LIMELIGHT_PITCH = 0;
-    // Degrees the limelight is turned left from the front of the robot (0 = facing the front of the robot)
     final double LIMELIGHT_YAW = 0;
 
-    // Limelight's docs say target space +X points to the right "if you are looking at the target".
-    // If the robot's X comes out mirrored across the hive when you test it, set this to false.
     final boolean TARGET_SPACE_X_IS_VIEWER_RIGHT = true;
 
     public Limelight limelight;
@@ -47,7 +31,7 @@ public abstract class calculatePosition {
         limelight = ll;
         this.telemetry = telemetry;
     }
-    //overid by the color limelights
+    //overrid by the color limelights
 
     //determines if the visible target is on the front side or back side of the field.
 
@@ -61,6 +45,9 @@ public abstract class calculatePosition {
     //returns 0 for no targets detected 1 for moving 2 for down and 3 for up
     public abstract int enemyUp();
     public abstract void updateTagPosition();
+
+    //returs a 3 element array the first value x distance to target second one is y value to target and the third one is an angle relative to target
+    public abstract double[] aimState(double[] botPose);
 
     //returns {x, y, heading} of the robot on the field (meters, meters, radians).
     //On failure returns a single element array with the fail type:
@@ -118,9 +105,7 @@ public abstract class calculatePosition {
     }
 
     //Converts a {x, y, heading} array from getPosition() to a Pedro Pathing pose, or null if it is a fail code.
-    //Pedro's origin is the bottom left corner looking at the field from the audience, in inches, so it has the
-    //same axis directions as this class's field frame: just change meters to inches and move the origin 72in.
-    //(matches the team's autos: red starts near (9, 25), blue near (133, 117))
+    //Pedro's origin is the bottom left corner
     public static Pose toPedroPose(double[] fieldPosition){
         if (fieldPosition == null || fieldPosition.length < 3) {
             return null;

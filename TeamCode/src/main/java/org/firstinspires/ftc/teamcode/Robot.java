@@ -41,7 +41,6 @@ public class Robot {
 
     InputHandling inputHandler = null;
 
-    CRServo shootFeedServo;
 
     CRServo intakeServoLeft;
     CRServo intakeServoRight;
