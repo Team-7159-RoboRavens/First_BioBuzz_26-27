@@ -131,6 +131,10 @@ public class Robot {
             rightBack.setDirection(DcMotor.Direction.REVERSE);
 
         }
+        if (robotId == 2){
+            leftBack.setDirection(DcMotor.Direction.REVERSE);
+            rightBack.setDirection(DcMotor.Direction.FORWARD                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               );
+        }
 
     }
 
