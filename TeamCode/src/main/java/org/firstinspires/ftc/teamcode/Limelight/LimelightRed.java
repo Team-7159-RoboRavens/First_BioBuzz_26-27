@@ -127,4 +127,27 @@ public class LimelightRed extends calculatePosition{
             idUp[tag.getFiducialId()-30] = val;
         }
     }
+
+    @Override
+    public double[] aimState(double[] botPose) {
+        if (friendlyUp() != 3) {
+            return null;
+        }
+        double x, y, angle;
+        if (botPose[1] < 0){
+            y = botPose[1] * -1;
+        }
+        else{
+            y = botPose[1];
+        }
+        y -= 0.3370036948997776 - 0.075;
+        if (botPose[1] > 0){
+            x = -12.75 - botPose[0];
+        }
+        else {
+            x = botPose[0] + 12.75;
+        }
+
+        return new double[] {x, y, botPose[2]};
+    }
 }
