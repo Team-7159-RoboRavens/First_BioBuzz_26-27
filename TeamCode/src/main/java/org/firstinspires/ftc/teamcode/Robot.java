@@ -89,9 +89,6 @@ public class Robot {
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-
-
         flywheelMotor = hmap.get(DcMotorEx.class,"shootMotor");
         flywheelMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P,I,D,F);
@@ -133,9 +130,12 @@ public class Robot {
         }
         if (robotId == 2){
             leftBack.setDirection(DcMotor.Direction.REVERSE);
-            rightBack.setDirection(DcMotor.Direction.FORWARD                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               );
+            rightBack.setDirection(DcMotor.Direction.FORWARD);
         }
 
+        // TODO: why do we need brake for the intake wheel instead of float?
+        intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intakeMotor1.setDirection(DcMotor.Direction.REVERSE);
     }
 
     /**
