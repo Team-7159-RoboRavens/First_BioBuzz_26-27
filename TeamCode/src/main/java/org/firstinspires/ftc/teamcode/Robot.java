@@ -146,6 +146,7 @@ public class Robot {
             rightFront.setDirection(DcMotor.Direction.FORWARD);
             leftBack.setDirection(DcMotor.Direction.FORWARD);
             rightBack.setDirection(DcMotor.Direction.REVERSE);
+            shootMotor.setDirection(DcMotor.Direction.REVERSE);
 
         }
 
