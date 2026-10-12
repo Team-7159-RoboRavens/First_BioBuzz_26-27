@@ -14,7 +14,7 @@ public class BasicBM {
     private OpMode opmode;
     private Robot robot;
     public Gamepad g1;
-    private Gamepad g2;
+    public Gamepad g2;
     /**
      * @param op running op mode, used to read gamepad state
      * @param r robot instance this button map drives
@@ -105,9 +105,12 @@ public class BasicBM {
         if (g1.bWasPressed()){
             robot.inputHandlingEnabled = false;
         }
-        double forward = getDpadForward(g1.dpad_up, g1.dpad_down);
-        double right = getDpadRight(g1.dpad_left, g1.dpad_right);
-        double rotateClockwise = getBumperRotateClockwise(g1.left_bumper, g1.right_bumper);
+//        double forward = getDpadForward(g1.dpad_up, g1.dpad_down);
+//        double right = getDpadRight(g1.dpad_left, g1.dpad_right);
+//        double rotateClockwise = getBumperRotateClockwise(g1.left_bumper, g1.right_bumper);
+        double forward = 0;
+        double right = 0;
+        double rotateClockwise = 0;
 
         double[] stickMovement = getMovement(g1.left_stick_x, g1.left_stick_y);
         forward += stickMovement[0];

@@ -12,11 +12,14 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.TeleOp.TeleOpData;
+
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import java.util.List;
 
@@ -27,9 +30,10 @@ public class Robot {
     DcMotorEx rightFront;
     DcMotorEx leftBack;
     DcMotorEx rightBack;
-    DcMotorEx shootMotor;
+    public DcMotorEx shootMotor;
     DcMotor intakeMotor1;
     public CRServo shootFeedServo;
+    public Servo flowerServo;
     public DcMotorEx flywheelMotor;
     public double F = 12;
     public double P = 36;
@@ -130,10 +134,21 @@ public class Robot {
             leftBack.setDirection(DcMotor.Direction.REVERSE);
             rightBack.setDirection(DcMotor.Direction.FORWARD);
         }
+        if (robotId == 10){
+            shootFeedServo = hardwareMap.get(CRServo.class, "transferServo");
+            flowerServo = hardwareMap.get(Servo.class, "flowerServo");
+            shootMotor = hmap.get(DcMotorEx.class, "shootMotor");
+            intakeMotor1 = hmap.get(DcMotor.class, "intakeMotor");
+            shootFeedServo.setDirection(CRServo.Direction.REVERSE);
+            intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+            intakeMotor1.setDirection(DcMotor.Direction.REVERSE);
+            leftFront.setDirection(DcMotor.Direction.REVERSE);
+            rightFront.setDirection(DcMotor.Direction.FORWARD);
+            leftBack.setDirection(DcMotor.Direction.FORWARD);
+            rightBack.setDirection(DcMotor.Direction.REVERSE);
 
-        // TODO: why do we need brake for the intake wheel instead of float?
-        intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        intakeMotor1.setDirection(DcMotor.Direction.REVERSE);
+        }
+
     }
 
     public Robot(HardwareMap hmap) {
@@ -163,12 +178,18 @@ public class Robot {
 
     public void setShootFeedPower(double power){
         if (shootFeedServo != null) {
-            shootFeedServo.setPower(1.0);
+            shootFeedServo.setPower(power);
         }
     }
     public void setShootPower(double power){
         if (shootMotor != null) {
             shootMotor.setPower(power);
+        }
+    }
+    public void setShootRPM(double RPM){
+        if (shootMotor != null) {
+            double targetTicksPerSec = (RPM / 60.0) * 383.6;
+            shootMotor.setVelocity(targetTicksPerSec);
         }
     }
 
@@ -217,17 +238,17 @@ public class Robot {
 
     public double limelightAngle() { return pinpointAngle();}
 
-    // TODO: how is this function different from setPowers above
-    /**
-     * @param mp per-wheel motor powers to apply to the drivetrain
-     */
-    public void setAcleratePowers(MotorPowers mp){
-        leftFront.setPower(mp.lf);
-        rightFront.setPower(mp.rf);
-        leftBack.setPower(mp.lb);
-        rightBack.setPower(mp.rb);
-    }
+
     public void setHeadingHold(boolean headingHold){
         inputHandler.setLockHeading(headingHold);
+    }
+
+    public void setFlowerState(double val) {
+        if (val == 2){
+            flowerServo.setPosition(0.9);
+        }
+        else if (val == 1){
+            flowerServo.setPosition(0.3);
+        }
     }
 }
