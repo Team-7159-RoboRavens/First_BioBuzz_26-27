@@ -33,7 +33,7 @@ public class OneCycleAutoBlue extends OpMode{
     // define path and poses
     private final Pose startPose = new Pose(133,117, Math.toRadians(180));
     private final Pose shootPose1 = new Pose(85.23906485671196, 117, Math.toRadians(270));
-    private final Pose intakePose = new Pose(133.08898944193066, 133.62971342383105, Math.toRadians(180));
+    private final Pose intakePose = new Pose(133.08898944193066, 133.62971342383105, Math.toRadians(0));
     private final Pose intakeControl = new Pose(64.13273001508298, 126.42458521870286);
     private final Pose parkPose = new Pose(132.57466063348417, 43.497737556561084, Math.toRadians(0));
     private final Pose parkControl = new Pose(109.37971342383108, 52.54227941176471);
@@ -67,7 +67,7 @@ public class OneCycleAutoBlue extends OpMode{
                 telemetry.addLine("Done Start to shoot1");
                 break;
             case SHOOT_PRELOAD1:
-                //check if follower has done it's path
+//                check if follower has done it's path
                 if (!follower.isBusy()){
                     mechanisms.shoot();
                     if (pathTimer.getElapsedTimeSeconds() >= 0.6) {
@@ -83,9 +83,9 @@ public class OneCycleAutoBlue extends OpMode{
                 telemetry.addLine("Done Shoot1 to intake");
                 break;
             case INTAKE1:
-                //check if follower has done it's path
+//                check if follower has done it's path
                 if(!follower.isBusy()){
-                    mechanisms.intake();
+//                    mechanisms.intake();
                     if (pathTimer.getElapsedTimeSeconds() >= 0.25) {
                         setPathState(PathState.INTAKE_POS_PARK_POS);
                         telemetry.addLine("Done with intake1");
@@ -116,9 +116,8 @@ public class OneCycleAutoBlue extends OpMode{
         opModeTimer.resetTimer();
         follower = Constants.createFollower(hardwareMap);
         mechanisms = new AutoMechanisms(hardwareMap);
-
-        buildPaths();
         follower.setPose(startPose);
+        buildPaths();
     }
     public void start(){
         opModeTimer.resetTimer();
