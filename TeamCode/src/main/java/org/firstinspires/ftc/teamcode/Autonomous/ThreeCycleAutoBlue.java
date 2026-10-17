@@ -35,9 +35,10 @@ public class ThreeCycleAutoBlue extends OpMode{
 
     PathState pathState;
     // define path and poses
+    
     private final Pose startPose = new Pose(133,117, Math.toRadians(180));
     private final Pose shootPose1 = new Pose(85.23906485671196, 117, Math.toRadians(270));
-    private final Pose intakePose = new Pose(133.08898944193066, 133.62971342383105, Math.toRadians(0));
+    private final Pose intakePose = new Pose(133.08898944193066, 133.62971342383105, Math.toRadians(180));
     private final Pose intakeControl = new Pose(64.13273001508298, 126.42458521870286);
     private final Pose shootPose2 = new Pose(92.19909502262443, 10.49778469079939, Math.toRadians(108));
     private final Pose shoot2Control = new Pose(115.1184012066365,44.029411764705884);
@@ -135,7 +136,7 @@ public class ThreeCycleAutoBlue extends OpMode{
                 if (!follower.isBusy()){
                     mechanisms.shoot();
                     if (pathTimer.getElapsedTimeSeconds() >= 0.6) {
-                        mechanisms.resetFeeder();
+//                        mechanisms.resetFeeder();
                         setPathState(PathState.SHOOT_POS2_PARK_POS);
                         telemetry.addLine("Done Shooting 3");
                     }
@@ -165,9 +166,8 @@ public class ThreeCycleAutoBlue extends OpMode{
         opModeTimer.resetTimer();
         follower = Constants.createFollower(hardwareMap);
         mechanisms = new AutoMechanisms(hardwareMap);
-
-        buildPaths();
         follower.setPose(startPose);
+        buildPaths();
     }
     public void start(){
         opModeTimer.resetTimer();

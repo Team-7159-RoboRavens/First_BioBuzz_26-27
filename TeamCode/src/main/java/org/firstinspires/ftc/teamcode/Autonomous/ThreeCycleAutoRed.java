@@ -1,11 +1,17 @@
 package org.firstinspires.ftc.teamcode.Autonomous;
 
 import com.pedropathing.follower.Follower;
+import com.pedropathing.follower.FollowerConstants;
+import com.pedropathing.ftc.FollowerBuilder;
+import com.pedropathing.ftc.drivetrains.Mecanum;
+import com.pedropathing.ftc.drivetrains.MecanumConstants;
+import com.pedropathing.ftc.localization.constants.PinpointConstants;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
@@ -37,7 +43,7 @@ public class ThreeCycleAutoRed extends OpMode{
     // define path and poses
     private final Pose startPose = new Pose(9,25, Math.toRadians(0));
     private final Pose shootPose1 = new Pose(59, 25, Math.toRadians(90));
-    private final Pose intakePose = new Pose(8.876319758672755, 8.349924585218675, Math.toRadians(180));
+    private final Pose intakePose = new Pose(8.876319758672755, 8.349924585218675, Math.toRadians(0));
     private final Pose intakeControl = new Pose(98.49396681749627, 13.523378582202092);
     private final Pose shootPose2 = new Pose(49.08748114630466, 131.72252073906486, Math.toRadians(280));
     private final Pose shoot2Control = new Pose(31.91251885369533, 96.97586726998493);
@@ -75,13 +81,17 @@ public class ThreeCycleAutoRed extends OpMode{
         switch(pathState){
             case DRIVE_STARTPOS_SHOOT_POS1:
                 follower.followPath(driveStartPosShootPos1, true);
+                telemetry.addLine("Done with Path 1");
                 setPathState(PathState.SHOOT_PRELOAD1);
-                telemetry.addLine("Done Start to shoot1");
                 break;
+
             case SHOOT_PRELOAD1:
                 //check if follower has done it's path
+                telemetry.addLine("Done Start to shoot1");
                 if (!follower.isBusy()){
+                    telemetry.addLine("Follower is not busy");
                     mechanisms.shoot();
+
                     if (pathTimer.getElapsedTimeSeconds() >= 0.6) {
                         mechanisms.resetFeeder();
                         setPathState(PathState.SHOOT_POS1_INTAKE_POS);
@@ -165,9 +175,10 @@ public class ThreeCycleAutoRed extends OpMode{
         opModeTimer.resetTimer();
         follower = Constants.createFollower(hardwareMap);
         mechanisms = new AutoMechanisms(hardwareMap);
+        follower.setPose(startPose);
+
 
         buildPaths();
-        follower.setPose(startPose);
     }
     public void start(){
         opModeTimer.resetTimer();
