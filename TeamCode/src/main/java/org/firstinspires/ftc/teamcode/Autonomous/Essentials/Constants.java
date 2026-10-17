@@ -24,7 +24,7 @@ public class Constants {
         //TODO: how are these parameters derived
         //TODO: who in the Control team is in charge of these
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .translationalPIDFCoefficients(new PIDFCoefficients(0.095, 0, 0.035, 0.012))
+            .translationalPIDFCoefficients(new PIDFCoefficients(0.045, 0, 0.01, 0.012))
             .headingPIDFCoefficients(new PIDFCoefficients(0.38, 0, 0.055, 0.055))
             .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.06,0.0,0.02,0.4,0.05))
         //TODO: who in the Control/Mech team has verified the following 3 parameters
