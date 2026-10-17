@@ -85,7 +85,7 @@ public class OneCycleAutoBlue extends OpMode{
             case INTAKE1:
 //                check if follower has done it's path
                 if(!follower.isBusy()){
-//                    mechanisms.intake();
+                    mechanisms.intake();
                     if (pathTimer.getElapsedTimeSeconds() >= 0.25) {
                         setPathState(PathState.INTAKE_POS_PARK_POS);
                         telemetry.addLine("Done with intake1");

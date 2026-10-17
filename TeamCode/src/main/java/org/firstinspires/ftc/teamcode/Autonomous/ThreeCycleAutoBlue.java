@@ -136,7 +136,7 @@ public class ThreeCycleAutoBlue extends OpMode{
                 if (!follower.isBusy()){
                     mechanisms.shoot();
                     if (pathTimer.getElapsedTimeSeconds() >= 0.6) {
-//                        mechanisms.resetFeeder();
+                        mechanisms.resetFeeder();
                         setPathState(PathState.SHOOT_POS2_PARK_POS);
                         telemetry.addLine("Done Shooting 3");
                     }
