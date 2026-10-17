@@ -148,7 +148,7 @@ public class ThreeCycleAutoBlue extends OpMode{
                 telemetry.addLine("Done with Auto");
                 break;
             case DONE:
-                mechanisms.stopFlywheel();
+                mechanisms.reset();
                 break;
 
         }

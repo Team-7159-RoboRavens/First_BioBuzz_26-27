@@ -99,7 +99,7 @@ public class OneCycleAutoRed extends OpMode{
                 telemetry.addLine("Done with Auto");
                 break;
             case DONE:
-                mechanisms.stopFlywheel();
+                mechanisms.reset();
                 break;
 
         }
