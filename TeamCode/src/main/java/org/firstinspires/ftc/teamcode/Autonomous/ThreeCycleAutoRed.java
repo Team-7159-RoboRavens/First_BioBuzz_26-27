@@ -1,198 +1,230 @@
 package org.firstinspires.ftc.teamcode.Autonomous;
 
+// Correct Pedro Pathing 3.0 Production Imports
 import com.pedropathing.follower.Follower;
-import com.pedropathing.follower.FollowerConstants;
-import com.pedropathing.ftc.FollowerBuilder;
-import com.pedropathing.ftc.drivetrains.Mecanum;
-import com.pedropathing.ftc.drivetrains.MecanumConstants;
-import com.pedropathing.ftc.localization.constants.PinpointConstants;
-import com.pedropathing.geometry.BezierCurve;
-import com.pedropathing.geometry.BezierLine;
-import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.PathChain;
+import com.pedropathing.math.Pose;                     // Relocated in 3.0
+import com.pedropathing.paths.Path;                   // Replaces PathChain in 3.0
+import static com.pedropathing.paths.Paths.path;      // Static 3.0 inline path builders
+import static com.pedropathing.paths.Paths.line;
+import static com.pedropathing.paths.Paths.curve;
+
 import com.pedropathing.util.Timer;
-import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import android.util.Log;
 
 import org.firstinspires.ftc.teamcode.Autonomous.Essentials.Constants;
 
-@Autonomous(name = "ThreeCycleAutoRed")
-public class ThreeCycleAutoRed extends OpMode{
+@Autonomous(name = "ThreeCycleAutoRed", group = "Autonomous")
+public class ThreeCycleAutoRed extends OpMode {
     private Follower follower;
     private AutoMechanisms mechanisms;
     private Timer pathTimer, opModeTimer;
 
     public enum PathState {
-        // START POSITION_END POSITION
-        // DRIVE > MOVEMENT STATE
-        // SHOOT > ATTEMPT TO SCORE THE ARTIFACT
         DRIVE_STARTPOS_SHOOT_POS1,
-        SHOOT_POS1_INTAKE_POS,
-        INTAKE_POS_SHOOT_POS2,
-        SHOOT_POS2_PARK_POS,
         SHOOT_PRELOAD1,
-        SHOOT_PRELOAD2,
-        SHOOT_PRELOAD3,
+        DRIVE_SHOOT_POS1_INTAKE_POS,
         INTAKE1,
+        DRIVE_INTAKE_POS_SHOOT_POS2,
+        SHOOT_PRELOAD2,
         INTAKE2,
+        SHOOT_PRELOAD3,
+        DRIVE_SHOOT_POS2_PARK_POS,
         DONE
     }
 
-    PathState pathState;
-    // define path and poses
-    private final Pose startPose = new Pose(9,25, Math.toRadians(0));
+    private PathState pathState;
+
+    // Define coordinate Poses (Heading field values remain the same)
+    private final Pose startPose = new Pose(9, 25, Math.toRadians(0));
     private final Pose shootPose1 = new Pose(59, 25, Math.toRadians(90));
-    private final Pose intakePose = new Pose(8.876319758672755, 8.349924585218675, Math.toRadians(0));
+
+    private final Pose intakePose = new Pose(9, 8.349924585218675, Math.toRadians(0));
     private final Pose intakeControl = new Pose(98.49396681749627, 13.523378582202092);
+
     private final Pose shootPose2 = new Pose(49.08748114630466, 131.72252073906486, Math.toRadians(280));
-    private final Pose shoot2Control = new Pose(31.91251885369533, 96.97586726998493);
+    private final Pose shoot2Control = new Pose(45.0, 96.97586726998493);
+
     private final Pose parkPose = new Pose(9.855957767722485, 112.22021116138762, Math.toRadians(280));
     private final Pose parkControl = new Pose(45.853695324283564, 110.28883861236804);
 
-    private PathChain driveStartPosShootPos1;
-    private PathChain driveShootPos1IntakePos;
-    private PathChain driveIntakePoseShootPos2;
-    private PathChain driveShootPos2ParkPos;
+    // CHANGED: Replacing legacy PathChain arrays with modern Pedro 3.0 Path instances
+    private Path driveStartPosShootPos1;
+    private Path driveShootPos1IntakePos;
+    private Path driveIntakePoseShootPos2;
+    private Path driveShootPos2ParkPos;
 
-    public void buildPaths(){
-        //put in coordinates for starting pose > ending pose
-        driveStartPosShootPos1 = follower.pathBuilder()
-                .addPath(new BezierLine(startPose, shootPose1))
-                .setLinearHeadingInterpolation(startPose.getHeading(), shootPose1.getHeading())
-                .build();
+    public void buildPaths() {
+        // FIXED: Replaced old .pathBuilder() chains with the fast 3.0 static builders
+        // FIXED: Replaced .getHeading() calls with native .heading accessor properties
+        driveStartPosShootPos1 = path(
+                line(startPose, shootPose1)
+                        .linear(startPose.heading, shootPose1.heading)
+        );
 
-        driveShootPos1IntakePos = follower.pathBuilder()
-                .addPath(new BezierCurve(shootPose1, intakeControl, intakePose))
-                .setLinearHeadingInterpolation(shootPose1.getHeading(), intakePose.getHeading())
-                .build();
-        driveIntakePoseShootPos2 = follower.pathBuilder()
-                .addPath(new BezierCurve(intakePose, shoot2Control, shootPose2))
-                .setLinearHeadingInterpolation(intakePose.getHeading(), shootPose2.getHeading())
-                .build();
-        driveShootPos2ParkPos = follower.pathBuilder()
-                .addPath(new BezierCurve(shootPose2, parkControl, parkPose))
-                .setLinearHeadingInterpolation(shootPose2.getHeading(), parkPose.getHeading())
-                .build();
+        driveShootPos1IntakePos = path(
+                curve(shootPose1, intakeControl, intakePose)
+                        .linear(shootPose1.heading, intakePose.heading)
+        );
 
+        driveIntakePoseShootPos2 = path(
+                curve(intakePose, shoot2Control, shootPose2)
+                        .linear(intakePose.heading, shootPose2.heading)
+        );
+
+        driveShootPos2ParkPos = path(
+                curve(shootPose2, parkControl, parkPose)
+                        .linear(shootPose2.heading, parkPose.heading)
+        );
     }
 
     public void statePathUpdate() {
-        switch(pathState){
+        // Continuous position logging to Android Studio Logcat
+        // FIXED: Replaced .getPose() with .pose(), and changed math property coordinates
+        Pose currentPose = follower.pose();
+        Log.i("RobotPosition", String.format("State: %s | X: %.2f, Y: %.2f, Heading: %.2f",
+                pathState.toString(), currentPose.x, currentPose.y, Math.toDegrees(currentPose.heading)));
+
+        switch (pathState) {
             case DRIVE_STARTPOS_SHOOT_POS1:
-                follower.followPath(driveStartPosShootPos1, true);
-                telemetry.addLine("Done with Path 1");
-                setPathState(PathState.SHOOT_PRELOAD1);
+                if (!follower.isBusy()) {
+                    follower.follow(driveStartPosShootPos1, true); // FIXED: .follow() replaces .followPath()
+                }
+
+                if (!follower.isBusy()) {
+                    setPathState(PathState.SHOOT_PRELOAD1);
+                }
                 break;
 
             case SHOOT_PRELOAD1:
-                //check if follower has done it's path
-                telemetry.addLine("Done Start to shoot1");
-                if (!follower.isBusy()){
-                    telemetry.addLine("Follower is not busy");
+                // FIXED: Timer tracks seconds via .seconds() in 3.0
+                if (pathTimer.seconds() > 0.1) {
                     mechanisms.shoot();
 
-                    if (pathTimer.getElapsedTimeSeconds() >= 0.6) {
-                        mechanisms.resetFeeder();
-                        setPathState(PathState.SHOOT_POS1_INTAKE_POS);
-                        telemetry.addLine("Done Shooting 1");
+                    if (pathTimer.seconds() >= 1.2) {
+                        mechanisms.reset();
+                        setPathState(PathState.DRIVE_SHOOT_POS1_INTAKE_POS);
                     }
                 }
                 break;
-            case SHOOT_POS1_INTAKE_POS:
-                follower.followPath(driveShootPos1IntakePos, true);
-                setPathState(PathState.INTAKE1);
-                telemetry.addLine("Done Shoot1 to intake");
+
+            case DRIVE_SHOOT_POS1_INTAKE_POS:
+                if (!follower.isBusy()) {
+                    follower.follow(driveShootPos1IntakePos, true);
+                }
+
+                if (!follower.isBusy()) {
+                    setPathState(PathState.INTAKE1);
+                }
                 break;
+
             case INTAKE1:
-                //check if follower has done it's path
-                if(!follower.isBusy()){
+                if (pathTimer.seconds() > 0.1) {
                     mechanisms.intake();
-                    if (pathTimer.getElapsedTimeSeconds() >= 0.25) {
-                        setPathState(PathState.INTAKE_POS_SHOOT_POS2);
-                        telemetry.addLine("Done with intake1");
+                    if (pathTimer.seconds() >= 1.0) {
+                        mechanisms.stopIntake();
+                        setPathState(PathState.DRIVE_INTAKE_POS_SHOOT_POS2);
                     }
                 }
-                break;
-            case INTAKE_POS_SHOOT_POS2:
-                follower.followPath(driveIntakePoseShootPos2, true);
-                setPathState(PathState.SHOOT_PRELOAD2);
-                telemetry.addLine("Done Intake to shoot2");
-                break;
-            case SHOOT_PRELOAD2:
-                //check if follower has done it's path
-                if (!follower.isBusy()){
-                    mechanisms.shoot();
-                    if (pathTimer.getElapsedTimeSeconds() >= 0.6) {
-                        mechanisms.resetFeeder();
-                        setPathState(PathState.INTAKE2);
-                        telemetry.addLine("Done Shooting 2");
-                    }
-                }
-                break;
-            case INTAKE2:
-                //check if follower has done it's path
-                if(!follower.isBusy()){
-                    mechanisms.intake();
-                    if (pathTimer.getElapsedTimeSeconds() >= 0.25) {
-                        setPathState(PathState.SHOOT_PRELOAD3);
-                        telemetry.addLine("Done with intake2");
-                    }
-                }
-                break;
-            case SHOOT_PRELOAD3:
-                //check if follower has done it's path
-                if (!follower.isBusy()){
-                    mechanisms.shoot();
-                    if (pathTimer.getElapsedTimeSeconds() >= 0.6) {
-                        mechanisms.resetFeeder();
-                        setPathState(PathState.SHOOT_POS2_PARK_POS);
-                        telemetry.addLine("Done Shooting 3");
-                    }
-                }
-                break;
-            case SHOOT_POS2_PARK_POS:
-                follower.followPath(driveShootPos2ParkPos, true);
-                setPathState(PathState.DONE);
-                telemetry.addLine("Done Shoot2 to park");
-                telemetry.addLine("Done with Auto");
-                break;
-            case DONE:
-                mechanisms.reset();
                 break;
 
+            case DRIVE_INTAKE_POS_SHOOT_POS2:
+                if (!follower.isBusy()) {
+                    follower.follow(driveIntakePoseShootPos2, true);
+                }
+
+                if (!follower.isBusy()) {
+                    setPathState(PathState.SHOOT_PRELOAD2);
+                }
+                break;
+
+            case SHOOT_PRELOAD2:
+                if (pathTimer.seconds() > 0.1) {
+                    mechanisms.shoot();
+                    if (pathTimer.seconds() >= 1.2) {
+                        mechanisms.reset();
+                        setPathState(PathState.INTAKE2);
+                    }
+                }
+                break;
+
+            case INTAKE2:
+                if (pathTimer.seconds() > 0.1) {
+                    mechanisms.intake();
+                    if (pathTimer.seconds() >= 1.0) {
+                        mechanisms.stopIntake();
+                        setPathState(PathState.SHOOT_PRELOAD3);
+                    }
+                }
+                break;
+
+            case SHOOT_PRELOAD3:
+                if (pathTimer.seconds() > 0.1) {
+                    mechanisms.shoot();
+                    if (pathTimer.seconds() >= 1.2) {
+                        mechanisms.reset();
+                        setPathState(PathState.DRIVE_SHOOT_POS2_PARK_POS);
+                    }
+                }
+                break;
+
+            case DRIVE_SHOOT_POS2_PARK_POS:
+                if (!follower.isBusy()) {
+                    follower.follow(driveShootPos2ParkPos, true);
+                }
+
+                if (!follower.isBusy()) {
+                    setPathState(PathState.DONE);
+                }
+                break;
+
+            case DONE:
+                if (!follower.isBusy()) {
+                    mechanisms.reset();
+                }
+                break;
         }
     }
+
     public void setPathState(PathState newState) {
         pathState = newState;
-        pathTimer.resetTimer();
+        pathTimer.reset(); // FIXED: Timer resets via .reset() instead of resetTimer()
     }
+
     @Override
-    public void init(){
-        pathState = PathState.DRIVE_STARTPOS_SHOOT_POS1;
+    public void init() {
         pathTimer = new Timer();
         opModeTimer = new Timer();
-        opModeTimer.resetTimer();
+        opModeTimer.reset();
+
+        // FIXED: This assumes your Constants file has been updated to provide the 3.0 factory setup.
+        // If Constants.java is red, you will need to open it and use: new Follower(hardwareMap)
         follower = Constants.createFollower(hardwareMap);
         mechanisms = new AutoMechanisms(hardwareMap);
+
+        // FIXED: Replaced legacy setStartingPose method with direct assignment or setPose
         follower.setPose(startPose);
-
-
         buildPaths();
+        setPathState(PathState.DRIVE_STARTPOS_SHOOT_POS1);
     }
-    public void start(){
-        opModeTimer.resetTimer();
-        setPathState(pathState);
-    }
+
     @Override
-    public void loop(){
+    public void start() {
+        opModeTimer.reset();
+        pathTimer.reset();
+    }
+
+    @Override
+    public void loop() {
         follower.update();
         statePathUpdate();
 
+        Pose currentPose = follower.pose(); // FIXED: Access current pose with .pose()
         telemetry.addData("Path State", pathState.toString());
-        telemetry.addData("x", follower.getPose().getX());
-        telemetry.addData("y", follower.getPose().getY());
-        telemetry.addData("Heading", follower.getPose().getHeading());
-        telemetry.addData("Path Time", pathTimer.getElapsedTimeSeconds());
+        telemetry.addData("x", currentPose.x);
+        telemetry.addData("y", currentPose.y);
+        telemetry.addData("Heading (Deg)", Math.toDegrees(currentPose.heading));
+        telemetry.update();
     }
 }

@@ -24,12 +24,13 @@ public class Constants {
         //TODO: how are these parameters derived
         //TODO: who in the Control team is in charge of these
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .translationalPIDFCoefficients(new PIDFCoefficients(0.135, 0, 0.011, 0.012))
-            .headingPIDFCoefficients(new PIDFCoefficients(0.76, 0, 0.02, 0.055))
-            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.1,0.0,0.01,0.4,0.05))
+            .translationalPIDFCoefficients(new PIDFCoefficients(0.095, 0, 0.035, 0.012))
+            .headingPIDFCoefficients(new PIDFCoefficients(0.38, 0, 0.055, 0.055))
+            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.06,0.0,0.02,0.4,0.05))
         //TODO: who in the Control/Mech team has verified the following 3 parameters
-            .forwardZeroPowerAcceleration(-60.14)
-            .lateralZeroPowerAcceleration(-61.79)
+            .forwardZeroPowerAcceleration(-25.00)
+            .lateralZeroPowerAcceleration(-25.00)
+            .centripetalScaling(0.001)
             .mass(9);
     //TODO: as these parameters will likely be different from the two robots our team has, it's better to have at least two different children classes for each of them
 
@@ -50,7 +51,7 @@ public class Constants {
     //TODO: who in the Control team is in charge of these
     //TODO: who in the Mech team has verified these, especially the xVelocity and yVelocity
     public static MecanumConstants mecanumConstants = new MecanumConstants()
-            .maxPower(1)
+            .maxPower(.9)
             .xVelocity(65.4)
             .yVelocity(45)
 //            .maxPower(0.5)

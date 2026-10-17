@@ -4,8 +4,9 @@ repositories {
     maven {
         url = "https://mymaven.bylazar.com/releases"
     }
+    // You can remove https://maven.pedropathing.com as Pedro 3 relies on the Dairy Foundation server
     maven {
-        url = "https://maven.pedropathing.com"
+        url = "https://repo.dairy.foundation/releases/"
     }
 }
 
@@ -19,7 +20,8 @@ dependencies {
     implementation 'org.firstinspires.ftc:FtcCommon:11.2.1'
     implementation 'org.firstinspires.ftc:Vision:11.2.1'
     implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'com.pedropathing:ftc:2.1.2'
-    implementation 'com.pedropathing:telemetry:1.0.0'
-}
 
+    // Upgraded Pedro 3 Dependencies
+    implementation 'com.pedropathing:revhub:3.0.1'
+    implementation 'com.pedropathing:tuning:1.0.0'
+}
