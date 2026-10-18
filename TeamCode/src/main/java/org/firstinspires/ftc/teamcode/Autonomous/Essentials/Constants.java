@@ -1,97 +1,69 @@
 package org.firstinspires.ftc.teamcode.Autonomous.Essentials;
 
-import com.pedropathing.control.FilteredPIDFCoefficients;
-import com.pedropathing.control.PIDFCoefficients;
-import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
-import com.qualcomm.robotcore.hardware.HardwareDevice;
-
+import com.pedropathing.algorithm.Foresight;
+import com.pedropathing.algorithm.ForesightConfig;
+import com.pedropathing.controllers.Controller;
 import com.pedropathing.follower.Follower;
-import com.pedropathing.follower.FollowerConstants;
-import com.pedropathing.ftc.FollowerBuilder;
-import com.pedropathing.ftc.drivetrains.MecanumConstants;
-import com.pedropathing.ftc.localization.Encoder;
-import com.pedropathing.ftc.localization.constants.DriveEncoderConstants;
-import com.pedropathing.ftc.localization.constants.PinpointConstants;
-import com.pedropathing.ftc.localization.constants.TwoWheelConstants;
-import com.pedropathing.paths.PathConstraints;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.pedropathing.math.Matrix;
+import com.pedropathing.math.Vector2D;
+import com.pedropathing.revhub.drivetrains.Mecanum;
+import com.pedropathing.revhub.drivetrains.MecanumConfig;
+import com.pedropathing.revhub.localizers.PinpointConfig;
+import com.pedropathing.revhub.localizers.PinpointLocalizer;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Constants {
-        //TODO: how are these parameters derived
-        //TODO: who in the Control team is in charge of these
-    public static FollowerConstants followerConstants = new FollowerConstants()
-            .translationalPIDFCoefficients(new PIDFCoefficients(0.135, 0, 0.011, 0.012))
-            .headingPIDFCoefficients(new PIDFCoefficients(0.76, 0, 0.02, 0.055))
-            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.1,0.0,0.01,0.4,0.05))
-        //TODO: who in the Control/Mech team has verified the following 3 parameters
-            .forwardZeroPowerAcceleration(-60.14)
-            .lateralZeroPowerAcceleration(-61.79)
-            .mass(9);
-    //TODO: as these parameters will likely be different from the two robots our team has, it's better to have at least two different children classes for each of them
+    public static final MecanumConfig drivetrainConfig = new MecanumConfig(c -> {
+        c.frontLeftName.set("leftFront");
+        c.backLeftName.set("leftBack");
+        c.frontRightName.set("rightFront");
+        c.backRightName.set("rightBack");
 
-    //TODO: when default values are not used, it'll be good to describe the ratoinale briefly, e.g, use 0.9 to apply brake sooner to avoid overshooting
-    public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 0.9, 0.9);
+        c.frontLeftDirection.set(DcMotorSimple.Direction.REVERSE);
+        c.backLeftDirection.set(DcMotorSimple.Direction.FORWARD);
+        c.frontRightDirection.set(DcMotorSimple.Direction.FORWARD);
+        c.backRightDirection.set(DcMotorSimple.Direction.REVERSE);
+    });
 
+    public static final PinpointConfig localizerConfig = new PinpointConfig(c -> {
+        c.name.set("pinpoint");
+        c.xPodOffset.set(-155.0);
+        c.yPodOffset.set(-60.0);
+        c.offsetUnits.set(DistanceUnit.MM);
+        c.globalDistanceUnit.set(DistanceUnit.INCH);
+        c.xPodDirection.set(GoBildaPinpointDriver.EncoderDirection.REVERSED);
+        c.yPodDirection.set(GoBildaPinpointDriver.EncoderDirection.REVERSED);
+        c.podType.set(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+    });
 
-    //This is where the magic happens baby!
+    public static final ForesightConfig foresightConfig = new ForesightConfig(c -> {
+        Controller forward = Controller.proportional(0.3);
+        Controller forwardSecondary = Controller.proportional(0.1);
+        Controller strafe = Controller.proportional(0.3);
+        Controller strafeSecondary = Controller.proportional(0.1);
+
+        c.forwardTranslational.set(Controller.piecewise(forwardSecondary).put(2.5, forward));
+        c.strafeTranslational.set(Controller.piecewise(strafeSecondary).put(2.5, strafe));
+        c.coast.set(Controller.proportionalFeedforward(0.010978350889324107));
+        c.brake.set(Controller.proportionalFeedforward(0.008731598255925491));
+        c.headingFeedback.set(Controller.proportional(5.258721785960744));
+        c.headingBrakeCoefficients.set(Vector2D.cartesian(0.05642143125655298, 0.0063829525363003695));
+        c.linearBrakeCoefficients.set(Matrix.diag(0.10605894992901523, 0.08719146175596092));
+        c.quadraticBrakeCoefficients.set(Matrix.diag(0.0014663966976606565, 0.0013837064502458813));
+        c.maxAchievableForwardVelocity.set(65.4);
+        c.maxAchievableStrafeVelocity.set(45.0);
+        c.naturalForwardDeceleration.set(60.14);
+        c.naturalStrafeDeceleration.set(61.79);
+    });
+
     public static Follower createFollower(HardwareMap hardwareMap) {
-        return new FollowerBuilder(followerConstants, hardwareMap)
-                .pinpointLocalizer(localizerConstants)
-                .pathConstraints(pathConstraints)
-                .mecanumDrivetrain(mecanumConstants)
-                .build();
+        return new Follower(
+                new PinpointLocalizer(hardwareMap, localizerConfig),
+                new Mecanum(hardwareMap, drivetrainConfig),
+                new Foresight(foresightConfig));
     }
-
-    //TODO: how are the first 3 parameters derived?
-    //TODO: who in the Control team is in charge of these
-    //TODO: who in the Mech team has verified these, especially the xVelocity and yVelocity
-    public static MecanumConstants mecanumConstants = new MecanumConstants()
-            .maxPower(1)
-            .xVelocity(65.4)
-            .yVelocity(45)
-//            .maxPower(0.5)
-//            .xVelocity(45)
-//            .yVelocity(45)
-            .rightFrontMotorName("rightFront")
-            .leftFrontMotorName("leftFront")
-            .rightRearMotorName("rightBack")
-            .leftRearMotorName("leftBack")
-            .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
-            .leftRearMotorDirection(DcMotorSimple.Direction.FORWARD)
-            .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
-            .rightRearMotorDirection(DcMotorSimple.Direction.REVERSE);
-
-
-    // TODO: what platform does this apply to?
-    // TODO: who confirmed this in Control team?
-    // TODO: who confirmed this in Mech team?
-    //This is just instantiating the normal driving
-    public static PinpointConstants localizerConstants = new PinpointConstants()
-            .forwardPodY(-60)
-            .strafePodX(-155)
-            .distanceUnit(DistanceUnit.MM)
-            .hardwareMapName("pinpoint")
-            .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
-            .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED)
-            .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED);
-
-//    public static TwoWheelConstants localizerConstants = new TwoWheelConstants()
-//            .forwardEncoder_HardwareMapName("rightFront")
-//            .forwardEncoderDirection(Encoder.FORWARD)
-//            .forwardPodY(-6.1)
-//            .strafeEncoder_HardwareMapName("leftFront")
-//            .strafeEncoderDirection(Encoder.REVERSE)
-//            .strafePodX(3.6)
-//            .IMU_HardwareMapName("imu")
-//            .IMU_Orientation(
-//                    new RevHubOrientationOnRobot(
-//                            RevHubOrientationOnRobot.LogoFacingDirection.UP,
-//                            RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
-//                    )
-//            );
-
 }

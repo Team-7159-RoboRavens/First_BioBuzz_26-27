@@ -1,187 +1,26 @@
 package org.firstinspires.ftc.teamcode.Autonomous;
 
-import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.Pose;
-import com.pedropathing.geometry.BezierCurve;
-import com.pedropathing.geometry.BezierLine;
-import com.pedropathing.paths.PathChain;
-import com.pedropathing.util.Timer;
-
-import com.qualcomm.robotcore.eventloop.opmode.*;
-
-import org.firstinspires.ftc.teamcode.Autonomous.Essentials.Constants;
+import com.pedropathing.math.Pose;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 @Autonomous(name = "ThreeCycleAutoBlue")
-public class ThreeCycleAutoBlue extends OpMode{
-    private Follower follower;
-    private AutoMechanisms mechanisms;
-    private Timer pathTimer, opModeTimer;
+public class ThreeCycleAutoBlue extends ThreeCycleAutoBase {
 
-    public enum PathState {
-        // START POSITION_END POSITION
-        // DRIVE > MOVEMENT STATE
-        // SHOOT > ATTEMPT TO SCORE THE ARTIFACT
-        DRIVE_STARTPOS_SHOOT_POS1,
-        SHOOT_POS1_INTAKE_POS,
-        INTAKE_POS_SHOOT_POS2,
-        SHOOT_POS2_PARK_POS,
-        SHOOT_PRELOAD1,
-        SHOOT_PRELOAD2,
-        SHOOT_PRELOAD3,
-        INTAKE1,
-        INTAKE2,
-        DONE
-    }
-
-    PathState pathState;
-    // define path and poses
-    
-    private final Pose startPose = new Pose(133,117, Math.toRadians(180));
+    private final Pose startPose = new Pose(133, 117, Math.toRadians(180));
     private final Pose shootPose1 = new Pose(85.23906485671196, 117, Math.toRadians(270));
     private final Pose intakePose = new Pose(133.08898944193066, 133.62971342383105, Math.toRadians(180));
     private final Pose intakeControl = new Pose(64.13273001508298, 126.42458521870286);
     private final Pose shootPose2 = new Pose(92.19909502262443, 10.49778469079939, Math.toRadians(108));
-    private final Pose shoot2Control = new Pose(115.1184012066365,44.029411764705884);
+    private final Pose shoot2Control = new Pose(115.1184012066365, 44.029411764705884);
     private final Pose parkPose = new Pose(131.5075414781297, 45.2051282051282, Math.toRadians(108));
-    private final Pose parkControl = new Pose(107.08220211161387,58.49924585218703);
+    private final Pose parkControl = new Pose(107.08220211161387, 58.49924585218703);
 
-    private PathChain driveStartPosShootPos1;
-    private PathChain driveShootPos1IntakePos;
-    private PathChain driveIntakePoseShootPos2;
-    private PathChain driveShootPos2ParkPos;
-
-    public void buildPaths(){
-        //put in coordinates for starting pose > ending pose
-        driveStartPosShootPos1 = follower.pathBuilder()
-                .addPath(new BezierLine(startPose, shootPose1))
-                .setLinearHeadingInterpolation(startPose.getHeading(), shootPose1.getHeading())
-                .build();
-
-        driveShootPos1IntakePos = follower.pathBuilder()
-                .addPath(new BezierCurve(shootPose1, intakeControl, intakePose))
-                .setLinearHeadingInterpolation(shootPose1.getHeading(), intakePose.getHeading())
-                .build();
-        driveIntakePoseShootPos2 = follower.pathBuilder()
-                .addPath(new BezierCurve(intakePose, shoot2Control, shootPose2))
-                .setLinearHeadingInterpolation(intakePose.getHeading(), shootPose2.getHeading())
-                .build();
-        driveShootPos2ParkPos = follower.pathBuilder()
-                .addPath(new BezierCurve(shootPose2, parkControl, parkPose))
-                .setLinearHeadingInterpolation(shootPose2.getHeading(), parkPose.getHeading())
-                .build();
-
-    }
-
-    public void statePathUpdate() {
-        switch(pathState){
-            case DRIVE_STARTPOS_SHOOT_POS1:
-                follower.followPath(driveStartPosShootPos1, true);
-                setPathState(PathState.SHOOT_PRELOAD1);
-                telemetry.addLine("Done Start to shoot1");
-                break;
-            case SHOOT_PRELOAD1:
-                //check if follower has done it's path
-                if (!follower.isBusy()){
-                    mechanisms.shoot();
-                    if (pathTimer.getElapsedTimeSeconds() >= 0.6) {
-                        mechanisms.resetFeeder();
-                        setPathState(PathState.SHOOT_POS1_INTAKE_POS);
-                        telemetry.addLine("Done Shooting 1");
-                    }
-                }
-                break;
-            case SHOOT_POS1_INTAKE_POS:
-                follower.followPath(driveShootPos1IntakePos, true);
-                setPathState(PathState.INTAKE1);
-                telemetry.addLine("Done Shoot1 to intake");
-                break;
-            case INTAKE1:
-                //check if follower has done it's path
-                if(!follower.isBusy()){
-                    mechanisms.intake();
-                    if (pathTimer.getElapsedTimeSeconds() >= 0.25) {
-                        setPathState(PathState.INTAKE_POS_SHOOT_POS2);
-                        telemetry.addLine("Done with intake1");
-                    }
-                }
-                break;
-            case INTAKE_POS_SHOOT_POS2:
-                follower.followPath(driveIntakePoseShootPos2, true);
-                setPathState(PathState.SHOOT_PRELOAD2);
-                telemetry.addLine("Done Intake to shoot2");
-                break;
-            case SHOOT_PRELOAD2:
-                //check if follower has done it's path
-                if (!follower.isBusy()){
-                    mechanisms.shoot();
-                    if (pathTimer.getElapsedTimeSeconds() >= 0.6) {
-                        mechanisms.resetFeeder();
-                        setPathState(PathState.INTAKE2);
-                        telemetry.addLine("Done Shooting 2");
-                    }
-                }
-                break;
-            case INTAKE2:
-                //check if follower has done it's path
-                if(!follower.isBusy()){
-                    mechanisms.intake();
-                    if (pathTimer.getElapsedTimeSeconds() >= 0.25) {
-                        setPathState(PathState.SHOOT_PRELOAD3);
-                        telemetry.addLine("Done with intake2");
-                    }
-                }
-                break;
-            case SHOOT_PRELOAD3:
-                //check if follower has done it's path
-                if (!follower.isBusy()){
-                    mechanisms.shoot();
-                    if (pathTimer.getElapsedTimeSeconds() >= 0.6) {
-                        mechanisms.resetFeeder();
-                        setPathState(PathState.SHOOT_POS2_PARK_POS);
-                        telemetry.addLine("Done Shooting 3");
-                    }
-                }
-                break;
-            case SHOOT_POS2_PARK_POS:
-                follower.followPath(driveShootPos2ParkPos, true);
-                setPathState(PathState.DONE);
-                telemetry.addLine("Done Shoot2 to park");
-                telemetry.addLine("Done with Auto");
-                break;
-            case DONE:
-                mechanisms.reset();
-                break;
-
-        }
-    }
-    public void setPathState(PathState newState) {
-        pathState = newState;
-        pathTimer.resetTimer();
-    }
-    @Override
-    public void init(){
-        pathState = PathState.DRIVE_STARTPOS_SHOOT_POS1;
-        pathTimer = new Timer();
-        opModeTimer = new Timer();
-        opModeTimer.resetTimer();
-        follower = Constants.createFollower(hardwareMap);
-        mechanisms = new AutoMechanisms(hardwareMap);
-        follower.setPose(startPose);
-        buildPaths();
-    }
-    public void start(){
-        opModeTimer.resetTimer();
-        setPathState(pathState);
-    }
-    @Override
-    public void loop(){
-        follower.update();
-        statePathUpdate();
-
-        telemetry.addData("Path State", pathState.toString());
-        telemetry.addData("x", follower.getPose().getX());
-        telemetry.addData("y", follower.getPose().getY());
-        telemetry.addData("Heading", follower.getPose().getHeading());
-        telemetry.addData("Path Time", pathTimer.getElapsedTimeSeconds());
-    }
+    @Override protected Pose getStartPose() { return startPose; }
+    @Override protected Pose getShootPose1() { return shootPose1; }
+    @Override protected Pose getIntakePose() { return intakePose; }
+    @Override protected Pose getIntakeControl() { return intakeControl; }
+    @Override protected Pose getShootPose2() { return shootPose2; }
+    @Override protected Pose getShoot2Control() { return shoot2Control; }
+    @Override protected Pose getParkPose() { return parkPose; }
+    @Override protected Pose getParkControl() { return parkControl; }
 }

@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.TeleOp;
 
-import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.LLStatus;
@@ -88,12 +88,12 @@ public class limelightTest extends OpMode {
                 telemetry.addData("Limelight x: ", botPos[0]);
                 telemetry.addData("Limelight y: ", botPos[1]);
                 telemetry.addData("Limelight orientation: ", botPos[2]);
-                telemetry.addData("Limelight PedrX: ", pedroPos.getX());
-                telemetry.addData("Limelight PedroY: ", pedroPos.getY());
-                telemetry.addData("Limelight PedroOrientation: ", pedroPos.getHeading());
+                telemetry.addData("Limelight PedrX: ", pedroPos.x());
+                telemetry.addData("Limelight PedroY: ", pedroPos.y());
+                telemetry.addData("Limelight PedroOrientation: ", pedroPos.heading());
                 Pose pedroPose = calculatePosition.toPedroPose(botPos);
                 telemetry.addData("Pedro pose", "x: %.1f in, y: %.1f in, heading: %.1f deg",
-                        pedroPose.getX(), pedroPose.getY(), Math.toDegrees(pedroPose.getHeading()));
+                        pedroPose.x(), pedroPose.y(), Math.toDegrees(pedroPose.heading()));
             }
             if (canSeeFriendly) {
                 int isUp = llB.friendlyUp();
