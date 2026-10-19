@@ -1,30 +1,26 @@
 package org.firstinspires.ftc.teamcode.Autonomous;
 
-import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-@Autonomous(name = "ThreeCycleAutoRed", group = "Autonomous")
-public class ThreeCycleAutoRed extends ThreeCycleBase { // Extends the base class
+@Autonomous(name = "ThreeCycleAutoRed")
+public class ThreeCycleAutoRed extends ThreeCycleAutoBase {
 
-    @Override
-    public void init() {
-        // 1. Assign your exact Red specific coordinate positions
-        startPose = new Pose(9, 25, Math.toRadians(0));
-        shootPose1 = new Pose(59, 25, Math.toRadians(90));
-        intakePose = new Pose(9, 8.3499, Math.toRadians(0));
-        intakeControl = new Pose(98.4939, 13.5233);
-        shootPose2 = new Pose(49.0874, 131.7225, Math.toRadians(280));
-        shoot2Control = new Pose(45.0, 96.9758);
-        parkPose = new Pose(9.8559, 112.2202, Math.toRadians(280));
-        parkControl = new Pose(45.8536, 110.2888);
+    private final Pose startPose = new Pose(9, 25, Math.toRadians(0));
+    private final Pose shootPose1 = new Pose(59, 25, Math.toRadians(90));
+    private final Pose intakePose = new Pose(8.876319758672755, 8.349924585218675, Math.toRadians(0));
+    private final Pose intakeControl = new Pose(98.49396681749627, 13.523378582202092);
+    private final Pose shootPose2 = new Pose(49.08748114630466, 131.72252073906486, Math.toRadians(280));
+    private final Pose shoot2Control = new Pose(31.91251885369533, 96.97586726998493);
+    private final Pose parkPose = new Pose(9.855957767722485, 112.22021116138762, Math.toRadians(280));
+    private final Pose parkControl = new Pose(45.853695324283564, 110.28883861236804);
 
-        // 2. Call the base class initialization to map hardware maps and systems
-        super.init();
-
-        // 3. Initialize follower coordinates and compile the chains
-        follower.setStartingPose(startPose);
-        follower.setPose(startPose);
-        buildPaths();
-        setPathState(PathState.DRIVE_STARTPOS_SHOOT_POS1);
-    }
+    @Override protected Pose getStartPose() { return startPose; }
+    @Override protected Pose getShootPose1() { return shootPose1; }
+    @Override protected Pose getIntakePose() { return intakePose; }
+    @Override protected Pose getIntakeControl() { return intakeControl; }
+    @Override protected Pose getShootPose2() { return shootPose2; }
+    @Override protected Pose getShoot2Control() { return shoot2Control; }
+    @Override protected Pose getParkPose() { return parkPose; }
+    @Override protected Pose getParkControl() { return parkControl; }
 }

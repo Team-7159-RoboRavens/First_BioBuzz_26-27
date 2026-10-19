@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.Limelight;
 
 import java.util.List;
-import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.Telemetry;

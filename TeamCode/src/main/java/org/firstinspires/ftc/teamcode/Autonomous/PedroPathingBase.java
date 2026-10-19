@@ -1,14 +1,14 @@
 package org.firstinspires.ftc.teamcode.Autonomous;
 
 import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.BezierLine;
-import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.PathChain;
+import com.pedropathing.math.Pose;
+import com.pedropathing.paths.Path;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.Autonomous.Essentials.Constants;
-import org.firstinspires.ftc.teamcode.Robot;
+
+import static com.pedropathing.api.Paths.line;
 
 @Autonomous(name="PedroPathingBase")
 public class PedroPathingBase extends OpMode {
@@ -20,18 +20,14 @@ public class PedroPathingBase extends OpMode {
     }
 
     PathState pathState;
-    private Robot robot;
     private final Pose startPose = new Pose(0, 0, 0);
 
     private final Pose endPose = new Pose(20, 0, Math.PI);
 
-    private PathChain chain1;
+    private Path chain1;
 
     public void buildPaths() {
-        chain1 = follower.pathBuilder()
-                .addPath(new BezierLine(startPose, endPose))
-                .setLinearHeadingInterpolation(startPose.getHeading(), endPose.getHeading())
-                .build();
+        chain1 = line(startPose, endPose).linear(startPose, endPose);
         telemetry.addLine("path built");
     }
 
@@ -39,12 +35,13 @@ public class PedroPathingBase extends OpMode {
         switch (pathState) {
             case START_POS:
                 telemetry.addLine("start pos");
-                follower.followPath(chain1, true);
+                follower.follow(chain1);
                 pathState = PathState.END_POS;
                 break;
             case END_POS:
                 telemetry.addLine("end pos");
                 if (!follower.isBusy()) {
+                    follower.stop();
                     //TODO: what if a robot got stuck somewhere and never gets here?
                     telemetry.addLine("finished chain1");
                 }
@@ -57,7 +54,6 @@ public class PedroPathingBase extends OpMode {
     public void init() {
         pathState = PathState.START_POS;
         follower = Constants.createFollower(hardwareMap);
-        robot = new Robot(hardwareMap, 0);//might be wrong id
         buildPaths();
         follower.setPose(startPose);
     }
@@ -67,8 +63,8 @@ public class PedroPathingBase extends OpMode {
         follower.update();
         updateStates();
 
-        telemetry.addData("Pinpoint Angle", robot.pinpointAngle());
-        telemetry.addData("Pinpoint X", robot.getPinpointX());
-        telemetry.addData("Pinpoint Y", robot.getPinpointY());
+        telemetry.addData("x", follower.pose().x());
+        telemetry.addData("y", follower.pose().y());
+        telemetry.addData("heading", follower.pose().heading());
     }
 }
