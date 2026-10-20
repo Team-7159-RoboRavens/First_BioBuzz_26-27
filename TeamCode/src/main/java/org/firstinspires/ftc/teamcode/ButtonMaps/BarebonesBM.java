@@ -10,12 +10,12 @@ import org.firstinspires.ftc.teamcode.Robot;
 // Basic button map: reads gamepad1 input and converts it into motor powers.
 public class BarebonesBM {
     // Deadzone thresholds below which stick input is ignored.
-    private final double LEFT_STICK_TRIGGER = 0.1;
-    private final double RIGHT_STICK_TRIGGER = 0.1;
-    private OpMode opmode;
-    private BarebonesRobot robot;
-    private Gamepad g1;
-    private Gamepad g2;
+    static final double LEFT_STICK_TRIGGER = 0.1;
+    static final double RIGHT_STICK_TRIGGER = 0.1;
+    OpMode opmode;
+    BarebonesRobot robot;
+    Gamepad g1;
+    Gamepad g2;
     /**
      * @param op running op mode, used to read gamepad state
      * @param r robot instance this button map drives

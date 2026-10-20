@@ -20,9 +20,9 @@ public class PedroPathingBase extends OpMode {
     }
 
     PathState pathState;
-    private final Pose startPose = new Pose(0, 0, 0);
+    private final Pose startPose = new Pose(0, 0, Math.PI/4);
 
-    private final Pose endPose = new Pose(20, 0, Math.PI);
+    private final Pose endPose = new Pose(20, 0, Math.PI/4);
 
     private Path chain1;
 
