@@ -22,7 +22,7 @@ public class PedroTuningHeading extends OpMode {
     PathState pathState;
     private final Pose startPose = new Pose(0, 0, 0);
 
-    private final Pose endPose = new Pose(1, 0, 2);
+    private final Pose endPose = new Pose(1, 0, 3);
 
     private Path chain1;
 

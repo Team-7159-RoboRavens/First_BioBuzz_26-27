@@ -249,7 +249,7 @@ public class Robot {
             flowerServo.setPosition(0.9);
         }
         else if (val == 1){
-            flowerServo.setPosition(0.3);
+            flowerServo.setPosition(0.2);
         }
     }
 }
