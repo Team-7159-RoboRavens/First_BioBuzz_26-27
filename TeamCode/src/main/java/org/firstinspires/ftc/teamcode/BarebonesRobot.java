@@ -14,7 +14,7 @@ public class BarebonesRobot {
     DcMotor rightFront;
     DcMotor leftBack;
     DcMotor rightBack;
-
+    private GoBildaPinpointDriver pinpoint;
 
 
     /**
@@ -26,6 +26,13 @@ public class BarebonesRobot {
         rightFront = hmap.get(DcMotor.class, "rightFront");
         leftBack = hmap.get(DcMotor.class, "leftBack");
         rightBack = hmap.get(DcMotor.class, "rightBack");
+        pinpoint = hmap.get(GoBildaPinpointDriver.class, "pinpoint");
+
+        pinpoint.setOffsets(-155, -60, DistanceUnit.MM);
+        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED,
+            GoBildaPinpointDriver.EncoderDirection.REVERSED);
+        pinpoint.resetPosAndIMU();
 
         // Hold position when no power is applied instead of coasting.
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -58,5 +65,13 @@ public class BarebonesRobot {
         rightFront.setPower(mp.rf);
         leftBack.setPower(mp.lb);
         rightBack.setPower(mp.rb);
+    }
+
+    public void pinpointUpdate() {
+        pinpoint.update();
+    }
+
+    public double pinpointAngle() {
+        return pinpoint.getHeading(AngleUnit.RADIANS);
     }
 }
