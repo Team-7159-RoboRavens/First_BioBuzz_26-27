@@ -67,6 +67,10 @@ public class BarebonesRobot {
         rightBack.setPower(mp.rb);
     }
 
+
+    public void resetPinpoint(){
+        pinpoint.resetPosAndIMU();
+    }
     public void pinpointUpdate() {
         pinpoint.update();
     }

@@ -39,6 +39,9 @@ public class BarebonesBM {
      */
     public MotorPowers getPowers() {
         robot.pinpointUpdate();
+        if (g1.backWasPressed()){
+            robot.resetPinpoint();
+        }
         double forward = 0;
         double right = 0;
         double rotateClockwise = 0;

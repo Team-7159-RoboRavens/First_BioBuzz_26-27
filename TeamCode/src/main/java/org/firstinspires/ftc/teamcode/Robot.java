@@ -244,6 +244,9 @@ public class Robot {
         inputHandler.setLockHeading(headingHold);
     }
 
+    public void resetPinpoint(){
+        pinpoint.resetPosAndIMU();
+    }
     public void setFlowerState(double val) {
         if (val == 2){
             flowerServo.setPosition(0.8);
