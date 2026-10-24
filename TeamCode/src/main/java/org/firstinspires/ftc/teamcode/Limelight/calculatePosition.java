@@ -186,6 +186,13 @@ public abstract class calculatePosition {
         double limelightY = tagY + cameraInTag.y * downY + cameraInTag.z * outY;
         double limelightZ = tagZ + cameraInTag.y * downZ + cameraInTag.z * outZ;
         telemetry.addData("tag " + id + " limelight height: ", limelightZ);
+        // The lens height is fixed, so a solved height far from it means the tag's rotation solve flipped or the HIVE
+        // is not resting at its 30 degree tilt. getTagFieldZ() can't catch this because it only uses the tag's position.
+        // This is the lens position, so it does not depend on LIMELIGHT_PITCH.
+        if (Math.abs(limelightZ - LIMELIGHT_HEIGHT) > ACCEPTABLE_CAMERA_HEIGHT_OFFSET) {
+            telemetry.addData("tag " + id + " rejected, limelight height off by: ", limelightZ - LIMELIGHT_HEIGHT);
+            return null;
+        }
 
         // Horizontal bearing to the tag as seen by the camera (positive = tag is to the right of center).
         // The camera's down/forward axes are tilted by the mount pitch, so level them before taking the angle.
@@ -278,6 +285,11 @@ public abstract class calculatePosition {
 
     //in meters how far above or below limeight can think the target is from a stable state
     final double ACCEPTABLE_OFFSET = 0.15;
+
+    //in meters how far the limelight height solved from a tag can be from LIMELIGHT_HEIGHT before the tag is ignored.
+    //A good solve can be off by up to ACCEPTABLE_OFFSET (the same error seen from the other side), so don't go below it
+    //without checking the "limelight height" telemetry first
+    final double ACCEPTABLE_CAMERA_HEIGHT_OFFSET = 0.15;
 
     //returns null if the tag is moving aka not in a stable state
     Double getTagFieldZ(LLResultTypes.FiducialResult limelightResults){
