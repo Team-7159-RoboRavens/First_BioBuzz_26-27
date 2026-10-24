@@ -3,37 +3,49 @@ package org.firstinspires.ftc.teamcode.ButtonMaps;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
+//import org.firstinspires.ftc.teamcode.Helpers.HeadingHelper;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
 
-// Basic button map: reads gamepad1 input and converts it into motor powers.
-public class BasicBM {
+// Button map used with the GoBilda Pinpoint odometry computer.
+// Input math is split into static helpers (vs. BasicBM) so they can be unit tested directly.
+public class PinpointBM {
     // Deadzone thresholds below which stick input is ignored.
-    private static final double LEFT_STICK_TRIGGER = 0.1;
-    private static final double RIGHT_STICK_TRIGGER = 0.1;
+    public static final double LEFT_STICK_TRIGGER = 0.1;
+    public static final double RIGHT_STICK_TRIGGER = 0.1;
     private OpMode opmode;
     private Robot robot;
-    public Gamepad g1;
-    public Gamepad g2;
+    private Gamepad g1;
+    private Gamepad g2;
+//    private HeadingHelper h;
     /**
      * @param op running op mode, used to read gamepad state
      * @param r robot instance this button map drives
      */
-    public BasicBM(OpMode op, Robot r) {
+    public PinpointBM(OpMode op, Robot r) {
         opmode = op;
         robot = r;
         g1 = opmode.gamepad1;
         g2 = opmode.gamepad2;
+//        h = new HeadingHelper(r);
     }
     /**
-     * Rescales gamepad1's right trigger from [0.1, 1] to [0, 1] so power ramps up smoothly past the deadzone.
-     *
-     * @return intake motor power in [0, 1]
+     * @return intake motor power for gamepad1's current right trigger value, in [0, 1]
      */
     public double getIntakePower(){
+        return getIntakePower(g1.right_trigger);
+    }
+
+    /**
+     * Rescales the trigger from [0.1, 1] to [0, 1] so power ramps up smoothly past the deadzone.
+     *
+     * @param rightTrigger raw right trigger value, [0, 1]
+     * @return intake motor power in [0, 1]
+     */
+    public static double getIntakePower(double rightTrigger){
         double power = 0;
-        if (g1.right_trigger> 0.1){
-            power = g1.right_trigger;
+        if (rightTrigger > 0.1){
+            power = rightTrigger;
             power -= 0.1;
             power /= 0.9;
         }
@@ -99,18 +111,10 @@ public class BasicBM {
      */
     public MotorPowers getPowers() {
         // Refresh odometry each loop before using any pinpoint-derived data.
-        if (g1.aWasPressed()){
-            robot.inputHandlingEnabled = true;
-        }
-        if (g1.bWasPressed()){
-            robot.inputHandlingEnabled = false;
-        }
-//        double forward = getDpadForward(g1.dpad_up, g1.dpad_down);
-//        double right = getDpadRight(g1.dpad_left, g1.dpad_right);
-//        double rotateClockwise = getBumperRotateClockwise(g1.left_bumper, g1.right_bumper);
-        double forward = 0;
-        double right = 0;
-        double rotateClockwise = 0;
+        robot.pinpointUpdate();
+        double forward = getDpadForward(g1.dpad_up, g1.dpad_down);
+        double right = getDpadRight(g1.dpad_left, g1.dpad_right);
+        double rotateClockwise = getBumperRotateClockwise(g1.left_bumper, g1.right_bumper);
 
         double[] stickMovement = getMovement(g1.left_stick_x, g1.left_stick_y);
         forward += stickMovement[0];
@@ -118,7 +122,7 @@ public class BasicBM {
 
         rotateClockwise += getRotation(g1.right_stick_x);
 
-        return Mechanumdrive.setMotorPowers(forward, right, rotateClockwise);
+        return Mechanumdrive.fieldOrientedDrive(forward, right, rotateClockwise, Math.PI/2+ robot.pinpointAngle());
 
     }
 
@@ -154,7 +158,7 @@ public class BasicBM {
      * @return clockwise rotation power, [-1, 1]
      */
     public static double getRotation(double rightx){
-        if (rightx > RIGHT_STICK_TRIGGER || rightx < - RIGHT_STICK_TRIGGER){
+        if (rightx > RIGHT_STICK_TRIGGER || rightx < -RIGHT_STICK_TRIGGER){
             double distance = Math.abs(rightx) - RIGHT_STICK_TRIGGER;
             distance /= 0.9;
             distance = Math.pow(distance, 2);
@@ -166,9 +170,4 @@ public class BasicBM {
 
         return 0;
     }
-
-    public Robot getRobot(){
-        return robot;
-    }
 }
-
