@@ -249,10 +249,10 @@ public class Robot {
     }
     public void setFlowerState(double val) {
         if (val == 2){
-            flowerServo.setPosition(0.8);
+            flowerServo.setPosition(0.8);//up
         }
         else if (val == 1){
-            flowerServo.setPosition(0.35);
+            flowerServo.setPosition(0.25);//down
         }
     }
 }
