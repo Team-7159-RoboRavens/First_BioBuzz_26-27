@@ -16,8 +16,11 @@ public class WorkingBotButtonMap extends BasicBM{
     // second is intake the third is feed motor and the 4th is the thing for getting stuff out of flowers
     public double[] getState(){
         double[] vals = new double[4];
+        if (g2.dpadUpWasPressed()){
+            RPM += 1;
+        }
         if (g2.dpadRightWasPressed()){
-            RPM += 40;
+            RPM += 10;
         }
         if (g2.dpadLeftWasPressed()){
             RPM -= 40;
