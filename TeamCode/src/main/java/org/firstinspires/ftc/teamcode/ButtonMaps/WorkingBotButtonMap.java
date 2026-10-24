@@ -17,7 +17,10 @@ public class WorkingBotButtonMap extends BasicBM{
     public double[] getState(){
         double[] vals = new double[4];
         if (g2.dpadRightWasPressed()){
-            RPM += 40;
+            RPM += 1;
+        }
+        if (g2.dpadUpWasPressed()){
+            RPM += 10;
         }
         if (g2.dpadLeftWasPressed()){
             RPM -= 40;
