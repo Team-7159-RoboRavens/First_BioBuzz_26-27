@@ -15,8 +15,8 @@ public class PinpointBM {
     public static final double RIGHT_STICK_TRIGGER = 0.1;
     private OpMode opmode;
     private Robot robot;
-    private Gamepad g1;
-    private Gamepad g2;
+    public Gamepad g1;
+    public Gamepad g2;
     private HeadingHelper h;
     /**
      * @param op running op mode, used to read gamepad state
@@ -113,9 +113,12 @@ public class PinpointBM {
         // Refresh odometry each loop before using any pinpoint-derived data.
         robot.pinpointUpdate();
         h.update();
-        double forward = getDpadForward(g1.dpad_up, g1.dpad_down);
-        double right = getDpadRight(g1.dpad_left, g1.dpad_right);
-        double rotateClockwise = getBumperRotateClockwise(g1.left_bumper, g1.right_bumper);
+//        double forward = getDpadForward(g1.dpad_up, g1.dpad_down);
+//        double right = getDpadRight(g1.dpad_left, g1.dpad_right);
+//        double rotateClockwise = getBumperRotateClockwise(g1.left_bumper, g1.right_bumper);
+        double forward = 0;
+        double right = 0;
+        double rotateClockwise = 0;
 
         double[] stickMovement = getMovement(g1.left_stick_x, g1.left_stick_y);
         forward += stickMovement[0];

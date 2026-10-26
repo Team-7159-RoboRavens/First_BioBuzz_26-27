@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.Robot;
 
-public class WorkingBotButtonMap extends BasicBM{
+public class WorkingBotButtonMap extends PinpointBM{
     private double RPM = 0;
 
     public WorkingBotButtonMap(OpMode op, Robot r) {
