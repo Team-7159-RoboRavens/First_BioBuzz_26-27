@@ -5,7 +5,6 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.teamcode.BarebonesRobot;
 import org.firstinspires.ftc.teamcode.MotorPowers;
-import org.firstinspires.ftc.teamcode.Robot;
 
 // Basic button map: reads gamepad1 input and converts it into motor powers.
 public class BarebonesBM {
@@ -39,6 +38,7 @@ public class BarebonesBM {
      * @return per-wheel motor powers for the current gamepad1 input
      */
     public MotorPowers getPowers() {
+        robot.pinpointUpdate();
         double forward = 0;
         double right = 0;
         double rotateClockwise = 0;
@@ -85,6 +85,7 @@ public class BarebonesBM {
             rotateClockwise += distance;
         }
 
-        return Mechanumdrive.setMotorPowers(forward, right, rotateClockwise);
+        return Mechanumdrive.fieldOrientedDrive(forward, right, rotateClockwise,
+            Math.PI / 2 + robot.pinpointAngle());
     }
 }
