@@ -33,7 +33,7 @@ public class PinpointBM {
      * @return intake motor power for gamepad1's current right trigger value, in [0, 1]
      */
     public double getIntakePower(){
-        return getIntakePower(g1.right_trigger);
+        return getIntakePower(g2.right_trigger, g2.left_trigger);
     }
 
     /**
@@ -42,14 +42,20 @@ public class PinpointBM {
      * @param rightTrigger raw right trigger value, [0, 1]
      * @return intake motor power in [0, 1]
      */
-    public static double getIntakePower(double rightTrigger){
-        double power = 0;
+    public static double getIntakePower(double rightTrigger, double leftTrigger){
+        double leftPower = 0;
+        double rightPower = 0;
         if (rightTrigger > 0.1){
-            power = rightTrigger;
-            power -= 0.1;
-            power /= 0.9;
+            rightPower = rightTrigger;
+            rightPower -= 0.1;
+            rightPower /= 0.9;
         }
-        return power;
+        if (leftTrigger > 0.1){
+            leftPower = -leftTrigger;
+            leftPower += 0.1;
+            leftPower /= 0.9;
+        }
+        return leftPower + rightPower;
     }
 
     /**

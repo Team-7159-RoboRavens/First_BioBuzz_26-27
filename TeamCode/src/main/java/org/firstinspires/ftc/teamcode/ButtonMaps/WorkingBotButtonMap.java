@@ -25,19 +25,17 @@ public class WorkingBotButtonMap extends PinpointBM{
         if (g2.dpadLeftWasPressed()){
             RPM -= 40;
             if (RPM < 0){
-                RPM = 0;
+                double feedPower = -0.7;
+                vals[2] = feedPower;
             }
         }
-        vals[0] = RPM;
-        vals[1] = getIntakePower();
-        if (g2.right_bumper){
+        else if (g2.right_bumper){
             double feedPower = 0.7;
             vals[2] = feedPower;
         }
-        if (g1.right_bumper){
-            vals[3] = 2;
-        }
-        else if (g1.left_bumper){
+        vals[0] = RPM;
+        vals[1] = getIntakePower();
+        if (g2.left_bumper){
             vals[3] = 1;
         }
         return vals;

@@ -37,7 +37,7 @@ public class InputHandling {
     private final int LOCK_SAMPLES = 5;
  
     // Encoder CPR at the output shaft
-    private final double TICKS = 383.6;
+    private final double TICKS = 1075.2;
  
     private final int SECONDS_PER_MINUTE = 60;
  

@@ -50,7 +50,7 @@ public class TeleOpWorkingBot extends OpMode{
         lastFrameTime.reset();
         frameCount ++;
         TeleOpData.frameTime = averageFrameTime;
-        telemetry.addData("Motors", "shoot motor target(%.2f), actual(%.2f)",vals[0], robot.shootMotor.getVelocity() * 60 /386.3);
+        telemetry.addData("Motors", "shoot motor target(%.2f), actual(%.2f)",vals[0], robot.shootMotor.getVelocity() * 60 /1075.2 );
         telemetry.addData("Motors", "left front(%.2f), right front(%.2f)", mp.lf, mp.rf);
         telemetry.addData("Motors", "left back(%.2f), right back(%.2f)", mp.lb, mp.rb);
         telemetry.addData("Motors", "enabled(%b)", robot.inputHandlingEnabled);
