@@ -130,10 +130,19 @@ public class PinpointBM {
         forward += stickMovement[0];
         right += stickMovement[1];
 
-        rotateClockwise += getRotation(g1.right_stick_x);
+        rotateClockwise += getRotateClockwise();
 
         return Mechanumdrive.fieldOrientedDrive(forward, right, rotateClockwise, Math.PI/2+h.heading);
 
+    }
+
+    /**
+     * Called from getPowers() after odometry is refreshed, so button maps can replace the rotation input.
+     *
+     * @return clockwise rotation power, [-1, 1]
+     */
+    protected double getRotateClockwise(){
+        return getRotation(g1.right_stick_x);
     }
 
     /**

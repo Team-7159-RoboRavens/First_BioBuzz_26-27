@@ -107,7 +107,7 @@ public class Robot {
             intakeMotor1 = hmap.get(DcMotor.class, "intakeMotor");
             intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         }
-        if (robotId == 0 || robotId == 3 || robotId == 4) {
+        if (robotId == 0 || robotId == 3 || robotId == 4 || robotId == 10) {
             pinpoint = hmap.get(GoBildaPinpointDriver.class, "pinpoint");
             pinpoint.setOffsets(startPinpointX, startPinpointY, DistanceUnit.MM);
             pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
