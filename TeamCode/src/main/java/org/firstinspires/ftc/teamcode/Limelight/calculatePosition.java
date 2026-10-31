@@ -13,14 +13,25 @@ public abstract class calculatePosition {
 
     // Position of the limelight lens relative to the center of the robot, in meters.
     // +X is toward the front of the robot, +Y is toward the left of the robot.
-    final double LIMELIGHT_OFFSET_X = 0;
-    final double LIMELIGHT_OFFSET_Y = 0.1;
+    //old bot position
+//    final double LIMELIGHT_OFFSET_X = 0.1;
+//    final double LIMELIGHT_OFFSET_Y = 0;
+//    // Height of the limelight lens above the floor, in meters
+//    final double LIMELIGHT_HEIGHT = 0.125;
+//
+//    final double LIMELIGHT_PITCH = 45;
+//    final double LIMELIGHT_YAW = 0;
+
+    //working bot position
+    final double LIMELIGHT_OFFSET_X = 0.18175;
+    final double LIMELIGHT_OFFSET_Y = 0.07039;
     // Height of the limelight lens above the floor, in meters
-    final double LIMELIGHT_HEIGHT = 0.125;
+    final double LIMELIGHT_HEIGHT = 0.23254;
 
     final double LIMELIGHT_PITCH = 45;
     final double LIMELIGHT_YAW = 0;
-
+    final double shooter_offset_y = -0.07646;
+    final double shooter_offset_x = 0.21139;
     final boolean TARGET_SPACE_X_IS_VIEWER_RIGHT = true;
 
     public Limelight limelight;

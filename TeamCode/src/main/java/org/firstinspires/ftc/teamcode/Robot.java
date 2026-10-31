@@ -251,7 +251,7 @@ public class Robot {
         }
         //up
         else {
-            flowerServo.setPosition(0.3);
+            flowerServo.setPosition(0.35);
         }
     }
 }
