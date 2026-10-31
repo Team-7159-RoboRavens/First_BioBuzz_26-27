@@ -134,20 +134,26 @@ public class LimelightBlue extends calculatePosition{
             return null;
         }
         double x, y, angle;
+        double targetOffsetY = 0.3370036948997776 - 0.075;
         if (botPose[1] < 0){
             y = botPose[1] * -1;
         }
         else{
             y = botPose[1];
         }
-        y -= 0.3370036948997776 - 0.075;
+        y -= targetOffsetY;
         if (botPose[1] > 0){
-            x = 12.75 - botPose[0];
+            x = HIVE_CENTER_X - botPose[0];
         }
         else {
-            x = botPose[0] - 12.75;
+            x = botPose[0] - HIVE_CENTER_X;
         }
+        //the target is the CELL on the same side of the center line as the robot
+        double targetY = botPose[1] > 0 ? targetOffsetY : -targetOffsetY;
+        double fieldAngleToTarget = Math.atan2(targetY - botPose[1], HIVE_CENTER_X - botPose[0]);
+        //radians the robot has to turn to face the target, positive is counterclockwise
+        angle = Math.IEEEremainder(fieldAngleToTarget - botPose[2], 2 * Math.PI);
 
-        return new double[] {x, y, botPose[2]};
+        return new double[] {x, y, angle};
     }
 }
