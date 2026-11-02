@@ -48,12 +48,12 @@ public class PinpointBM {
         if (rightTrigger > 0.1){
             rightPower = rightTrigger;
             rightPower -= 0.1;
-            rightPower /= 0.9;
+            rightPower /= 1.8;
         }
         if (leftTrigger > 0.1){
             leftPower = -leftTrigger;
             leftPower += 0.1;
-            leftPower /= 0.9;
+            leftPower /= 1.8;
         }
         return leftPower + rightPower;
     }

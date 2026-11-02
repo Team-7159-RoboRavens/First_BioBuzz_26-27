@@ -170,14 +170,18 @@ public class WorkingBotButtonMap extends PinpointBM{
     // second is intake the third is feed motor and the 4th is the thing for getting stuff out of flowers
     public double[] getState(){
         double[] vals = new double[4];
+        vals[1] = getIntakePower();
         if (g2.dpadUpWasPressed()){
-            RPM += 1;
+            RPM = 200;
+        }
+        if (g2.dpadDownWasPressed()){
+            RPM = 0;
         }
         if (g2.dpadRightWasPressed()){
-            RPM += 10;
+            RPM += 5;
         }
         if (g2.dpadLeftWasPressed()){
-            RPM -= 40;
+            RPM -= 5;
             if (RPM < 0){
                 double feedPower = -0.7;
                 vals[2] = feedPower;
@@ -186,9 +190,9 @@ public class WorkingBotButtonMap extends PinpointBM{
         else if (g2.right_bumper){
             double feedPower = 0.7;
             vals[2] = feedPower;
+            vals[1] = 0.5;
         }
         vals[0] = RPM;
-        vals[1] = getIntakePower();
         if (g2.left_bumper){
             vals[3] = 1;
         }

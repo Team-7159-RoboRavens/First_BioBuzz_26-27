@@ -29,14 +29,18 @@ public class TeleOpKalmanTest extends OpMode {
     private Pose lastLimelightPedroPose;
     private long lastLimelightPoseNanos;
 
+
+    PinpointBM bm;
+
     @Override
     public void init() {
-        robot = new Robot(hardwareMap, 3);
+        robot = new Robot(hardwareMap, 0);
         limelight = new Limelight(robot);
         limelight.useAprilTagPipeline();
         limelightPosition = new LimelightBlue(limelight, telemetry);
         positionFilter = new KalmanPositionFilter();
         previousUpdateNanos = System.nanoTime();
+        bm = new PinpointBM(this, robot);
     }
 
     @Override
@@ -46,6 +50,9 @@ public class TeleOpKalmanTest extends OpMode {
         }
         robot.pinpointUpdate();
         limelight.update();
+
+        MotorPowers mp = bm.getPowers();
+        robot.setPowers(mp);
 
         // Only use each Limelight frame once, and only when calculatePosition could turn it into a pose.
         // Limelight3A re-polls at 100 Hz, so the same camera frame comes back with new Control Hub timestamps;
