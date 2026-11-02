@@ -31,6 +31,9 @@ public abstract class calculatePosition {
         limelight = ll;
         this.telemetry = telemetry;
     }
+
+    protected calculatePosition() {
+    }
     //overrid by the color limelights
 
     //determines if the visible target is on the front side or back side of the field.
@@ -121,7 +124,7 @@ public abstract class calculatePosition {
     }
 
     //converts the limelight's field position/heading into the robot center's field position/heading
-    private double[] getRobotCoordinate(double limelightX, double limelightY, double limelightAngle) {
+    public double[] getRobotCoordinate(double limelightX, double limelightY, double limelightAngle) {
         double robotHeading = limelightAngle - Math.toRadians(LIMELIGHT_YAW);
         double cos = Math.cos(robotHeading);
         double sin = Math.sin(robotHeading);
@@ -131,7 +134,7 @@ public abstract class calculatePosition {
         return new double[] {robotX, robotY, robotHeading};
     }
 
-    //returns all visiblie ids;
+    //returns all visible IDs;
     int[] getVisibleIds(List<LLResultTypes.FiducialResult> limelightResults){
         int size = limelightResults.size();
         int[] visibleTagIds = new int[size];
