@@ -5,20 +5,19 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.BarebonesRobot;
 import org.firstinspires.ftc.teamcode.ButtonMaps.BarebonesBM;
-import org.firstinspires.ftc.teamcode.ButtonMaps.BasicBM;
+import org.firstinspires.ftc.teamcode.ButtonMaps.PPBM;
 import org.firstinspires.ftc.teamcode.MotorPowers;
-import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.PPBot;
 
-// TeleOp op mode using the basic (non-Pinpoint) button map.
-@TeleOp(name="TeleOpBarebones")
-public class TeleOpBarebones extends OpMode {
-    BarebonesRobot robot;
-    BarebonesBM bm;
+@TeleOp(name="TeleOpPP")
+public class TeleOpPP extends OpMode {
+    PPBot robot;
+    PPBM bm;
 
     @Override
     public void init() {
-        robot = new BarebonesRobot(hardwareMap);
-        bm = new BarebonesBM(this, robot);
+        robot = new PPBot(hardwareMap);
+        bm = new PPBM(this, robot);
     }
 
     @Override
@@ -27,7 +26,8 @@ public class TeleOpBarebones extends OpMode {
         robot.setPowers(mp);
         telemetry.addData("Motors", "left front(%.2f), right front(%.2f)", mp.lf, mp.rf);
         telemetry.addData("Motors", "left back(%.2f), right back(%.2f)", mp.lb, mp.rb);
-        telemetry.addData("Left stick X", "%.3f", gamepad1.left_stick_x);
-        telemetry.addData("Pinpoint heading (rad)", "%.3f", robot.pinpointAngle());
+        telemetry.addData("Pinpoint Angle", robot.pinpointAngle());
+        telemetry.addData("Pinpoint X", robot.getPinpointX());
+        telemetry.addData("Pinpoint Y", robot.getPinpointY());
     }
 }

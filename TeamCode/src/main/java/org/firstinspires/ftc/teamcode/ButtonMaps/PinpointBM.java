@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode.ButtonMaps;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
-import org.firstinspires.ftc.teamcode.Helpers.HeadingHelper;
+//import org.firstinspires.ftc.teamcode.Helpers.HeadingHelper;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
 
@@ -27,7 +27,7 @@ public class PinpointBM {
         robot = r;
         g1 = opmode.gamepad1;
         g2 = opmode.gamepad2;
-        h = new HeadingHelper(r);
+//        h = new HeadingHelper(r);
     }
     /**
      * @return intake motor power for gamepad1's current right trigger value, in [0, 1]
@@ -119,12 +119,9 @@ public class PinpointBM {
         // Refresh odometry each loop before using any pinpoint-derived data.
         robot.pinpointUpdate();
         h.update();
-//        double forward = getDpadForward(g1.dpad_up, g1.dpad_down);
-//        double right = getDpadRight(g1.dpad_left, g1.dpad_right);
-//        double rotateClockwise = getBumperRotateClockwise(g1.left_bumper, g1.right_bumper);
-        double forward = 0;
-        double right = 0;
-        double rotateClockwise = 0;
+        double forward = getDpadForward(g1.dpad_up, g1.dpad_down);
+        double right = getDpadRight(g1.dpad_left, g1.dpad_right);
+        double rotateClockwise = getBumperRotateClockwise(g1.left_bumper, g1.right_bumper);
 
         double[] stickMovement = getMovement(g1.left_stick_x, g1.left_stick_y);
         forward += stickMovement[0];
@@ -132,7 +129,7 @@ public class PinpointBM {
 
         rotateClockwise += getRotateClockwise();
 
-        return Mechanumdrive.fieldOrientedDrive(forward, right, rotateClockwise, Math.PI/2+h.heading);
+        return Mechanumdrive.fieldOrientedDrive(forward, right, rotateClockwise, Math.PI/2+ robot.pinpointAngle());
 
     }
 
