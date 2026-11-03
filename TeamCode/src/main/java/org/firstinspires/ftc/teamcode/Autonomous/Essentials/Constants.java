@@ -30,16 +30,16 @@ public class Constants {
     });
 
     public static final PinpointConfig localizerConfig = new PinpointConfig(c -> {
-        int id = 4;
+        int id = 5;
         c.name.set("pinpoint");
         if (id == 4) {
-            c.xPodOffset.set(-67.0);
-            c.yPodOffset.set(-67.0);
+            c.xPodOffset.set(-2.6378);
+            c.yPodOffset.set(-2.6378);
         } else {
-            c.xPodOffset.set(-155.0);
-            c.yPodOffset.set(-60.0);
+            c.xPodOffset.set(6.146);
+            c.yPodOffset.set(-1.579);
         }
-        c.offsetUnits.set(DistanceUnit.MM);
+        c.offsetUnits.set(DistanceUnit.INCH);
         c.globalDistanceUnit.set(DistanceUnit.INCH);
         c.xPodDirection.set(GoBildaPinpointDriver.EncoderDirection.REVERSED);
         c.yPodDirection.set(GoBildaPinpointDriver.EncoderDirection.REVERSED);

@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.Servo;
 
 public class AutoMechanisms {
     public static final String FLYWHEEL_NAME = "shootMotor";
@@ -18,15 +19,17 @@ public class AutoMechanisms {
     public static final double FLYWHEEL_D = 0.1;
     public static final double FLYWHEEL_F = 14.5;
 
-    public static final double INTAKE_POWER = 1.0;
+    public static final double INTAKE_POWER = 0.6;
 
     // FIX: Changed from 1.0 to -1.0 to spin the continuous servo in the opposite direction
-    public static final double SHOOT_FEED_POWER = -1.0;
+    public static final double SHOOT_FEED_POWER = 1.0;
 
     private final DcMotorEx flywheel;
     private final DcMotor intakeMotor;
     private final CRServo shootFeedServo;
     private final CRServo intakeServoRight;
+
+    public Servo flowerServo;
 
     public AutoMechanisms(HardwareMap hardwareMap) {
         flywheel = hardwareMap.get(DcMotorEx.class, FLYWHEEL_NAME);
@@ -40,6 +43,7 @@ public class AutoMechanisms {
                 new PIDFCoefficients(FLYWHEEL_P, FLYWHEEL_I, FLYWHEEL_D, FLYWHEEL_F));
         flywheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        flowerServo = hardwareMap.get(Servo.class, "flowerServo");
         reset();
     }
 
@@ -51,17 +55,27 @@ public class AutoMechanisms {
         shootFeedServo.setPower(SHOOT_FEED_POWER);
     }
 
-    public void shoot() {
+    public void startShoot() {
         stopIntake();
         spinUpFlywheel();
+    }
+    public void shoot() {
         extendFeeder();
+        intakeMotor.setPower(INTAKE_POWER);
     }
 
     public void intake() {
         resetFeeder();
         stopFlywheel();
         intakeMotor.setPower(INTAKE_POWER);
-        intakeServoRight.setPower(-INTAKE_POWER);
+    }
+
+    public void lowerFlower(){
+        flowerServo.setPosition(0.94);
+    }
+
+    public void raiseFlower(){
+        flowerServo.setPosition(0.35);
     }
 
     public void resetFeeder() {

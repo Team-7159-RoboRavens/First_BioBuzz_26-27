@@ -130,5 +130,6 @@ public abstract class OneCycleAutoBase extends OpMode {
         telemetry.addData("Heading", follower.pose().heading());
         telemetry.addData("Path Time", pathTimer.seconds());
         telemetry.update();
+        mechanisms.raiseFlower();
     }
 }

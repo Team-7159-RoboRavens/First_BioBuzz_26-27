@@ -22,8 +22,8 @@ public class ShootAndParkNoPedro extends LinearOpMode {
     // Starting values for the park drive, tune these on the robot.
     // The angle is measured counterclockwise from straight right, so 70 degrees is mostly forward and a little left.
     private static final double PARK_ANGLE_DEGREES = 65;
-    private static final double PARK_POWER = -0.6;
-    private static final long PARK_MS = 3000;
+    private static final double PARK_POWER = 0.7;
+    private static final long PARK_MS = 2500;
 
     @Override
     public void runOpMode() {
@@ -54,7 +54,7 @@ public class ShootAndParkNoPedro extends LinearOpMode {
         telemetry.addLine("parking");
         telemetry.update();
         double parkAngle = Math.toRadians(PARK_ANGLE_DEGREES);
-        double forward = Math.sin(parkAngle) * PARK_POWER;
+        double forward = -Math.sin(parkAngle) * PARK_POWER;
         double right = Math.cos(parkAngle) * PARK_POWER;
         robot.setPowers(Mechanumdrive.setMotorPowers(forward, right, 0));
         sleep(PARK_MS);
