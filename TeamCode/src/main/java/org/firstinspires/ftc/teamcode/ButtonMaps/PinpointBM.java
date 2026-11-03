@@ -17,7 +17,7 @@ public class PinpointBM {
     private Robot robot;
     public Gamepad g1;
     public Gamepad g2;
-    private HeadingHelper h;
+//    private HeadingHelper h;
     /**
      * @param op running op mode, used to read gamepad state
      * @param r robot instance this button map drives
@@ -118,7 +118,7 @@ public class PinpointBM {
     public MotorPowers getPowers() {
         // Refresh odometry each loop before using any pinpoint-derived data.
         robot.pinpointUpdate();
-        h.update();
+//        h.update();
         double forward = getDpadForward(g1.dpad_up, g1.dpad_down);
         double right = getDpadRight(g1.dpad_left, g1.dpad_right);
         double rotateClockwise = getBumperRotateClockwise(g1.left_bumper, g1.right_bumper);

@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.ButtonMaps;
 
-import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 

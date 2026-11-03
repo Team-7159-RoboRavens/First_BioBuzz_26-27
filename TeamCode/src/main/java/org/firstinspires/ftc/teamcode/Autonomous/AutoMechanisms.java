@@ -12,7 +12,7 @@ public class AutoMechanisms {
     public static final String SHOOT_FEED_SERVO_NAME = "shootFeedServo";
     public static final String INTAKE_SERVO_RIGHT_NAME = "intakeServoRight";
 
-    public static final double FLYWHEEL_VELOCITY = 1550.0;
+    public static final double FLYWHEEL_VELOCITY = 200.0;
     public static final double FLYWHEEL_P = 12.0;
     public static final double FLYWHEEL_I = 0.5;
     public static final double FLYWHEEL_D = 0.1;

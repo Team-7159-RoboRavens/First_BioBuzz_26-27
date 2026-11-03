@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.Localization;
 
-import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Pose;
 
 import java.util.ArrayDeque;
 import java.util.Iterator;
@@ -66,9 +66,9 @@ public final class KalmanPositionFilter {
      * @param startPose starting pose in Pedro coordinates
      */
     public KalmanPositionFilter(Pose startPose) {
-        x = startPose.getX();
-        y = startPose.getY();
-        heading = normalizeRadians(startPose.getHeading());
+        x = startPose.x();
+        y = startPose.y();
+        heading = normalizeRadians(startPose.heading());
         hasFieldPose = true;
         setCovariance(START_POSITION_VARIANCE, START_HEADING_VARIANCE);
     }
@@ -198,9 +198,9 @@ public final class KalmanPositionFilter {
 
     // Pulls the estimate toward a Limelight pose, weighted by how much each is trusted
     private void correct(Pose limelightPose, double latencySeconds) {
-        double measuredX = limelightPose.getX();
-        double measuredY = limelightPose.getY();
-        double measuredHeading = normalizeRadians(limelightPose.getHeading());
+        double measuredX = limelightPose.x();
+        double measuredY = limelightPose.y();
+        double measuredHeading = normalizeRadians(limelightPose.heading());
 
         if (!hasFieldPose) {
             // First sighting: the odometry-only estimate is in the wrong frame, so take the Limelight pose outright
@@ -332,7 +332,7 @@ public final class KalmanPositionFilter {
     }
 
     private static boolean isUsablePose(Pose pose) {
-        return pose != null && isFinite(pose.getX()) && isFinite(pose.getY()) && isFinite(pose.getHeading());
+        return pose != null && isFinite(pose.x()) && isFinite(pose.y()) && isFinite(pose.heading());
     }
 
     private static double[] multiply3x3(double[] left, double[] right) {

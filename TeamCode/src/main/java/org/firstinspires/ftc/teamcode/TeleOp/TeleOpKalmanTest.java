@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.TeleOp;
 
-import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -110,12 +110,12 @@ public class TeleOpKalmanTest extends OpMode {
             telemetry.addData("Limelight pose", "x: %.3f m, y: %.3f m, heading: %.1f deg",
                     lastLimelightPosition[0], lastLimelightPosition[1], Math.toDegrees(lastLimelightPosition[2]));
             telemetry.addData("Limelight Pedro pose", "x: %.1f in, y: %.1f in, heading: %.1f deg",
-                    lastLimelightPedroPose.getX(), lastLimelightPedroPose.getY(),
-                    Math.toDegrees(lastLimelightPedroPose.getHeading()));
-            double headingDifference = Math.IEEEremainder(position.headingRadians - lastLimelightPedroPose.getHeading(), 2.0 * Math.PI);
+                    lastLimelightPedroPose.x(), lastLimelightPedroPose.y(),
+                    Math.toDegrees(lastLimelightPedroPose.heading()));
+            double headingDifference = Math.IEEEremainder(position.headingRadians - lastLimelightPedroPose.heading(), 2.0 * Math.PI);
             telemetry.addData("Kalman - Limelight", "x: %.1f in, y: %.1f in, heading: %.1f deg",
-                    position.xInches - lastLimelightPedroPose.getX(),
-                    position.yInches - lastLimelightPedroPose.getY(),
+                    position.xInches - lastLimelightPedroPose.x(),
+                    position.yInches - lastLimelightPedroPose.y(),
                     Math.toDegrees(headingDifference));
         }
     }

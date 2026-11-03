@@ -21,8 +21,8 @@ public class ShootAndParkNoPedro extends LinearOpMode {
 
     // Starting values for the park drive, tune these on the robot.
     // The angle is measured counterclockwise from straight right, so 70 degrees is mostly forward and a little left.
-    private static final double PARK_ANGLE_DEGREES = 70;
-    private static final double PARK_POWER = 0.5;
+    private static final double PARK_ANGLE_DEGREES = 65;
+    private static final double PARK_POWER = -0.6;
     private static final long PARK_MS = 3000;
 
     @Override
