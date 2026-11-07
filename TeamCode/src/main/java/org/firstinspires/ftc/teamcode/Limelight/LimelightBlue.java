@@ -15,6 +15,10 @@ public class LimelightBlue extends calculatePosition{
         super(ll, t);
     }
 
+    public LimelightBlue() {
+
+    }
+
     @Override
     public boolean canSeeTargetFriendly() {
         for (int i = 8; i < 16; i++) {
