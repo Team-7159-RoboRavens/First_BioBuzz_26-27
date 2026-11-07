@@ -17,10 +17,10 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     protected Timer pathTimer, opModeTimer;
 
     public enum PathState {
-        DRIVE_STARTPOS_SHOOT_POS1,
         SHOOT_POS1_SHOOT_POS_1_1,
         SHOOT_POS1_1_INTAKE_POS,
         INTAKE_POS_SHOOT_POS2,
+        PRE_SHOOT_POS2_SHOOT_POS2,
         SHOOT_POS2_PARK_POS,
         SHOOT_PRELOAD1,
         SHOOT_PRELOAD2,
@@ -33,54 +33,45 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     protected PathState pathState;
 
     // Abstract pose getters to be implemented by Red/Blue subclasses
-    protected abstract Pose getStartPose();
     protected abstract Pose getShootPose1();
     protected abstract Pose getShootPose1_1();
     protected abstract Pose getIntakePose();
     protected abstract Pose getIntakeControl();
+    protected abstract Pose getPreShootPose2();
     protected abstract Pose getShootPose2();
     protected abstract Pose getShoot2Control();
+    protected abstract Pose getShoot2Control2();
     protected abstract Pose getParkPose();
     protected abstract Pose getParkControl();
 
-    protected Path driveStartPosShootPos1;
+
     protected Path driveShootPos1_1IntakePos;
     protected Path driveIntakePoseShootPos2;
+    protected Path drivePreShootPos2ShootPos2;
     protected Path driveShootPos2ParkPos;
     protected Path driveShootPos1ShootPos1_1;
 
 
     public void buildPaths() {
-        Pose startPose = getStartPose();
         Pose shootPose1 = getShootPose1();
         Pose shootPose1_1 = getShootPose1_1();
         Pose intakePose = getIntakePose();
         Pose intakeControl = getIntakeControl();
+        Pose preShootPose2 = getPreShootPose2();
         Pose shootPose2 = getShootPose2();
         Pose shoot2Control = getShoot2Control();
+        Pose shoot2Control2 = getShoot2Control();
         Pose parkPose = getParkPose();
         Pose parkControl = getParkControl();
-
-        driveStartPosShootPos1 = line(startPose, shootPose1).linear(startPose, shootPose1);
         driveShootPos1_1IntakePos = curve(shootPose1_1, intakeControl, intakePose).linear(shootPose1_1, intakePose);
-        driveIntakePoseShootPos2 = curve(intakePose, shoot2Control, shootPose2).linear(intakePose, shootPose2);
+        driveIntakePoseShootPos2 = curve(intakePose, shoot2Control, shoot2Control2, preShootPose2).linear(intakePose, shootPose2);
+        drivePreShootPos2ShootPos2 = line(preShootPose2, shootPose2).linear(preShootPose2, shootPose2);
         driveShootPos2ParkPos = curve(shootPose2, parkControl, parkPose).linear(shootPose2, parkPose);
         driveShootPos1ShootPos1_1 = line(shootPose1, shootPose1_1).linear(shootPose1, shootPose1_1);
     }
 
     public void statePathUpdate() {
         switch(pathState){
-            case DRIVE_STARTPOS_SHOOT_POS1:
-                if (pathTimer.seconds() < 0.05 && !follower.isBusy()) {
-                    follower.follow(driveStartPosShootPos1);
-                }
-                if (pathTimer.seconds() > 0.2 && !follower.isBusy()) {
-                    telemetry.addLine("Follower is not busy");
-                    setPathState(PathState.SHOOT_PRELOAD1);
-                    telemetry.addLine("Done with Path 1");
-                }
-                break;
-
 
             case SHOOT_PRELOAD1:
                 telemetry.addLine("Done Start to shoot1");
@@ -104,7 +95,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                 if (pathTimer.seconds() < 0.05 && !follower.isBusy()) {
                     follower.follow(driveShootPos1ShootPos1_1);
                 }
-                if (pathTimer.seconds() > 0.4 && ) {
+                if (pathTimer.seconds() > 0.4 && !follower.isBusy()) {
                     telemetry.addLine("Follower is not busy");
                     setPathState(PathState.SHOOT_POS1_1_INTAKE_POS);
                     telemetry.addLine("Done Shoot1 to Shoot1_1");
@@ -133,10 +124,11 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                 if (pathTimer.seconds() < 0.05 && !follower.isBusy()) {
                     follower.follow(driveIntakePoseShootPos2);
                 }
-                if (pathTimer.seconds() < 0.5) {
+                if (pathTimer.seconds() > 2.5){
                     mechanisms.lowerFlower();
                 }
                 if (pathTimer.seconds() > 0.2 && !follower.isBusy()) {
+                    mechanisms.lowerFlower();
                     telemetry.addLine("Follower is not busy");
                     setPathState(PathState.SHOOT_PRELOAD2);
                     telemetry.addLine("Done Intake to shoot2");
@@ -153,15 +145,24 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                     }
                     if (pathTimer.seconds() >= 4) {
                         mechanisms.intake();
-                        setPathState(PathState.INTAKE2);
+                        setPathState(PathState.PRE_SHOOT_POS2_SHOOT_POS2);
                         telemetry.addLine("Done Shooting 2");
                     }
                 }
                 break;
+            case PRE_SHOOT_POS2_SHOOT_POS2:
+                if (pathTimer.seconds() < 0.05 && !follower.isBusy()) {
+                    follower.follow(drivePreShootPos2ShootPos2);
+                }
+                if (pathTimer.seconds() > 0.2 && !follower.isBusy()) {
+                    telemetry.addLine("Follower is not busy");
+                    setPathState(PathState.INTAKE2);
+                    telemetry.addLine("Done Intake to shoot2");
+                }
             case INTAKE2:
                 if(!follower.isBusy()){
                     mechanisms.intake();
-                    if (pathTimer.seconds() >= 0.25) {
+                    if (pathTimer.seconds() >= 0.5) {
                         setPathState(PathState.SHOOT_PRELOAD3);
                         telemetry.addLine("Done with intake2");
                     }
@@ -215,13 +216,13 @@ public abstract class ThreeCycleAutoBase extends OpMode {
 
     @Override
     public void init(){
-        pathState = PathState.DRIVE_STARTPOS_SHOOT_POS1;
+        pathState = PathState.SHOOT_PRELOAD1;
         pathTimer = new Timer();
         opModeTimer = new Timer();
         opModeTimer.reset();
         follower = Constants.createFollower(hardwareMap);
         mechanisms = new AutoMechanisms(hardwareMap);
-        follower.setPose(getStartPose());
+        follower.setPose(getShootPose1());
         buildPaths();
         mechanisms.raiseFlower();
     }
@@ -235,6 +236,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     @Override
     public void loop(){
         follower.update();
+        telemetry.addData("intake motor", mechanisms.intakeMotor.getVelocity());
         statePathUpdate();
 
         telemetry.addData("Path State", pathState.toString());

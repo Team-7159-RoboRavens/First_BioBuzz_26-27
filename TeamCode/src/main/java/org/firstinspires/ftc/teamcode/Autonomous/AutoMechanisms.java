@@ -1,7 +1,10 @@
 package org.firstinspires.ftc.teamcode.Autonomous;
 
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
+
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -10,22 +13,22 @@ import com.qualcomm.robotcore.hardware.Servo;
 public class AutoMechanisms {
     public static final String FLYWHEEL_NAME = "shootMotor";
     public static final String INTAKE_MOTOR_NAME = "intakeMotor";
-    public static final String SHOOT_FEED_SERVO_NAME = "shootFeedServo";
+    public static final String SHOOT_FEED_SERVO_NAME = "transferServo";
     public static final String INTAKE_SERVO_RIGHT_NAME = "intakeServoRight";
 
-    public static final double FLYWHEEL_VELOCITY = 200.0;
+    public static final double FLYWHEEL_VELOCITY =  200 / 60.0 * 383.6;
     public static final double FLYWHEEL_P = 12.0;
     public static final double FLYWHEEL_I = 0.5;
     public static final double FLYWHEEL_D = 0.1;
     public static final double FLYWHEEL_F = 14.5;
 
-    public static final double INTAKE_POWER = 0.6;
+    public static final double INTAKE_POWER = -0.6;
 
     // FIX: Changed from 1.0 to -1.0 to spin the continuous servo in the opposite direction
-    public static final double SHOOT_FEED_POWER = 1.0;
+    public static final double SHOOT_FEED_POWER = -1.0;
 
     private final DcMotorEx flywheel;
-    private final DcMotor intakeMotor;
+    public final DcMotorEx intakeMotor;
     private final CRServo shootFeedServo;
     private final CRServo intakeServoRight;
 
@@ -33,7 +36,8 @@ public class AutoMechanisms {
 
     public AutoMechanisms(HardwareMap hardwareMap) {
         flywheel = hardwareMap.get(DcMotorEx.class, FLYWHEEL_NAME);
-        intakeMotor = hardwareMap.get(DcMotor.class, INTAKE_MOTOR_NAME);
+        flywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+        intakeMotor = hardwareMap.get(DcMotorEx.class, INTAKE_MOTOR_NAME);
         shootFeedServo = hardwareMap.get(CRServo.class, SHOOT_FEED_SERVO_NAME);
         intakeServoRight = hardwareMap.get(CRServo.class, INTAKE_SERVO_RIGHT_NAME);
 
