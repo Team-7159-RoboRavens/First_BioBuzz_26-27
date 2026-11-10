@@ -60,11 +60,10 @@ public abstract class ThreeCycleAutoBase extends OpMode {
         Pose preShootPose2 = getPreShootPose2();
         Pose shootPose2 = getShootPose2();
         Pose shoot2Control = getShoot2Control();
-        Pose shoot2Control2 = getShoot2Control();
         Pose parkPose = getParkPose();
         Pose parkControl = getParkControl();
         driveShootPos1_1IntakePos = curve(shootPose1_1, intakeControl, intakePose).linear(shootPose1_1, intakePose);
-        driveIntakePoseShootPos2 = curve(intakePose, shoot2Control, shoot2Control2, preShootPose2).linear(intakePose, shootPose2);
+        driveIntakePoseShootPos2 = curve(intakePose, shoot2Control, preShootPose2).linear(intakePose, preShootPose2);
         drivePreShootPos2ShootPos2 = line(preShootPose2, shootPose2).linear(preShootPose2, shootPose2);
         driveShootPos2ParkPos = curve(shootPose2, parkControl, parkPose).linear(shootPose2, parkPose);
         driveShootPos1ShootPos1_1 = line(shootPose1, shootPose1_1).linear(shootPose1, shootPose1_1);
@@ -95,7 +94,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                 if (pathTimer.seconds() < 0.05 && !follower.isBusy()) {
                     follower.follow(driveShootPos1ShootPos1_1);
                 }
-                if (pathTimer.seconds() > 0.4 && !follower.isBusy()) {
+                if (pathTimer.seconds() > 0.4 && (follower.atParametricEnd() || follower.distanceToEndpoint() < 1.5)) {
                     telemetry.addLine("Follower is not busy");
                     setPathState(PathState.SHOOT_POS1_1_INTAKE_POS);
                     telemetry.addLine("Done Shoot1 to Shoot1_1");
@@ -159,6 +158,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                     setPathState(PathState.INTAKE2);
                     telemetry.addLine("Done Intake to shoot2");
                 }
+                break;
             case INTAKE2:
                 if(!follower.isBusy()){
                     mechanisms.intake();
