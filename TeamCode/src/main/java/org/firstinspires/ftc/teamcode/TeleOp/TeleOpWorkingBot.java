@@ -8,6 +8,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.ButtonMaps.WheelTestBM;
 import org.firstinspires.ftc.teamcode.ButtonMaps.WorkingBotButtonMap;
 import org.firstinspires.ftc.teamcode.Limelight.Limelight;
+import org.firstinspires.ftc.teamcode.Macros.GoToShoot;
+import org.firstinspires.ftc.teamcode.Macros.Macro;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
 import com.qualcomm.hardware.lynx.LynxModule;
@@ -15,18 +17,23 @@ import org.firstinspires.ftc.teamcode.ButtonMaps.BasicBM;
 
 @TeleOp(name = "TeleOpWorkingBot")
 public class TeleOpWorkingBot extends OpMode{
-    Robot robot;
+    public Robot robot;
     WorkingBotButtonMap bm;
     private ElapsedTime lastFrameTime = new ElapsedTime();
 
     public double averageFrameTime = 0;
     private long frameCount;
     Limelight ll;
+    GoToShoot goToShoot;
+
+    MotorPowers mp;
+    double[] vals;
 
     @Override
     public void init() {
         robot = new Robot(hardwareMap, 10);
         bm = new WorkingBotButtonMap(this, robot);
+        goToShoot = new GoToShoot(this);
     }
 
     @Override
@@ -34,16 +41,19 @@ public class TeleOpWorkingBot extends OpMode{
         for (LynxModule hub : robot.hubs) {
             hub.clearBulkCache();
         }
-        MotorPowers mp = bm.getPowers();
-        robot.setPowers(mp);
-        double[] vals = bm.getState();
-        robot.setShootRPM(vals[0]);
-        robot.setIntakePower(vals[1]);
-        robot.setShootFeedPower(vals[2]);
-        robot.setFlowerState(vals[3]);
-
-
-
+        if (!goToShoot.active) {
+            mp = bm.getPowers();
+            robot.setPowers(mp);
+            vals = bm.getState();
+            robot.setShootRPM(vals[0]);
+            robot.setIntakePower(vals[1]);
+            robot.setShootFeedPower(vals[2]);
+            robot.setFlowerState(vals[3]);
+            if (robot.macroActive) goToShoot.activate();
+        } else {
+            mp = goToShoot.nextFrame();
+            vals = new double[4];
+        }
 
         averageFrameTime = averageFrameTime * frameCount + lastFrameTime.milliseconds();
         averageFrameTime /= frameCount + 1;

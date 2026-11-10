@@ -20,6 +20,9 @@ public class MotorPowers {
     }
 
     public MotorPowers() {
-
+        this.lf = 0;
+        this.rf = 0;
+        this.lb = 0;
+        this.rb = 0;
     }
 }
