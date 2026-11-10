@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.ButtonMaps.Mechanumdrive;
 import org.firstinspires.ftc.teamcode.TeleOp.TeleOpData;
 
 import com.qualcomm.robotcore.hardware.VoltageSensor;
@@ -60,6 +61,7 @@ public class Robot {
 
     public boolean inputHandlingEnabled = false;
 
+    public boolean macroActive = false;
 
     /**
      * @param hmap hardware map used to look up the drivetrain motors, intake motor,
@@ -256,5 +258,8 @@ public class Robot {
         else {
             flowerServo.setPosition(0.35);
         }
+    }
+    public void setMacroState(boolean active) {
+        macroActive = active;
     }
 }
