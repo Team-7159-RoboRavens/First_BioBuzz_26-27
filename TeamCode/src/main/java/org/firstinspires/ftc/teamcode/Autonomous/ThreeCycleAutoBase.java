@@ -103,7 +103,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                     Log.i("SHOOT_POS1_SHOOT_POS_1_1", "following driveShootPos1ShootPos1_1");
                     follower.follow(driveShootPos1ShootPos1_1);
                 }
-                if (pathTimer.seconds() > 0.4 && (follower.atParametricEnd() || follower.distanceToEndpoint() < 1.5)) {
+                if (pathTimer.seconds() > 0.4 && !follower.isBusy()) {
                     telemetry.addLine("Follower is not busy");
                     Log.i("SHOOT_POS1_SHOOT_POS_1_1", "Follower is not busy");
                     setPathState(PathState.SHOOT_POS1_1_INTAKE_POS);
@@ -140,10 +140,10 @@ public abstract class ThreeCycleAutoBase extends OpMode {
             case INTAKE_POS_SHOOT_POS2:
                 Log.i("INTAKE_POS_SHOOT_POS2", "path timer = "+pathTimer.seconds());
                 Log.i("INTAKE_POS_SHOOT_POS2", "follower is busy: " + follower.isBusy());
-                if (follower.currentPath() != null) Log.i("INTAKE_POS_SHOOT_POS2", "current path: " + follower.currentPath().endPose());
                 if (pathTimer.seconds() < 0.05 && !follower.isBusy()) {
                     Log.i("INTAKE_POS_SHOOT_POS2", "following driveIntakePoseShootPos2");
-                    follower.follow(driveIntakePoseShootPos2);
+//                    follower.follow(driveIntakePoseShootPos2);
+                    follower.follow(curve(follower.pose(), getShoot2Control(), getPreShootPose2()).linear(getIntakePose(),getPreShootPose2()));
                 }
                 if (pathTimer.seconds() > 2.5){
                     Log.i("INTAKE_POS_SHOOT_POS2", "lowering (t>2.5)");
@@ -291,5 +291,6 @@ public abstract class ThreeCycleAutoBase extends OpMode {
         Log.i("loop", "y: " + follower.pose().y());
         Log.i("loop", "heading: " + follower.pose().heading());
         Log.i("loop", "path time: " + pathTimer.seconds());
+        if (follower.currentPath() != null) Log.i("INTAKE_POS_SHOOT_POS2", "current destination: " + follower.currentPath().endPose());
     }
 }

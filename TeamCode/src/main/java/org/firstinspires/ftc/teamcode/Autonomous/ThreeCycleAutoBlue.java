@@ -8,7 +8,7 @@ public class ThreeCycleAutoBlue extends ThreeCycleAutoBase {
     private final Pose shootPose1 = new Pose(89.3, 127, Math.toRadians(90));
     private final Pose shootPose1_1 = new Pose(85.3, 117, Math.toRadians(0));
 
-    private final Pose intakePose = new Pose(132.08898944193066, 128.5, Math.toRadians(0));
+    private final Pose intakePose = new Pose(125.08898944193066, 128.5, Math.toRadians(0));
     private final Pose intakeControl = new Pose(96.3, 134.29);
     private final Pose preShootPose2 = new Pose(91.19909502262443, 15.49778469079939, Math.toRadians(284));
     private final Pose shootPose2 = new Pose(92.19909502262443, 12, Math.toRadians(284));
