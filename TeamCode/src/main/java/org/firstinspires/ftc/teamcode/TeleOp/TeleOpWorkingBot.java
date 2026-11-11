@@ -41,6 +41,7 @@ public class TeleOpWorkingBot extends OpMode{
         for (LynxModule hub : robot.hubs) {
             hub.clearBulkCache();
         }
+        telemetry.addData("macro active", goToShoot.active);
         if (!goToShoot.active) {
             mp = bm.getPowers();
             robot.setPowers(mp);

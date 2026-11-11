@@ -11,6 +11,8 @@ import org.firstinspires.ftc.teamcode.Autonomous.Essentials.Constants;
 import static com.pedropathing.api.Paths.curve;
 import static com.pedropathing.api.Paths.line;
 
+import android.util.Log;
+
 public abstract class ThreeCycleAutoBase extends OpMode {
     protected Follower follower;
     protected AutoMechanisms mechanisms;
@@ -73,98 +75,129 @@ public abstract class ThreeCycleAutoBase extends OpMode {
         switch(pathState){
 
             case SHOOT_PRELOAD1:
+                Log.i("SHOOT_PRELOAD1", "Done start to shoot1");
                 telemetry.addLine("Done Start to shoot1");
                 if (!follower.isBusy()){
+                    Log.i("SHOOT_PRELOAD1", "follow is not busy");
                     telemetry.addLine("Follower is not busy");
                     if (pathTimer.seconds() <= 0.8){
+                        Log.i("SHOOT_PRELOAD1", "starting shoot (t<=0.8)");
                         mechanisms.startShoot();
                     }
 
                     if (pathTimer.seconds() >= 0.8) {
+                        Log.i("SHOOT_PRELOAD1", "starting shoot (t>=0.8)");
                         mechanisms.shoot();
                     }
                     if (pathTimer.seconds() >= 4) {
+                        Log.i("SHOOT_PRELOAD1", "starting intake");
                         mechanisms.intake();
                         setPathState(PathState.SHOOT_POS1_SHOOT_POS_1_1);
                         telemetry.addLine("Done Shooting 1");
+                        Log.i("SHOOT_PRELOAD1", "Done shooting 1");
                     }
                 }
                 break;
             case SHOOT_POS1_SHOOT_POS_1_1:
                 if (pathTimer.seconds() < 0.05 && !follower.isBusy()) {
+                    Log.i("SHOOT_POS1_SHOOT_POS_1_1", "following driveShootPos1ShootPos1_1");
                     follower.follow(driveShootPos1ShootPos1_1);
                 }
                 if (pathTimer.seconds() > 0.4 && (follower.atParametricEnd() || follower.distanceToEndpoint() < 1.5)) {
                     telemetry.addLine("Follower is not busy");
+                    Log.i("SHOOT_POS1_SHOOT_POS_1_1", "Follower is not busy");
                     setPathState(PathState.SHOOT_POS1_1_INTAKE_POS);
                     telemetry.addLine("Done Shoot1 to Shoot1_1");
+                    Log.i("SHOOT_POS1_SHOOT_POS_1_1", "Done");
                 }
                 break;
             case SHOOT_POS1_1_INTAKE_POS:
                 if (pathTimer.seconds() < 0.05 && !follower.isBusy()) {
+                    Log.i("SHOOT_POS1_1_INTAKE_POS", "following driveShootPos1_1IntakePos");
                     follower.follow(driveShootPos1_1IntakePos);
                 }
                 if (pathTimer.seconds() > 0.2 && !follower.isBusy()) {
                     telemetry.addLine("Follower is not busy");
+                    Log.i("SHOOT_POS1_1_INTAKE_POS", "follower not busy");
+                    mechanisms.lowerFlower();
                     setPathState(PathState.INTAKE1);
                     telemetry.addLine("Done Shoot1 to intake");
+                    Log.i("SHOOT_POS1_1_INTAKE_POS", "done");
                 }
                 break;
             case INTAKE1:
                 if(!follower.isBusy()){
                     mechanisms.intake();
+                    Log.i("INTAKE1", "Intaking");
                     if (pathTimer.seconds() >= 0.25) {
                         setPathState(PathState.INTAKE_POS_SHOOT_POS2);
+                        mechanisms.raiseFlower();
                         telemetry.addLine("Done with intake1");
+                        Log.i("INTAKE1", "done");
                     }
                 }
                 break;
             case INTAKE_POS_SHOOT_POS2:
+                Log.i("INTAKE_POS_SHOOT_POS2", "path timer = "+pathTimer.seconds());
+                Log.i("INTAKE_POS_SHOOT_POS2", "follower is busy: " + follower.isBusy());
+                if (follower.currentPath() != null) Log.i("INTAKE_POS_SHOOT_POS2", "current path: " + follower.currentPath().endPose());
                 if (pathTimer.seconds() < 0.05 && !follower.isBusy()) {
+                    Log.i("INTAKE_POS_SHOOT_POS2", "following driveIntakePoseShootPos2");
                     follower.follow(driveIntakePoseShootPos2);
                 }
                 if (pathTimer.seconds() > 2.5){
+                    Log.i("INTAKE_POS_SHOOT_POS2", "lowering (t>2.5)");
                     mechanisms.lowerFlower();
                 }
                 if (pathTimer.seconds() > 0.2 && !follower.isBusy()) {
                     mechanisms.lowerFlower();
                     telemetry.addLine("Follower is not busy");
+                    Log.i("INTAKE_POS_SHOOT_POS2", "not busy");
                     setPathState(PathState.SHOOT_PRELOAD2);
                     telemetry.addLine("Done Intake to shoot2");
+                    Log.i("INTAKE_POS_SHOOT_POS2", "done");
                 }
                 break;
             case SHOOT_PRELOAD2:
                 if (!follower.isBusy()){
                     if (pathTimer.seconds() <= 0.8){
                         mechanisms.startShoot();
+                        Log.i("SHOOT_PRELOAD2", "starting shoot");
                     }
 
                     if (pathTimer.seconds() >= 0.8) {
                         mechanisms.shoot();
+                        Log.i("SHOOT_PRELOAD2", "shooting");
                     }
                     if (pathTimer.seconds() >= 4) {
                         mechanisms.intake();
                         setPathState(PathState.PRE_SHOOT_POS2_SHOOT_POS2);
                         telemetry.addLine("Done Shooting 2");
+                        Log.i("SHOOT_PRELOAD2", "done");
                     }
                 }
                 break;
             case PRE_SHOOT_POS2_SHOOT_POS2:
                 if (pathTimer.seconds() < 0.05 && !follower.isBusy()) {
                     follower.follow(drivePreShootPos2ShootPos2);
+                    Log.i("PRE_SHOOT_POS2_SHOOT_POS2", "following drivePreShootPos2ShootPos2");
                 }
                 if (pathTimer.seconds() > 0.2 && !follower.isBusy()) {
                     telemetry.addLine("Follower is not busy");
+                    Log.i("PRE_SHOOT_POS2_SHOOT_POS2", "not busy");
                     setPathState(PathState.INTAKE2);
                     telemetry.addLine("Done Intake to shoot2");
+                    Log.i("PRE_SHOOT_POS2_SHOOT_POS2", "done");
                 }
                 break;
             case INTAKE2:
                 if(!follower.isBusy()){
                     mechanisms.intake();
+                    Log.i("INTAKE2", "intaking");
                     if (pathTimer.seconds() >= 0.5) {
                         setPathState(PathState.SHOOT_PRELOAD3);
                         telemetry.addLine("Done with intake2");
+                        Log.i("INTAKE2", "done");
                     }
                 }
                 break;
@@ -172,30 +205,36 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                 if (!follower.isBusy()){
                     if (pathTimer.seconds() <= 0.8){
                         mechanisms.startShoot();
+                        Log.i("SHOOT_PRELOAD3", "starting shoot");
                     }
 
                     if (pathTimer.seconds() >= 0.8) {
                         mechanisms.shoot();
+                        Log.i("SHOOT_PRELOAD3", "shooting");
                     }
                     if (pathTimer.seconds() >= 4) {
                         mechanisms.intake();
                         setPathState(PathState.SHOOT_POS2_PARK_POS);
                         telemetry.addLine("Done Shooting 3");
+                        Log.i("SHOOT_PRELOAD3", "done");
                     }
                 }
                 break;
             case SHOOT_POS2_PARK_POS:
                 if (pathTimer.seconds() < 0.05 && !follower.isBusy()) {
                     follower.follow(driveShootPos2ParkPos);
+                    Log.i("SHOOT_POS2_PARK_POS", "following driveShootPos2ParkPos");
                 }
                 if (pathTimer.seconds() > 0.1) {
                     mechanisms.raiseFlower();
+                    Log.i("SHOOT_POS2_PARK_POS", "raising");
                 }
                 if (pathTimer.seconds() > 0.2 && !follower.isBusy()) {
                     setPathState(PathState.DONE);
                     telemetry.addLine("Follower is not busy");
                     telemetry.addLine("Done Shoot2 to park");
                     telemetry.addLine("Done with Auto");
+                    Log.i("SHOOT_POS2_PARK_POS", "done");
                     break;
                 }
             case DONE:
@@ -203,6 +242,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                 // Pedro has finished the final path, then hold the robot still.
                 if (!follower.isBusy()) {
                     mechanisms.reset();
+                    Log.i("DONE", "done");
                     follower.stop();
                 }
                 break;
@@ -216,6 +256,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
 
     @Override
     public void init(){
+        Log.i("ThreeCycleAutoBase", "hello");
         pathState = PathState.SHOOT_PRELOAD1;
         pathTimer = new Timer();
         opModeTimer = new Timer();
@@ -245,5 +286,10 @@ public abstract class ThreeCycleAutoBase extends OpMode {
         telemetry.addData("Heading", follower.pose().heading());
         telemetry.addData("Path Time", pathTimer.seconds());
         telemetry.update();
+        Log.i("loop", "path state: " + pathState);
+        Log.i("loop", "x: " + follower.pose().x());
+        Log.i("loop", "y: " + follower.pose().y());
+        Log.i("loop", "heading: " + follower.pose().heading());
+        Log.i("loop", "path time: " + pathTimer.seconds());
     }
 }

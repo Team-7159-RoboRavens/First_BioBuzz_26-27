@@ -187,7 +187,7 @@ public class PinpointBM {
         return 0;
     }
 
-    public boolean checkMacro() {
+    public void checkMacro() {
         robot.setMacroState(g1.back);
     }
 }
