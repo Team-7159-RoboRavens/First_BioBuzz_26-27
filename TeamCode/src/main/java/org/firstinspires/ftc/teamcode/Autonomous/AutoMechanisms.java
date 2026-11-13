@@ -51,12 +51,22 @@ public class AutoMechanisms {
         reset();
     }
 
+    // Last commanded state, so the same hub command isn't sent every loop
+    private boolean flywheelOn = true;
+    private boolean feederOn = true;
+
     public void spinUpFlywheel() {
-        flywheel.setVelocity(FLYWHEEL_VELOCITY);
+        if (!flywheelOn) {
+            flywheel.setVelocity(FLYWHEEL_VELOCITY);
+            flywheelOn = true;
+        }
     }
 
     public void extendFeeder() {
-        shootFeedServo.setPower(SHOOT_FEED_POWER);
+        if (!feederOn) {
+            shootFeedServo.setPower(SHOOT_FEED_POWER);
+            feederOn = true;
+        }
     }
 
     public void startShoot() {
@@ -83,7 +93,10 @@ public class AutoMechanisms {
     }
 
     public void resetFeeder() {
-        shootFeedServo.setPower(0.0);
+        if (feederOn) {
+            shootFeedServo.setPower(0.0);
+            feederOn = false;
+        }
     }
 
     public void stopIntake() {
@@ -92,7 +105,10 @@ public class AutoMechanisms {
     }
 
     public void stopFlywheel() {
-        flywheel.setVelocity(0.0);
+        if (flywheelOn) {
+            flywheel.setVelocity(0.0);
+            flywheelOn = false;
+        }
     }
 
     public void reset() {

@@ -64,6 +64,11 @@ public class Constants {
         c.maxAchievableStrafeVelocity.set(45.0);
         c.naturalForwardDeceleration.set(60.14);
         c.naturalStrafeDeceleration.set(61.79);
+
+        // Looser end-of-path tolerances so paths finish faster (defaults were 0.1 in, 0.007 rad, 0.1 in/s)
+        c.translationalConstraint.set(0.75);              // inches
+        c.headingConstraint.set(Math.toRadians(2.0));     // radians
+        c.velocityConstraint.set(2.0);                    // inches / second
     });
 
     public static Follower createFollower(HardwareMap hardwareMap) {
