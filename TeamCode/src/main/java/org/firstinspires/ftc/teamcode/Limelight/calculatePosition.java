@@ -60,6 +60,70 @@ public abstract class calculatePosition {
     //returs a 3 element array the first value x distance to target second one is y value to target and the third one is an angle relative to target
     public abstract double[] aimState(double[] botPose);
 
+    // ---------------- Shooter aiming ----------------
+
+    // Field walls are 72in from the center of the field
+    final double FIELD_WALL = 72 * INCH;
+    // Max robot size (18in). The shooting distance is measured with the robot's back flat on the wall, facing the
+    // target, with the shooter on the front of the robot lined up with the center of the target
+    final double MAX_ROBOT_SIZE = 18 * INCH;
+
+    /**
+     * Horizontal distance from the shooter to the target center when the robot's back is flat against the wall
+     * behind the target (the wall at y = +-72in) and the shooter on the front of a max size robot is lined up with
+     * the target.
+     *
+     * @param targetY field y of the target center, meters
+     * @return shooter to target distance, meters
+     */
+    double getShootDistance(double targetY){
+        return FIELD_WALL - Math.abs(targetY) - MAX_ROBOT_SIZE;
+    }
+
+    /**
+     * Field heading that points the shooter (not the center of the robot) straight at the target from where the
+     * robot is now. The shooter sits shooter_offset_y to the side of the center, so the robot has to turn a little
+     * past the target for the shooter's line of fire to pass through it.
+     *
+     * @param botPose {x, y, heading} of the robot center, meters / radians, field center origin
+     * @return field heading in radians, or NaN if the robot is too close to the target to line the shooter up
+     */
+    double getShooterHeading(double[] botPose, double targetX, double targetY){
+        double dx = targetX - botPose[0];
+        double dy = targetY - botPose[1];
+        double distance = Math.hypot(dx, dy);
+        if (distance <= Math.abs(shooter_offset_y)) {
+            return Double.NaN;
+        }
+        // In robot space the target has to end up at y = shooter_offset_y, straight in front of the shooter
+        return Math.atan2(dy, dx) - Math.asin(shooter_offset_y / distance);
+    }
+
+    /**
+     * Where the robot center has to be, and which way it has to face, for the shooter to face the target from
+     * getShootDistance(). The robot stays on the same line through the target it is on now, so it only moves
+     * closer to / further from the target.
+     *
+     * @param botPose {x, y, heading} of the robot center, meters / radians, field center origin
+     * @return {x, y, heading} of the robot center (meters, meters, radians), or null if the robot is on the target
+     */
+    double[] getShootPose(double[] botPose, double targetX, double targetY){
+        double dx = targetX - botPose[0];
+        double dy = targetY - botPose[1];
+        double distance = Math.hypot(dx, dy);
+        if (distance < 1e-6) {
+            return null;
+        }
+        // With the shooter facing the target, the target is shooterDistance + shooter_offset_x in front of the
+        // center and shooter_offset_y to the side, so this is how far the center has to be from the target
+        double shooterDistance = getShootDistance(targetY);
+        double centerDistance = Math.hypot(shooterDistance + shooter_offset_x, shooter_offset_y);
+        double x = targetX - dx / distance * centerDistance;
+        double y = targetY - dy / distance * centerDistance;
+        double heading = Math.atan2(dy, dx) - Math.asin(shooter_offset_y / centerDistance);
+        return new double[] {x, y, heading};
+    }
+
     //returns {x, y, heading} of the robot on the field (meters, meters, radians).
     //On failure returns a single element array with the fail type:
     //{0} no results list, {1} no tags visible, {2} no visible tag gave a usable position

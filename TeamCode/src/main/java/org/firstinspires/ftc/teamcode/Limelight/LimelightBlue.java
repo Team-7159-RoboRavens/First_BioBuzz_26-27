@@ -148,12 +148,61 @@ public class LimelightBlue extends calculatePosition{
         else {
             x = botPose[0] - HIVE_CENTER_X;
         }
-        //the target is the CELL on the same side of the center line as the robot
-        double targetY = botPose[1] > 0 ? targetOffsetY : -targetOffsetY;
-        double fieldAngleToTarget = Math.atan2(targetY - botPose[1], HIVE_CENTER_X - botPose[0]);
-        //radians the robot has to turn to face the target, positive is counterclockwise
+        double fieldAngleToTarget = getShooterHeading(botPose, HIVE_CENTER_X, getTargetY(botPose));
+        if (Double.isNaN(fieldAngleToTarget)) {
+            return null;
+        }
+        //radians the robot has to turn for the shooter to face the target, positive is counterclockwise
         angle = Math.IEEEremainder(fieldAngleToTarget - botPose[2], 2 * Math.PI);
 
         return new double[] {x, y, angle};
+    }
+
+    //the target is the CELL on the same side of the center line as the robot
+    private double getTargetY(double[] botPose) {
+        double targetOffsetY = 0.3370036948997776 - 0.075;
+        return botPose[1] > 0 ? targetOffsetY : -targetOffsetY;
+    }
+
+    /**
+     * Pose the robot has to drive to so the shooter faces the target from the shooting distance.
+     *
+     * @param botPose {x, y, heading} of the robot center, meters / radians, field center origin
+     * @return {x, y, heading} (meters, meters, radians), or null if the target can't be aimed at
+     */
+    public double[] getShootPose(double[] botPose) {
+        return getShootPose(botPose, true);
+    }
+
+    /**
+     * @param botPose {x, y, heading} of the robot center, meters / radians, field center origin
+     * @param requireTargetUp true to return null unless a raised friendly CELL is in view right now. Pass false
+     *                        when re-solving each loop from the Kalman pose after the target was already checked,
+     *                        so the drive keeps going when the tags leave the Limelight's view
+     * @return {x, y, heading} (meters, meters, radians), or null if the target can't be aimed at
+     */
+    public double[] getShootPose(double[] botPose, boolean requireTargetUp) {
+        if (requireTargetUp && friendlyUp() != 3) {
+            return null;
+        }
+        return getShootPose(botPose, HIVE_CENTER_X, getTargetY(botPose));
+    }
+
+    /**
+     * @param botPose {x, y, heading} of the robot center, meters / radians, field center origin
+     * @return horizontal distance from the shooter to the target center, meters
+     */
+    public double getShooterDistance(double[] botPose) {
+        double targetY = getTargetY(botPose);
+        double cos = Math.cos(botPose[2]);
+        double sin = Math.sin(botPose[2]);
+        double shooterX = botPose[0] + shooter_offset_x * cos - shooter_offset_y * sin;
+        double shooterY = botPose[1] + shooter_offset_x * sin + shooter_offset_y * cos;
+        return Math.hypot(HIVE_CENTER_X - shooterX, targetY - shooterY);
+    }
+
+    /** @return shooter to target distance the drive is aiming for, meters */
+    public double getWantedShooterDistance(double[] botPose) {
+        return getShootDistance(getTargetY(botPose));
     }
 }
