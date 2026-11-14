@@ -19,7 +19,6 @@ public class ExtraLoadAutoRed extends ExtraLoadAutoBase {
     private final Pose parkControl = new Pose(36.91779788838613, 85.50075414781297);
 
     private final Pose extraApproachPose = new Pose(15.49778469079939, 91.19909502262443, Math.toRadians(166));
-    private final Pose extraIntakeEndPose = new Pose(12, 92.19909502262443, Math.toRadians(166));
 
     @Override protected Pose getShootPose1() { return shootPose1; }
     @Override protected Pose getShootPose1_1() { return shootPose1_1; }
@@ -33,5 +32,5 @@ public class ExtraLoadAutoRed extends ExtraLoadAutoBase {
     @Override protected Pose getParkControl() { return parkControl; }
 
     @Override protected Pose getExtraApproachPose() { return extraApproachPose; }
-    @Override protected Pose getExtraIntakeEndPose() { return extraIntakeEndPose; }
+    @Override protected Pose getExtraIntakeEndPose() { return parkPose; }
 }
