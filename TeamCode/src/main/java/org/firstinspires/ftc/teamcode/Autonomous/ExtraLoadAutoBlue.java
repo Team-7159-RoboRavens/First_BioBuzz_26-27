@@ -19,8 +19,10 @@ public class ExtraLoadAutoBlue extends ExtraLoadAutoBase {
     private final Pose parkPose = new Pose(131.5075414781297, 45.2051282051282, Math.toRadians(-90));
     private final Pose parkControl = new Pose(107.08220211161387, 58.49924585218703);
 
-    // preShootPose2 / shootPose2 turned 90 deg to face the park wall (x = 144 - y, y = 144 - x, heading = -90 - heading), not measured
-    private final Pose extraApproachPose = new Pose(122.50221530920061, 52.80090497737557, Math.toRadians(-14));
+    // preShootPose2 / shootPose2 rotated 90 deg about (72, 72): x = 144 - y, y = x, heading + 90
+    private final Pose extraApproachPose = new Pose(128.50221530920061, 91.19909502262443, Math.toRadians(14));
+    private final Pose extraIntakeEndPose = new Pose(132, 92.19909502262443, Math.toRadians(14));
+    private final Pose extraParkControl = new Pose(120, 68);
 
     @Override protected Pose getShootPose1() { return shootPose1; }
     @Override protected Pose getShootPose1_1() { return shootPose1_1; }
@@ -34,5 +36,6 @@ public class ExtraLoadAutoBlue extends ExtraLoadAutoBase {
     @Override protected Pose getParkControl() { return parkControl; }
 
     @Override protected Pose getExtraApproachPose() { return extraApproachPose; }
-    @Override protected Pose getExtraIntakeEndPose() { return parkPose; }
+    @Override protected Pose getExtraIntakeEndPose() { return extraIntakeEndPose; }
+    @Override protected Pose getExtraParkControl() { return extraParkControl; }
 }

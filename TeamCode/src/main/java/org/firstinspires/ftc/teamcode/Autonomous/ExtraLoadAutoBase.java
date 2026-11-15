@@ -6,8 +6,8 @@ import com.pedropathing.paths.Path;
 // Three cycle auto plus an extra pickup from the flower on the park wall before parking
 public abstract class ExtraLoadAutoBase extends ThreeCycleAutoBase {
 
-    protected static final double EXTRA_APPROACH_TIMEOUT = 4.0;
-    protected static final double EXTRA_INTAKE_TIMEOUT = 1.5;
+    protected static final double EXTRA_APPROACH_TIMEOUT = 5.0;
+    protected static final double EXTRA_INTAKE_TIMEOUT = 2.0;
     // Same as INTAKE2
     protected static final double EXTRA_PICKUP_TIME = 0.5;
 
@@ -15,15 +15,17 @@ public abstract class ExtraLoadAutoBase extends ThreeCycleAutoBase {
 
     protected abstract Pose getExtraIntakeEndPose();
 
+    protected abstract Pose getExtraParkControl();
+
     @Override
     protected PathState afterThirdVolley() {
         return PathState.EXTRA_APPROACH;
     }
 
-    // Park from the flower instead of from the shoot pose
+    // Park from the flower, curving away from the wall so the robot can turn
     @Override
     protected Path buildParkPath() {
-        return lineTo(getExtraIntakeEndPose(), getParkPose());
+        return curveTo(getExtraIntakeEndPose(), getExtraParkControl(), getParkPose());
     }
 
     @Override

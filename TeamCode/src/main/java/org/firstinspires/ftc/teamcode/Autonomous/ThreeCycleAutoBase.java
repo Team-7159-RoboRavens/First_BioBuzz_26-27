@@ -1,8 +1,10 @@
 package org.firstinspires.ftc.teamcode.Autonomous;
 
+import com.pedropathing.algorithm.Foresight;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
 import com.pedropathing.paths.Path;
+import com.pedropathing.paths.interpolator.Interpolator;
 import com.pedropathing.utils.Timer;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -14,6 +16,9 @@ import static com.pedropathing.api.Paths.line;
 
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.function.Supplier;
 
 public abstract class ThreeCycleAutoBase extends OpMode {
@@ -48,15 +53,25 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     // Wait this long before trusting follower.isBusy() after starting a path
     protected static final double MIN_PATH_TIME = 0.1;
 
-    // Max seconds per path before moving on
-    protected static final double SHOOT1_TO_SHOOT1_1_TIMEOUT = 2.0;
-    protected static final double SHOOT1_1_TO_INTAKE_TIMEOUT = 4.0;
-    protected static final double INTAKE_TO_SHOOT2_TIMEOUT = 6.0;
-    protected static final double PRE_SHOOT2_TO_SHOOT2_TIMEOUT = 1.5;
-    protected static final double SHOOT2_TO_PARK_TIMEOUT = 5.0;
+    // Max seconds per path before moving on (only there so a stuck path can't hang the auto)
+    protected static final double SHOOT1_TO_SHOOT1_1_TIMEOUT = 3.0;
+    protected static final double SHOOT1_1_TO_INTAKE_TIMEOUT = 5.0;
+    protected static final double INTAKE_TO_SHOOT2_TIMEOUT = 8.0;
+    protected static final double PRE_SHOOT2_TO_SHOOT2_TIMEOUT = 2.0;
+    protected static final double SHOOT2_TO_PARK_TIMEOUT = 6.0;
 
     // Skip to park after this many seconds
-    protected static final double PARK_DEADLINE = 24.5;
+    protected static final double PARK_DEADLINE = 26.5;
+
+    // Seconds to sit at the flower with the intake running, raise if balls are left behind
+    protected static final double INTAKE1_TIME = 0.5;
+    // How close to its end the intake path has to get before it counts as done (Pedro default is 0.025)
+    protected static final double INTAKE_END_T = 0.01;
+
+    // Face the direction of travel in the middle of the intake to shoot 2 path (false = old linear heading)
+    protected static final boolean FACE_TRAVEL_TO_SHOOT2 = true;
+    protected static final double TURN_IN_END = 0.25;
+    protected static final double TURN_OUT_START = 0.7;
 
     protected PathState pathState;
 
@@ -65,6 +80,10 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     // Flywheel already spinning for the next volley
     private boolean flywheelPrimed = false;
     private double lastLogTime = 0;
+
+    // Numbers for each finished path, shown on telemetry
+    private final List<String> pathReports = new ArrayList<>();
+    private double statLastTime, statDistance, statMaxSpeed, statTurnTime, statOffPathTime, statBrakeTime;
 
     // Abstract pose getters to be implemented by Red/Blue subclasses
     protected abstract Pose getShootPose1();
@@ -96,6 +115,28 @@ public abstract class ThreeCycleAutoBase extends OpMode {
         return curve(start, control, end).linear(start, end);
     }
 
+    // Has to get closer to the flower than a normal path before it counts as done
+    protected Path buildIntakePath() {
+        return curveTo(getShootPose1_1(), getIntakeControl(), getIntakePose())
+                .with(Constants.foresightConfig.parametricTConstraint.at(INTAKE_END_T));
+    }
+
+    // Mecanum is fastest driving forward, so turn to face the travel direction, then turn to the shoot heading
+    protected Path buildShoot2Path() {
+        Pose start = fromActual(getIntakePose());
+        Pose end = getPreShootPose2();
+        Path path = curve(start, getShoot2Control(), end);
+        if (!FACE_TRAVEL_TO_SHOOT2) {
+            return path.linear(start, end);
+        }
+        double turnInHeading = path.curve.tangent(path.curve.parameter(TURN_IN_END)).theta();
+        double turnOutHeading = path.curve.tangent(path.curve.parameter(TURN_OUT_START)).theta();
+        return path.heading(Interpolator.piecewise()
+                .until(TURN_IN_END, Interpolator.linear(start.heading(), turnInHeading))
+                .until(TURN_OUT_START, Interpolator.tangent)
+                .until(1.0, Interpolator.linear(turnOutHeading, end.heading())));
+    }
+
     // ExtraLoad overrides this
     protected Path buildParkPath() {
         return curveTo(getShootPose2(), getParkControl(), getParkPose());
@@ -106,13 +147,42 @@ public abstract class ThreeCycleAutoBase extends OpMode {
         if (!pathStarted) {
             follower.follow(pathSupplier.get());
             pathStarted = true;
+            statLastTime = pathTimer.seconds();
+            statDistance = statMaxSpeed = statTurnTime = statOffPathTime = statBrakeTime = 0;
             Log.i(pathState.toString(), "path started");
             return false;
         }
         double t = pathTimer.seconds();
+        updatePathStats(t);
         boolean timedOut = t > timeout;
-        if (timedOut) Log.w(pathState.toString(), "path timed out after " + t + "s");
-        return (t > MIN_PATH_TIME && !follower.isBusy()) || timedOut;
+        boolean done = (t > MIN_PATH_TIME && !follower.isBusy()) || timedOut;
+        if (done) reportPath(t, timedOut);
+        return done;
+    }
+
+    private void updatePathStats(double t) {
+        double dt = t - statLastTime;
+        statLastTime = t;
+        double speed = follower.velocity().linSpeed();
+        statDistance += speed * dt;
+        statMaxSpeed = Math.max(statMaxSpeed, speed);
+        if (follower.following() && follower.algorithm() instanceof Foresight) {
+            Foresight foresight = (Foresight) follower.algorithm();
+            // Past these errors Pedro spends power on turning / getting back on the path instead of driving
+            if (Math.abs(foresight.headingError()) > Math.toRadians(11.25)) statTurnTime += dt;
+            if (Math.abs(foresight.translationalError()) > 2.5) statOffPathTime += dt;
+            if (foresight.isBraking()) statBrakeTime += dt;
+        }
+    }
+
+    private void reportPath(double t, boolean timedOut) {
+        String report = String.format(Locale.US,
+                "%s %.1fs avg %.0f max %.0f in/s turning %.0f%% off path %.0f%% braking %.0f%%%s",
+                pathState, t, statDistance / t, statMaxSpeed,
+                100 * statTurnTime / t, 100 * statOffPathTime / t, 100 * statBrakeTime / t,
+                timedOut ? " TIMED OUT" : "");
+        Log.i("PathReport", report);
+        pathReports.add(report);
     }
 
     protected void primeFlywheel() {
@@ -171,8 +241,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                 break;
 
             case SHOOT_POS1_1_INTAKE_POS:
-                if (runPath(() -> curveTo(getShootPose1_1(), getIntakeControl(), getIntakePose()),
-                        SHOOT1_1_TO_INTAKE_TIMEOUT)) {
+                if (runPath(this::buildIntakePath, SHOOT1_1_TO_INTAKE_TIMEOUT)) {
                     mechanisms.lowerFlower();
                     setPathState(PathState.INTAKE1);
                 }
@@ -180,7 +249,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
 
             case INTAKE1:
                 mechanisms.intake();
-                if (pathTimer.seconds() >= 0.25) {
+                if (pathTimer.seconds() >= INTAKE1_TIME) {
                     mechanisms.raiseFlower();
                     setPathState(PathState.INTAKE_POS_SHOOT_POS2);
                 }
@@ -193,8 +262,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                 if (pathTimer.seconds() > 2.5) {
                     mechanisms.lowerFlower();
                 }
-                if (runPath(() -> curveTo(getIntakePose(), getShoot2Control(), getPreShootPose2()),
-                        INTAKE_TO_SHOOT2_TIMEOUT)) {
+                if (runPath(this::buildShoot2Path, INTAKE_TO_SHOOT2_TIMEOUT)) {
                     mechanisms.lowerFlower();
                     setPathState(PathState.SHOOT_PRELOAD2);
                 }
@@ -276,6 +344,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     public void start() {
         opModeTimer.reset();
         lastLogTime = 0;
+        pathReports.clear();
         setPathState(PathState.SHOOT_PRELOAD1);
     }
 
@@ -292,6 +361,9 @@ public abstract class ThreeCycleAutoBase extends OpMode {
         telemetry.addData("Path Time", pathTimer.seconds());
         telemetry.addData("Auto Time", opModeTimer.seconds());
         telemetry.addData("intake motor", mechanisms.intakeMotor.getVelocity());
+        for (String report : pathReports) {
+            telemetry.addLine(report);
+        }
         telemetry.update();
 
         // Only log a few times a second
