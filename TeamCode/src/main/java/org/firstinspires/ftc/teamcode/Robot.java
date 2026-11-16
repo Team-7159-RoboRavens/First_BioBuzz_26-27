@@ -238,16 +238,15 @@ public class Robot {
     public void pinpointUpdate(){
         pinpoint.update();
     }
+    public void resetIMU(){
+        pinpoint.resetPosAndIMU();
+    }
 
     public double limelightAngle() { return pinpointAngle();}
 
 
     public void setHeadingHold(boolean headingHold){
         inputHandler.setLockHeading(headingHold);
-    }
-
-    public void resetPinpoint(){
-        pinpoint.resetPosAndIMU();
     }
     public void setFlowerState(double val) {
         //down

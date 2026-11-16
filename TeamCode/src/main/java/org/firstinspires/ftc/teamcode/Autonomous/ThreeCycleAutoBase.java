@@ -242,7 +242,6 @@ public abstract class ThreeCycleAutoBase extends OpMode {
 
             case SHOOT_POS1_1_INTAKE_POS:
                 if (runPath(this::buildIntakePath, SHOOT1_1_TO_INTAKE_TIMEOUT)) {
-                    mechanisms.lowerFlower();
                     setPathState(PathState.INTAKE1);
                 }
                 break;

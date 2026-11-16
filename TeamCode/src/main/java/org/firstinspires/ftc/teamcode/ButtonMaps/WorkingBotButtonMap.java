@@ -265,7 +265,7 @@ public class WorkingBotButtonMap extends PinpointBM{
         double[] vals = new double[4];
         vals[1] = getIntakePower();
         if (g2.dpadUpWasPressed()){
-            RPM = 200;
+            RPM = 188;
         }
         if (g2.dpadDownWasPressed()){
             RPM = 0;
@@ -288,6 +288,9 @@ public class WorkingBotButtonMap extends PinpointBM{
         vals[0] = RPM;
         if (g2.left_bumper){
             vals[3] = 1;
+        }
+        if (g2.backWasPressed()){
+            robot.resetIMU();
         }
         return vals;
     }
