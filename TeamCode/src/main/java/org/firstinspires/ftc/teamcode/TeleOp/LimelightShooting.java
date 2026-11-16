@@ -1,11 +1,14 @@
 package org.firstinspires.ftc.teamcode.TeleOp;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Limelight.Limelight;
 import org.firstinspires.ftc.teamcode.Limelight.LimelightBlue;
 
+// Disabled, the Limelight made the phone disconnect from the driver station
+@Disabled
 @TeleOp(name="LimelightShooting")
 public class LimelightShooting extends OpMode {
     //extends flywheel shooting

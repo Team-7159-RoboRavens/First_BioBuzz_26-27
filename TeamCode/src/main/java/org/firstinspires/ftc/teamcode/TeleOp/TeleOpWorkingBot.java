@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.firstinspires.ftc.teamcode.ButtonMaps.WheelTestBM;
 import org.firstinspires.ftc.teamcode.ButtonMaps.WorkingBotButtonMap;
-import org.firstinspires.ftc.teamcode.Limelight.Limelight;
+// import org.firstinspires.ftc.teamcode.Limelight.Limelight;
 import org.firstinspires.ftc.teamcode.Macros.GoToShoot;
 import org.firstinspires.ftc.teamcode.Macros.Macro;
 import org.firstinspires.ftc.teamcode.MotorPowers;
@@ -30,7 +30,7 @@ public class TeleOpWorkingBot extends OpMode{
 
     public double averageFrameTime = 0;
     private long frameCount;
-    Limelight ll;
+    // Limelight ll;
     GoToShoot goToShoot;
 
     MotorPowers mp;
@@ -83,7 +83,7 @@ public class TeleOpWorkingBot extends OpMode{
             ReadWriteFile.writeFile(logFile, logData.toString());
         }
         TeleOpData.frameTime = averageFrameTime;
-        telemetry.addData("Motors", "shoot motor target(%.2f), actual(%.2f)",vals[0], robot.shootMotor.getVelocity() * 60 /1075.2 );
+        telemetry.addData("Motors", "shoot motor target(%.2f), actual(%.2f)",vals[0], robot.getShootRPM());
         telemetry.addData("Motors", "left front(%.2f), right front(%.2f)", mp.lf, mp.rf);
         telemetry.addData("Motors", "left back(%.2f), right back(%.2f)", mp.lb, mp.rb);
         telemetry.addData("Motors", "enabled(%b)", robot.inputHandlingEnabled);

@@ -189,11 +189,21 @@ public class Robot {
             shootMotor.setPower(power);
         }
     }
+    // Shoot motor encoder ticks per output revolution, used for both setting and reading RPM
+    public static final double SHOOT_TICKS_PER_REV = 383.6;
+
     public void setShootRPM(double RPM){
         if (shootMotor != null) {
-            double targetTicksPerSec = (RPM / 60.0) * 383.6;
+            double targetTicksPerSec = (RPM / 60.0) * SHOOT_TICKS_PER_REV;
             shootMotor.setVelocity(targetTicksPerSec);
         }
+    }
+
+    public double getShootRPM(){
+        if (shootMotor == null) {
+            return 0;
+        }
+        return shootMotor.getVelocity() / SHOOT_TICKS_PER_REV * 60.0;
     }
 
     public void tuneMotorPowers(MotorPowers mp){

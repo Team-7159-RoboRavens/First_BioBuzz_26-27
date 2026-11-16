@@ -90,6 +90,16 @@ public class AutoMechanisms {
         intakeMotor.setPower(INTAKE_POWER);
     }
 
+    // Intake without stopping the flywheel, for intaking between two volleys
+    public void intakeKeepFlywheel() {
+        resetFeeder();
+        intakeMotor.setPower(INTAKE_POWER);
+    }
+
+    public double getFlywheelRPM() {
+        return flywheel.getVelocity() / FLYWHEEL_TICKS_PER_REV * 60.0;
+    }
+
     public void lowerFlower(){
         flowerServo.setPosition(0.94);
     }

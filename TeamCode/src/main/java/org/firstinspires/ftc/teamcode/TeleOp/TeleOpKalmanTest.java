@@ -4,6 +4,7 @@ import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.ButtonMaps.Mechanumdrive;
@@ -15,6 +16,8 @@ import org.firstinspires.ftc.teamcode.Localization.KalmanPositionFilter;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
 
+// Disabled, the Limelight made the phone disconnect from the driver station
+@Disabled
 @TeleOp(name = "TeleOpKalmanTest")
 public class TeleOpKalmanTest extends OpMode {
     private Robot robot;

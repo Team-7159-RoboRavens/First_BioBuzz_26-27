@@ -1,16 +1,17 @@
 package org.firstinspires.ftc.teamcode.ButtonMaps;
 
 import com.pedropathing.math.Pose;
-import com.qualcomm.hardware.limelightvision.LLResult;
+// Limelight removed, the phone kept disconnecting from the driver station with it plugged in
+// import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.Limelight.Limelight;
+// import org.firstinspires.ftc.teamcode.Limelight.Limelight;
 import org.firstinspires.ftc.teamcode.Limelight.LimelightBlue;
-import org.firstinspires.ftc.teamcode.Limelight.calculatePosition;
 import org.firstinspires.ftc.teamcode.Localization.KalmanPositionFilter;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.TeleOp.TeleOpData;
 
 public class WorkingBotButtonMap extends PinpointBM{
     private static final double METERS_PER_INCH = 0.0254;
@@ -31,9 +32,11 @@ public class WorkingBotButtonMap extends PinpointBM{
     private double RPM = 0;
     private final Robot robot;
     private final Telemetry telemetry;
-    private final Limelight limelight;
+    // private final Limelight limelight;
+    // Only used for the shooting math, it has no Limelight
     private final LimelightBlue limelightBlue;
-    private final KalmanPositionFilter positionFilter = new KalmanPositionFilter();
+    // Pinpoint only, starts from where the auto ended
+    private final KalmanPositionFilter positionFilter;
     private long previousUpdateNanos = System.nanoTime();
     // Last finite Pinpoint reading (mm, mm, radians)
     private double pinpointX = 0;
@@ -42,7 +45,7 @@ public class WorkingBotButtonMap extends PinpointBM{
     // The Pinpoint takes a moment to reset and recalibrate, its jump back to 0 isn't the robot moving
     private static final long PINPOINT_RESET_NANOS = 400_000_000L;
     private long pinpointResetEndNanos = 0;
-    private double previousLimelightFrameTimestamp = Double.NaN;
+    // private double previousLimelightFrameTimestamp = Double.NaN;
 
     // Field heading the robot is turning to, in radians. A new call to rotateTo() replaces it.
     private double rotateTargetHeading = 0;
@@ -56,9 +59,14 @@ public class WorkingBotButtonMap extends PinpointBM{
         super(op, r);
         robot = r;
         telemetry = op.telemetry;
-        limelight = new Limelight(r);
-        limelight.useAprilTagPipeline();
-        limelightBlue = new LimelightBlue(limelight, telemetry);
+        // limelight = new Limelight(r);
+        // limelight.useAprilTagPipeline();
+        limelightBlue = new LimelightBlue(null, telemetry);
+        // Without an auto pose the field position is unknown and A / B do nothing
+        Pose autoEndPose = TeleOpData.autoEndPose;
+        positionFilter = autoEndPose != null ? new KalmanPositionFilter(autoEndPose) : new KalmanPositionFilter();
+        // Used once, a later teleop run starts somewhere else
+        TeleOpData.autoEndPose = null;
     }
 
     /**
@@ -128,20 +136,20 @@ public class WorkingBotButtonMap extends PinpointBM{
         }
     }
 
-    // Fuses this loop's Pinpoint reading with the Limelight, only using each Limelight frame once
+    // Runs the filter on this loop's Pinpoint reading, no Limelight
     private KalmanPositionFilter.FieldPosition updatePosition(){
-        limelight.update();
-        limelightBlue.updateTagPosition();
+        // limelight.update();
+        // limelightBlue.updateTagPosition();
 
-        Pose limelightPose = null;
-        double limelightLatencySeconds = 0;
-        LLResult result = limelight.latestResult;
-        if (result != null && result.isValid() && result.getTimestamp() != previousLimelightFrameTimestamp){
-            previousLimelightFrameTimestamp = result.getTimestamp();
-            limelightPose = limelightBlue.getPedroPose();
-            limelightLatencySeconds =
-                    (result.getCaptureLatency() + result.getTargetingLatency() + result.getStaleness()) / 1000.0;
-        }
+        // Pose limelightPose = null;
+        // double limelightLatencySeconds = 0;
+        // LLResult result = limelight.latestResult;
+        // if (result != null && result.isValid() && result.getTimestamp() != previousLimelightFrameTimestamp){
+        //     previousLimelightFrameTimestamp = result.getTimestamp();
+        //     limelightPose = limelightBlue.getPedroPose();
+        //     limelightLatencySeconds =
+        //             (result.getCaptureLatency() + result.getTargetingLatency() + result.getStaleness()) / 1000.0;
+        // }
 
         long currentTimeNanos = System.nanoTime();
         double deltaTimeSeconds = (currentTimeNanos - previousUpdateNanos) / 1_000_000_000.0;
@@ -153,8 +161,6 @@ public class WorkingBotButtonMap extends PinpointBM{
                 pinpointX,
                 pinpointY,
                 pinpointHeading,
-                limelightPose,
-                limelightLatencySeconds,
                 deltaTimeSeconds);
     }
 
@@ -166,12 +172,12 @@ public class WorkingBotButtonMap extends PinpointBM{
                 position.headingRadians};
     }
 
-    // Does nothing if the target can't be aimed at, getShootPose() needs a raised friendly CELL in view on the press.
+    // Does nothing if the target can't be aimed at. Without the Limelight it can't check that the CELL is raised.
     private void driveToShootPose(KalmanPositionFilter.FieldPosition position){
         if (!positionFilter.hasFieldPose()){
             return;
         }
-        double[] shootPose = limelightBlue.getShootPose(toFieldMeters(position));
+        double[] shootPose = limelightBlue.getShootPose(toFieldMeters(position), false);
         if (shootPose == null){
             return;
         }

@@ -5,6 +5,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.LLStatus;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.ButtonMaps.BasicBM;
@@ -23,6 +24,8 @@ import java.util.List;
 
 // TeleOp op mode using the Pinpoint-aware button map, with odometry telemetry.
 
+// Disabled, the Limelight made the phone disconnect from the driver station
+@Disabled
 @TeleOp(name = "limelightTest")
 public class limelightTest extends OpMode {
 
