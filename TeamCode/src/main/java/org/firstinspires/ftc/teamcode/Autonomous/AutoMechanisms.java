@@ -16,7 +16,8 @@ public class AutoMechanisms {
     public static final String SHOOT_FEED_SERVO_NAME = "transferServo";
     public static final String INTAKE_SERVO_RIGHT_NAME = "intakeServoRight";
 
-    public static final double FLYWHEEL_VELOCITY =  176 / 60.0 * 383.6;
+    // Flywheel encoder ticks per output revolution
+    public static final double FLYWHEEL_TICKS_PER_REV = 383.6;
     public static final double FLYWHEEL_P = 12.0;
     public static final double FLYWHEEL_I = 0.5;
     public static final double FLYWHEEL_D = 0.1;
@@ -52,13 +53,18 @@ public class AutoMechanisms {
     }
 
     // Last commanded state, so the same hub command isn't sent every loop
-    private boolean flywheelOn = true;
+    // NaN so the first command always goes out
+    private double flywheelRPM = Double.NaN;
     private boolean feederOn = true;
 
-    public void spinUpFlywheel() {
-        if (!flywheelOn) {
-            flywheel.setVelocity(FLYWHEEL_VELOCITY);
-            flywheelOn = true;
+    public void spinUpFlywheel(double rpm) {
+        setFlywheelRPM(rpm);
+    }
+
+    private void setFlywheelRPM(double rpm) {
+        if (rpm != flywheelRPM) {
+            flywheel.setVelocity(rpm / 60.0 * FLYWHEEL_TICKS_PER_REV);
+            flywheelRPM = rpm;
         }
     }
 
@@ -69,9 +75,9 @@ public class AutoMechanisms {
         }
     }
 
-    public void startShoot() {
+    public void startShoot(double rpm) {
         stopIntake();
-        spinUpFlywheel();
+        spinUpFlywheel(rpm);
     }
     public void shoot() {
         extendFeeder();
@@ -105,10 +111,7 @@ public class AutoMechanisms {
     }
 
     public void stopFlywheel() {
-        if (flywheelOn) {
-            flywheel.setVelocity(0.0);
-            flywheelOn = false;
-        }
+        setFlywheelRPM(0.0);
     }
 
     public void reset() {

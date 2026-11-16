@@ -36,7 +36,7 @@ public class GoToShoot extends Macro {
         xPower = xDiff/dist;
         yPower = yDiff/dist;
         robot.pinpointUpdate();
-        robot.setPowers(Mechanumdrive.fieldOrientedDrive(yPower*factor, xPower*factor, 0, Math.PI/2));
+        // No setPowers here, this runs in init and would drive the robot before start
     }
 
     public void updateProgress() {

@@ -135,6 +135,11 @@ public final class KalmanPositionFilter {
         return hasFieldPose;
     }
 
+    // Call after the Pinpoint is reset, the next reading becomes the new reference instead of a jump
+    public void resetPinpointReference() {
+        hasPinpointMeasurement = false;
+    }
+
     // Moves the estimate by the change in Pinpoint pose since the last update and grows the uncertainty to match
     private void predict(double pinpointXMillimeters, double pinpointYMillimeters, double pinpointHeading, double deltaTimeSeconds) {
         if (!hasPinpointMeasurement) {

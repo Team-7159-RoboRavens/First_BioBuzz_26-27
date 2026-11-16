@@ -35,6 +35,13 @@ public class WorkingBotButtonMap extends PinpointBM{
     private final LimelightBlue limelightBlue;
     private final KalmanPositionFilter positionFilter = new KalmanPositionFilter();
     private long previousUpdateNanos = System.nanoTime();
+    // Last finite Pinpoint reading (mm, mm, radians)
+    private double pinpointX = 0;
+    private double pinpointY = 0;
+    private double pinpointHeading = 0;
+    // The Pinpoint takes a moment to reset and recalibrate, its jump back to 0 isn't the robot moving
+    private static final long PINPOINT_RESET_NANOS = 400_000_000L;
+    private long pinpointResetEndNanos = 0;
     private double previousLimelightFrameTimestamp = Double.NaN;
 
     // Field heading the robot is turning to, in radians. A new call to rotateTo() replaces it.
@@ -65,6 +72,7 @@ public class WorkingBotButtonMap extends PinpointBM{
     public MotorPowers getPowers(){
         // Refresh odometry each loop before using any pinpoint-derived data.
         robot.pinpointUpdate();
+        readPinpoint();
         KalmanPositionFilter.FieldPosition position = updatePosition();
 
         double forward = getDpadForward(g1.dpad_up, g1.dpad_down);
@@ -105,7 +113,19 @@ public class WorkingBotButtonMap extends PinpointBM{
         if (!driverRotating){
             rotateClockwise = getRotationPower(position.headingRadians);
         }
-        return Mechanumdrive.fieldOrientedDrive(forward, right, rotateClockwise, Math.PI/2 + robot.pinpointAngle());
+        return Mechanumdrive.fieldOrientedDrive(forward, right, rotateClockwise, Math.PI/2 + pinpointHeading);
+    }
+
+    // Keeps the last good reading, a NaN from the Pinpoint would throw in the filter and stop the op mode
+    private void readPinpoint(){
+        double x = robot.getPinpointX();
+        double y = robot.getPinpointY();
+        double heading = robot.pinpointAngle();
+        if (Double.isFinite(x) && Double.isFinite(y) && Double.isFinite(heading)){
+            pinpointX = x;
+            pinpointY = y;
+            pinpointHeading = heading;
+        }
     }
 
     // Fuses this loop's Pinpoint reading with the Limelight, only using each Limelight frame once
@@ -126,10 +146,13 @@ public class WorkingBotButtonMap extends PinpointBM{
         long currentTimeNanos = System.nanoTime();
         double deltaTimeSeconds = (currentTimeNanos - previousUpdateNanos) / 1_000_000_000.0;
         previousUpdateNanos = currentTimeNanos;
+        if (currentTimeNanos < pinpointResetEndNanos){
+            positionFilter.resetPinpointReference();
+        }
         return positionFilter.update(
-                robot.getPinpointX(),
-                robot.getPinpointY(),
-                robot.pinpointAngle(),
+                pinpointX,
+                pinpointY,
+                pinpointHeading,
                 limelightPose,
                 limelightLatencySeconds,
                 deltaTimeSeconds);
@@ -275,22 +298,22 @@ public class WorkingBotButtonMap extends PinpointBM{
         }
         if (g2.dpadLeftWasPressed()){
             RPM -= 5;
-            if (RPM < 0){
-                double feedPower = -0.7;
-                vals[2] = feedPower;
-            }
+        }
+        // Feed only, the intake stays on the triggers
+        if (g2.left_bumper){
+            vals[2] = -0.7;
         }
         else if (g2.right_bumper){
-            double feedPower = 0.7;
-            vals[2] = feedPower;
-            vals[1] = 0.5;
+            vals[2] = 0.7;
         }
         vals[0] = RPM;
-        if (g2.left_bumper){
+        // Hold x to lower the flower
+        if (g2.x){
             vals[3] = 1;
         }
-        if (g2.backWasPressed()){
+        if (g1.backWasPressed()){
             robot.resetIMU();
+            pinpointResetEndNanos = System.nanoTime() + PINPOINT_RESET_NANOS;
         }
         return vals;
     }

@@ -50,6 +50,10 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     protected static final double FEED_TIME = 4.4;
     protected static final double PRESPIN_AFTER = 1.0;
 
+    // Flywheel RPM, the preload volley shoots stronger so it gets less
+    protected static final double FIRST_SHOT_RPM = 173;
+    protected static final double SHOT_RPM = 180;
+
     // Wait this long before trusting follower.isBusy() after starting a path
     protected static final double MIN_PATH_TIME = 0.1;
 
@@ -186,7 +190,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     }
 
     protected void primeFlywheel() {
-        mechanisms.spinUpFlywheel();
+        mechanisms.spinUpFlywheel(SHOT_RPM);
         flywheelPrimed = true;
     }
 
@@ -195,7 +199,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
         double t = pathTimer.seconds();
         double spinUp = flywheelPrimed ? PRESPUN_SPIN_UP_TIME : SPIN_UP_TIME;
         if (t < spinUp) {
-            mechanisms.startShoot();
+            mechanisms.startShoot(pathState == PathState.SHOOT_PRELOAD1 ? FIRST_SHOT_RPM : SHOT_RPM);
         } else {
             mechanisms.shoot();
         }
