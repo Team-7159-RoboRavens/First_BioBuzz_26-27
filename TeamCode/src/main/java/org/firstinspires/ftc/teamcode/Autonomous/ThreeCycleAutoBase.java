@@ -47,7 +47,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     // Shooting timings (seconds)
     protected static final double SPIN_UP_TIME = 0.8;
     protected static final double PRESPUN_SPIN_UP_TIME = 0.3;
-    protected static final double FEED_TIME = 3.2;
+    protected static final double FEED_TIME = 4.4;
     protected static final double PRESPIN_AFTER = 1.0;
 
     // Wait this long before trusting follower.isBusy() after starting a path

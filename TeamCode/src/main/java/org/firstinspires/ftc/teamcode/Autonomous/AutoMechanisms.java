@@ -16,7 +16,7 @@ public class AutoMechanisms {
     public static final String SHOOT_FEED_SERVO_NAME = "transferServo";
     public static final String INTAKE_SERVO_RIGHT_NAME = "intakeServoRight";
 
-    public static final double FLYWHEEL_VELOCITY =  188 / 60.0 * 383.6;
+    public static final double FLYWHEEL_VELOCITY =  176 / 60.0 * 383.6;
     public static final double FLYWHEEL_P = 12.0;
     public static final double FLYWHEEL_I = 0.5;
     public static final double FLYWHEEL_D = 0.1;

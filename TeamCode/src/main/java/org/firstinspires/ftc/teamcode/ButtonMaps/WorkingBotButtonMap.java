@@ -265,7 +265,7 @@ public class WorkingBotButtonMap extends PinpointBM{
         double[] vals = new double[4];
         vals[1] = getIntakePower();
         if (g2.dpadUpWasPressed()){
-            RPM = 188;
+            RPM = 183;
         }
         if (g2.dpadDownWasPressed()){
             RPM = 0;

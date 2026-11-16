@@ -12,7 +12,7 @@ public class ThreeCycleAutoBlue extends ThreeCycleAutoBase {
     private final Pose intakeControl = new Pose(96.3, 134.29);
     // -76 / -90 instead of 284 / 270 so the turn is the short way
     private final Pose preShootPose2 = new Pose(91.19909502262443, 15.49778469079939, Math.toRadians(-76));
-    private final Pose shootPose2 = new Pose(92.19909502262443, 12, Math.toRadians(-76));
+    private final Pose shootPose2 = new Pose(92.19909502262443, 11.8, Math.toRadians(-76));
     private final Pose shoot2Control = new Pose(115.1184012066365, 44.029411764705884);
     private final Pose shoot2Control2 = new Pose(115.1184012066365, 44.029411764705884);
     private final Pose parkPose = new Pose(131.5075414781297, 45.2051282051282, Math.toRadians(180));
