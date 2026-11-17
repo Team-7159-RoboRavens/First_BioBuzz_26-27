@@ -4,8 +4,8 @@ import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 // Blue rotated 180 deg about (72, 72): x = 144 - x, y = 144 - y, heading + 180
-@Autonomous(name = "ThreeCycleAutoRed")
-public class ThreeCycleAutoRed extends ThreeCycleAutoBase {
+@Autonomous(name = "ThreeCycleRedRightPark")
+public class ThreeCycleRedRightPark extends ThreeCycleAutoBase {
 
     private final Pose shootPose1 = new Pose(54.7, 17, Math.toRadians(270));
     private final Pose shootPose1_1 = new Pose(58.7, 27, Math.toRadians(180));

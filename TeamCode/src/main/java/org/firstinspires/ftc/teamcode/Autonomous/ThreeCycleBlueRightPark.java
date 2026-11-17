@@ -3,8 +3,8 @@ package org.firstinspires.ftc.teamcode.Autonomous;
 import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-@Autonomous(name = "ThreeCycleAutoBlue")
-public class ThreeCycleAutoBlue extends ThreeCycleAutoBase {
+@Autonomous(name = "ThreeCycleBlueRightPark")
+public class ThreeCycleBlueRightPark extends ThreeCycleAutoBase {
     private final Pose shootPose1 = new Pose(89.3, 127, Math.toRadians(90));
     private final Pose shootPose1_1 = new Pose(85.3, 117, Math.toRadians(0));
 
