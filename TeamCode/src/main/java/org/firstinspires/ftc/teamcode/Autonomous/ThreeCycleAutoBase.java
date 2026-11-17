@@ -51,7 +51,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     protected static final double MAX_SPIN_UP_TIME = 2.0;
     protected static final double RPM_TOLERANCE = 3;
     protected static final double SETTLE_TIME = 0.15;
-    protected static final double FEED_TIME = 4.4;
+    protected static final double FEED_TIME = 6;
     protected static final double PRESPIN_AFTER = 1.0;
 
     // Flywheel RPM, the preload volley shoots stronger so it gets less

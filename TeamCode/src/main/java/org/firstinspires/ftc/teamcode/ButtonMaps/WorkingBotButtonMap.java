@@ -293,18 +293,19 @@ public class WorkingBotButtonMap extends PinpointBM{
     public double[] getState(){
         double[] vals = new double[4];
         vals[1] = getIntakePower();
-        if (g2.dpadUpWasPressed()){
-            RPM = 183;
-        }
-        if (g2.dpadDownWasPressed()){
-            RPM = 0;
-        }
-        if (g2.dpadRightWasPressed()){
-            RPM += 5;
-        }
-        if (g2.dpadLeftWasPressed()){
-            RPM -= 5;
-        }
+        RPM = 183;
+//        if (g2.dpadUpWasPressed()){
+//            RPM = 183;
+//        }
+//        if (g2.dpadDownWasPressed()){
+//            RPM = 0;
+//        }
+//        if (g2.dpadRightWasPressed()){
+//            RPM += 5;
+//        }
+//        if (g2.dpadLeftWasPressed()){
+//            RPM -= 5;
+//        }
         // Feed only, the intake stays on the triggers
         if (g2.left_bumper){
             vals[2] = -0.7;
