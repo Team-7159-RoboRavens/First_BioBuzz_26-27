@@ -11,9 +11,14 @@ public abstract class ExtraLoadAutoBase extends ThreeCycleAutoBase {
     // Same as INTAKE2
     protected static final double EXTRA_PICKUP_TIME = 0.5;
 
-    protected abstract Pose getExtraApproachPose();
+    // Extra flower poses are preShootPose2 / shootPose2 rotated 90 deg about (72, 72): x = 144 - y, y = x, heading + 90
+    protected static Pose rotate90(Pose p) {
+        return new Pose(144 - p.y(), p.x(), p.heading() + Math.PI / 2);
+    }
 
-    protected abstract Pose getExtraIntakeEndPose();
+    protected Pose getExtraApproachPose() { return rotate90(getPreShootPose2()); }
+
+    protected Pose getExtraIntakeEndPose() { return rotate90(getShootPose2()); }
 
     protected abstract Pose getExtraParkControl();
 
