@@ -55,8 +55,8 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     protected static final double PRESPIN_AFTER = 1.0;
 
     // Flywheel RPM, the preload volley shoots stronger so it gets less
-    protected static final double FIRST_SHOT_RPM = 173;
-    protected static final double SHOT_RPM = 180;
+    protected static final double FIRST_SHOT_RPM = 175;
+    protected static final double SHOT_RPM = 183;
 
     // Wait this long before trusting follower.isBusy() after starting a path
     protected static final double MIN_PATH_TIME = 0.1;
@@ -278,6 +278,9 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                 break;
 
             case INTAKE_POS_SHOOT_POS2:
+                if (pathTimer.seconds() > 0.5) {
+                    mechanisms.stopIntake();
+                }
                 if (pathTimer.seconds() > PRESPIN_AFTER) {
                     primeFlywheel();
                 }
