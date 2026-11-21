@@ -21,7 +21,7 @@ public class ParkTransfer {
     void update() {
         if (stage != Stage.WAIT_IN_PARK
                 && auto.opModeTimer.seconds() > ThreeCycleAutoBase.PARK_DEADLINE) {
-            auto.mechanisms.intake();
+            auto.mechanisms.intakeKeepFlywheel();
             auto.setPathState(
                     ThreeCycleAutoBase.PathState.SHOOT_POS2_PARK_POS);
             return;
@@ -29,9 +29,11 @@ public class ParkTransfer {
 
         switch (stage) {
             case TO_PARK:
-                if (auto.pathTimer.seconds() > ThreeCycleAutoBase.PRESPIN_AFTER) {
-                    auto.primeFlywheel();
+                // Same as INTAKE_POS_SHOOT_POS2 in the other autos
+                if (auto.pathTimer.seconds() > 0.5) {
+                    auto.mechanisms.stopIntake();
                 }
+                auto.primeFlywheel();
                 if (auto.pathTimer.seconds() > 2.5) {
                     auto.mechanisms.lowerFlower();
                 }
@@ -59,9 +61,7 @@ public class ParkTransfer {
                 break;
 
             case TO_SHOOT:
-                if (auto.pathTimer.seconds() > ThreeCycleAutoBase.PRESPIN_AFTER) {
-                    auto.primeFlywheel();
-                }
+                auto.primeFlywheel();
                 if (auto.pathTimer.seconds() > 2.5) {
                     auto.mechanisms.lowerFlower();
                 }

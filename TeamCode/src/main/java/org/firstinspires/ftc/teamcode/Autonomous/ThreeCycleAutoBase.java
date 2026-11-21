@@ -46,13 +46,16 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     }
 
     // Shooting timings (seconds)
-    // Feeding waits until the flywheel has held its target speed for SETTLE_TIME, so it doesn't fire on an overshoot
-    protected static final double MIN_SPIN_UP_TIME = 0.3;
-    protected static final double MAX_SPIN_UP_TIME = 2.0;
+    // Only the first volley waits for spin up, the flywheel then stays on for the whole auto
+    // The first volley waits until the flywheel has held its target speed for SETTLE_TIME, so it doesn't fire on the spin up overshoot
+    protected static final double MIN_SPIN_UP_TIME = 1.0;
+    protected static final double MAX_SPIN_UP_TIME = 3.0;
     protected static final double RPM_TOLERANCE = 3;
-    protected static final double SETTLE_TIME = 0.15;
-    protected static final double FEED_TIME = 6;
-    protected static final double PRESPIN_AFTER = 1.0;
+    protected static final double SETTLE_TIME = 0.5;
+    // How long each volley feeds
+    protected static final double FEED_TIME_1 = 5.2;
+    protected static final double FEED_TIME_2 = 5.2;
+    protected static final double FEED_TIME_3 = 6.0;
 
     // Flywheel RPM, the preload volley shoots stronger so it gets less
     protected static final double FIRST_SHOT_RPM = 175;
@@ -69,7 +72,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     protected static final double SHOOT2_TO_PARK_TIMEOUT = 6.0;
 
     // Skip to park after this many seconds
-    protected static final double PARK_DEADLINE = 26.5;
+    protected static final double PARK_DEADLINE = 27.0;
 
     // Seconds to sit at the flower with the intake running, raise if balls are left behind
     protected static final double INTAKE1_TIME = 0.5;
@@ -198,11 +201,18 @@ public abstract class ThreeCycleAutoBase extends OpMode {
         mechanisms.spinUpFlywheel(SHOT_RPM);
     }
 
-    // Returns true when the volley is done, keepFlywheel leaves it spinning for the next volley
-    protected boolean runShoot(boolean keepFlywheel) {
+    // Returns true when the volley is done, the flywheel keeps spinning for the next volley
+    protected boolean runShoot(double feedTime) {
         double t = pathTimer.seconds();
+        // Flywheel is already at speed for volleys 2 and 3, so feed right away and keep the intake running
+        if (feedStartTime < 0 && pathState != PathState.SHOOT_PRELOAD1) {
+            mechanisms.spinUpFlywheel(SHOT_RPM);
+            feedStartTime = t;
+            Log.i("ThreeCycleAutoBase", String.format(Locale.US, "%s feeding at %.1f rpm",
+                    pathState, mechanisms.getFlywheelRPM()));
+        }
         if (feedStartTime < 0) {
-            double targetRPM = pathState == PathState.SHOOT_PRELOAD1 ? FIRST_SHOT_RPM : SHOT_RPM;
+            double targetRPM = FIRST_SHOT_RPM;
             mechanisms.startShoot(targetRPM);
             double rpm = mechanisms.getFlywheelRPM();
             if (Math.abs(rpm - targetRPM) <= RPM_TOLERANCE) {
@@ -219,12 +229,9 @@ public abstract class ThreeCycleAutoBase extends OpMode {
             return false;
         }
         mechanisms.shoot();
-        if (t >= feedStartTime + FEED_TIME) {
-            if (keepFlywheel) {
-                mechanisms.resetFeeder();
-            } else {
-                mechanisms.intake();
-            }
+        if (t >= feedStartTime + feedTime) {
+            primeFlywheel();
+            mechanisms.intakeKeepFlywheel();
             return true;
         }
         return false;
@@ -245,13 +252,13 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                 && pathState != PathState.SHOOT_POS2_PARK_POS
                 && pathState != PathState.DONE) {
             Log.w("ThreeCycleAutoBase", "past park deadline, going to park");
-            mechanisms.intake();
+            mechanisms.intakeKeepFlywheel();
             setPathState(PathState.SHOOT_POS2_PARK_POS);
         }
 
         switch (pathState) {
             case SHOOT_PRELOAD1:
-                if (runShoot(false)) {
+                if (runShoot(FEED_TIME_1)) {
                     setPathState(PathState.SHOOT_POS1_SHOOT_POS_1_1);
                 }
                 break;
@@ -270,7 +277,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                 break;
 
             case INTAKE1:
-                mechanisms.intake();
+                mechanisms.intakeKeepFlywheel();
                 if (pathTimer.seconds() >= INTAKE1_TIME) {
                     mechanisms.raiseFlower();
                     setPathState(PathState.INTAKE_POS_SHOOT_POS2);
@@ -281,9 +288,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                 if (pathTimer.seconds() > 0.5) {
                     mechanisms.stopIntake();
                 }
-                if (pathTimer.seconds() > PRESPIN_AFTER) {
-                    primeFlywheel();
-                }
+                primeFlywheel();
                 if (pathTimer.seconds() > 2.5) {
                     mechanisms.lowerFlower();
                 }
@@ -294,13 +299,13 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                 break;
 
             case SHOOT_PRELOAD2:
-                // Flywheel keeps spinning so volley 3 doesn't start from a stop
-                if (runShoot(true)) {
+                if (runShoot(FEED_TIME_2)) {
                     setPathState(PathState.PRE_SHOOT_POS2_SHOOT_POS2);
                 }
                 break;
 
             case PRE_SHOOT_POS2_SHOOT_POS2:
+                mechanisms.intakeKeepFlywheel();
                 if (runPath(() -> lineTo(getPreShootPose2(), getShootPose2()),
                         PRE_SHOOT2_TO_SHOOT2_TIMEOUT)) {
                     setPathState(PathState.INTAKE2);
@@ -315,7 +320,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                 break;
 
             case SHOOT_PRELOAD3:
-                if (runShoot(false)) {
+                if (runShoot(FEED_TIME_3)) {
                     setPathState(afterThirdVolley());
                 }
                 break;
