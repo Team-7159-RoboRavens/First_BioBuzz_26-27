@@ -51,7 +51,7 @@ public class ParkTransfer {
                 break;
 
             case WAIT_IN_PARK:
-                if (auto.pathTimer.seconds() >= 1.0) {
+                if (auto.pathTimer.seconds() >= 0.2) {
                     stage = Stage.TO_SHOOT;
                     auto.setPathState(
                             ThreeCycleAutoBase.PathState.INTAKE_POS_SHOOT_POS2);

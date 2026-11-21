@@ -12,8 +12,8 @@ public class ThreeCycleRedRightPark extends ThreeCycleAutoBase {
 
     private final Pose intakePose = new Pose(11.91101055806934, 15.5, Math.toRadians(180));
     private final Pose intakeControl = new Pose(47.7, 9.71);
-    private final Pose preShootPose2 = new Pose(52.80090497737557, 128.50221530920061, Math.toRadians(104));
-    private final Pose shootPose2 = new Pose(51.80090497737557, 131.4   , Math.toRadians(104));
+    private final Pose preShootPose2 = new Pose(52.80090497737557, 128.50221530920061, Math.toRadians(100));
+    private final Pose shootPose2 = new Pose(51.80090497737557, 131.2   , Math.toRadians(100));
     private final Pose shoot2Control = new Pose(28.8815987933635, 99.970588235294116);
     private final Pose shoot2Control2 = new Pose(28.8815987933635, 99.970588235294116);
     private final Pose parkPose = new Pose(12.4924585218703, 98.7948717948718, Math.toRadians(0));
