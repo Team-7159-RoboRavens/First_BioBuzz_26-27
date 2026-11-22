@@ -10,8 +10,8 @@ public abstract class ThreeCycleRedBase extends ThreeCycleAutoBase {
 
     protected static final Pose INTAKE_POSE = new Pose(11.91101055806934, 15.5, Math.toRadians(180));
     protected static final Pose INTAKE_CONTROL = new Pose(47.7, 9.71);
-    protected static final Pose PRE_SHOOT_POSE_2 = new Pose(52.80090497737557, 128.50221530920061, Math.toRadians(100));
-    protected static final Pose SHOOT_POSE_2 = new Pose(51.80090497737557, 131.2, Math.toRadians(100));
+    protected static final Pose PRE_SHOOT_POSE_2 = new Pose(52.80090497737557, 127.70221530920061, Math.toRadians(100));
+    protected static final Pose SHOOT_POSE_2 = new Pose(51.80090497737557, 131.35, Math.toRadians(100));
     protected static final Pose SHOOT_2_CONTROL = new Pose(28.8815987933635, 99.970588235294116);
     protected static final Pose SHOOT_2_CONTROL_2 = new Pose(28.8815987933635, 99.970588235294116);
     protected static final Pose PARK_CONTROL = new Pose(36.91779788838613, 85.50075414781297);
