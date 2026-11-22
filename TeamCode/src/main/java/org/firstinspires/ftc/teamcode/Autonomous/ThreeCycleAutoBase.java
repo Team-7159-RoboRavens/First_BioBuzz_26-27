@@ -42,7 +42,9 @@ public abstract class ThreeCycleAutoBase extends OpMode {
         // ExtraLoad autos only
         EXTRA_APPROACH,
         EXTRA_INTAKE,
-        EXTRA_PICKUP
+        EXTRA_PICKUP,
+
+        MOVE
     }
 
     // Shooting timings (seconds)
@@ -99,6 +101,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
 
     // Abstract pose getters to be implemented by Red/Blue subclasses
     protected abstract Pose getShootPose1();
+    protected abstract Pose getShootPose1_0();
     protected abstract Pose getShootPose1_1();
     protected abstract Pose getIntakePose();
     protected abstract Pose getIntakeControl();
@@ -126,7 +129,6 @@ public abstract class ThreeCycleAutoBase extends OpMode {
         Pose start = fromActual(nominalStart);
         return curve(start, control, end).linear(start, end);
     }
-
     // Has to get closer to the flower than a normal path before it counts as done
     protected Path buildIntakePath() {
         return curveTo(getShootPose1_1(), getIntakeControl(), getIntakePose())
@@ -257,6 +259,11 @@ public abstract class ThreeCycleAutoBase extends OpMode {
         }
 
         switch (pathState) {
+            case MOVE:
+                if (runPath(() -> lineTo(getShootPose1(), getShootPose1_0()), SHOOT1_TO_SHOOT1_1_TIMEOUT)) {
+                    setPathState(PathState.SHOOT_PRELOAD1);
+                }
+
             case SHOOT_PRELOAD1:
                 if (runShoot(FEED_TIME_1)) {
                     setPathState(PathState.SHOOT_POS1_SHOOT_POS_1_1);
@@ -371,7 +378,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
         mechanisms = new AutoMechanisms(hardwareMap);
         follower.setPose(getShootPose1());
         mechanisms.raiseFlower();
-        pathState = PathState.SHOOT_PRELOAD1;
+        pathState = PathState.MOVE;
     }
 
     @Override

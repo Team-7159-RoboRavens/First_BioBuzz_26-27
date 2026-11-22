@@ -101,11 +101,11 @@ public class AutoMechanisms {
     }
 
     public void lowerFlower(){
-        flowerServo.setPosition(0.94);
+        flowerServo.setPosition(0.90);
     }
 
     public void raiseFlower(){
-        flowerServo.setPosition(0.35);
+        flowerServo.setPosition(0.5);
     }
 
     public void resetFeeder() {
