@@ -308,7 +308,8 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                 mechanisms.intakeKeepFlywheel();
                 if (runPath(() -> lineTo(getPreShootPose2(), getShootPose2()),
                         PRE_SHOOT2_TO_SHOOT2_TIMEOUT)) {
-                    setPathState(PathState.INTAKE2);
+                    // Start feeding the moment the robot gets to shoot pose 2
+                    setPathState(PathState.SHOOT_PRELOAD3);
                 }
                 break;
 
