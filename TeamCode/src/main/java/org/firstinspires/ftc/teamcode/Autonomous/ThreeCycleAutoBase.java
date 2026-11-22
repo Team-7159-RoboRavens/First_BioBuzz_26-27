@@ -203,6 +203,25 @@ public abstract class ThreeCycleAutoBase extends OpMode {
         mechanisms.spinUpFlywheel(SHOT_RPM);
     }
 
+    // First volley spin up, timed from auto start so it keeps going through the MOVE path
+    protected boolean firstSpinUpDone() {
+        double t = opModeTimer.seconds();
+        mechanisms.startShoot(FIRST_SHOT_RPM);
+        double rpm = mechanisms.getFlywheelRPM();
+        if (Math.abs(rpm - FIRST_SHOT_RPM) <= RPM_TOLERANCE) {
+            if (atSpeedSince < 0) atSpeedSince = t;
+        } else {
+            atSpeedSince = -1;
+        }
+        boolean settled = atSpeedSince >= 0 && t - atSpeedSince >= SETTLE_TIME;
+        boolean done = (settled && t >= MIN_SPIN_UP_TIME) || t >= MAX_SPIN_UP_TIME;
+        if (done && pathState == PathState.SHOOT_PRELOAD1) {
+            Log.i("ThreeCycleAutoBase", String.format(Locale.US, "%s feeding at %.1f rpm after %.2fs%s",
+                    pathState, rpm, t, settled ? "" : " (not settled)"));
+        }
+        return done;
+    }
+
     // Returns true when the volley is done, the flywheel keeps spinning for the next volley
     protected boolean runShoot(double feedTime) {
         double t = pathTimer.seconds();
@@ -214,19 +233,8 @@ public abstract class ThreeCycleAutoBase extends OpMode {
                     pathState, mechanisms.getFlywheelRPM()));
         }
         if (feedStartTime < 0) {
-            double targetRPM = FIRST_SHOT_RPM;
-            mechanisms.startShoot(targetRPM);
-            double rpm = mechanisms.getFlywheelRPM();
-            if (Math.abs(rpm - targetRPM) <= RPM_TOLERANCE) {
-                if (atSpeedSince < 0) atSpeedSince = t;
-            } else {
-                atSpeedSince = -1;
-            }
-            boolean settled = atSpeedSince >= 0 && t - atSpeedSince >= SETTLE_TIME;
-            if ((settled && t >= MIN_SPIN_UP_TIME) || t >= MAX_SPIN_UP_TIME) {
+            if (firstSpinUpDone()) {
                 feedStartTime = t;
-                Log.i("ThreeCycleAutoBase", String.format(Locale.US, "%s feeding at %.1f rpm after %.2fs%s",
-                        pathState, rpm, t, settled ? "" : " (not settled)"));
             }
             return false;
         }
@@ -260,9 +268,11 @@ public abstract class ThreeCycleAutoBase extends OpMode {
 
         switch (pathState) {
             case MOVE:
+                firstSpinUpDone();
                 if (runPath(() -> lineTo(getShootPose1(), getShootPose1_0()), SHOOT1_TO_SHOOT1_1_TIMEOUT)) {
                     setPathState(PathState.SHOOT_PRELOAD1);
                 }
+                break;
 
             case SHOOT_PRELOAD1:
                 if (runShoot(FEED_TIME_1)) {
@@ -360,7 +370,6 @@ public abstract class ThreeCycleAutoBase extends OpMode {
         pathState = newState;
         pathStarted = false;
         feedStartTime = -1;
-        atSpeedSince = -1;
         pathTimer.reset();
     }
 
@@ -385,8 +394,9 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     public void start() {
         opModeTimer.reset();
         lastLogTime = 0;
+        atSpeedSince = -1;
         pathReports.clear();
-        setPathState(PathState.SHOOT_PRELOAD1);
+        setPathState(PathState.MOVE);
     }
 
     @Override

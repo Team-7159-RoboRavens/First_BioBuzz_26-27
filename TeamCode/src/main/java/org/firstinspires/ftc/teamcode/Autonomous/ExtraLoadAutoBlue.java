@@ -10,6 +10,7 @@ public class ExtraLoadAutoBlue extends ExtraLoadAutoBase {
     private final Pose extraParkControl = new Pose(120, 68);
 
     @Override protected Pose getShootPose1() { return ThreeCycleBlueBase.SHOOT_POSE_1; }
+    @Override protected Pose getShootPose1_0() { return ThreeCycleBlueBase.SHOOT_POSE_1_0; }
     @Override protected Pose getShootPose1_1() { return ThreeCycleBlueBase.SHOOT_POSE_1_1; }
     @Override protected Pose getIntakePose() { return ThreeCycleBlueBase.INTAKE_POSE; }
     @Override protected Pose getIntakeControl() { return ThreeCycleBlueBase.INTAKE_CONTROL; }
