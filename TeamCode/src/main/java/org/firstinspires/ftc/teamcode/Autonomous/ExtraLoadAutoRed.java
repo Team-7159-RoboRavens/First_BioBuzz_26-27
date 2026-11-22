@@ -20,5 +20,11 @@ public class ExtraLoadAutoRed extends ExtraLoadAutoBase {
     @Override protected Pose getShoot2Control2() { return ThreeCycleRedBase.SHOOT_2_CONTROL_2; }
     @Override protected Pose getParkControl() { return ThreeCycleRedBase.PARK_CONTROL; }
     @Override protected Pose getParkPose() { return parkPose; }
+    // Fixed here so the 3.5 in shoot 2 shift doesn't push the flower pickup into the wall
+    private final Pose extraApproachPose = new Pose(16.29778469079939, 52.80090497737557, Math.toRadians(190));
+    private final Pose extraIntakeEndPose = new Pose(12.5, 51.80090497737557, Math.toRadians(190));
+
+    @Override protected Pose getExtraApproachPose() { return extraApproachPose; }
+    @Override protected Pose getExtraIntakeEndPose() { return extraIntakeEndPose; }
     @Override protected Pose getExtraParkControl() { return extraParkControl; }
 }

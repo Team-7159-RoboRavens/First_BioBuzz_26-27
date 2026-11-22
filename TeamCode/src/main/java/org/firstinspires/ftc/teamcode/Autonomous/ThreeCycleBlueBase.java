@@ -11,8 +11,9 @@ public abstract class ThreeCycleBlueBase extends ThreeCycleAutoBase {
     protected static final Pose INTAKE_POSE = new Pose(132.58898944193066, 128.5, Math.toRadians(0));
     protected static final Pose INTAKE_CONTROL = new Pose(96.3, 134.29);
     // -80 / -90 instead of 280 / 270 so the turn is the short way
-    protected static final Pose PRE_SHOOT_POSE_2 = new Pose(91.19909502262443, 14.79778469079939, Math.toRadians(-80));
-    protected static final Pose SHOOT_POSE_2 = new Pose(93, 12.4, Math.toRadians(-80));
+    // Pre-shoot 2 and shoot 2 moved 3.5 in toward the wall to match where the robot actually ends up
+    protected static final Pose PRE_SHOOT_POSE_2 = new Pose(91.19909502262443, 11.29778469079939, Math.toRadians(-80));
+    protected static final Pose SHOOT_POSE_2 = new Pose(93, 8.9, Math.toRadians(-80));
     protected static final Pose SHOOT_2_CONTROL = new Pose(115.1184012066365, 44.029411764705884);
     protected static final Pose SHOOT_2_CONTROL_2 = new Pose(115.1184012066365, 44.029411764705884);
     protected static final Pose PARK_CONTROL = new Pose(107.08220211161387, 58.49924585218703);
