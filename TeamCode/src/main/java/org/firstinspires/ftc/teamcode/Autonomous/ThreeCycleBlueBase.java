@@ -5,7 +5,7 @@ import com.pedropathing.math.Pose;
 // Shared poses for every Blue auto (Left Park, Right Park, Safe), only the park pose is set per auto
 public abstract class ThreeCycleBlueBase extends ThreeCycleAutoBase {
     protected static final Pose SHOOT_POSE_1 = new Pose(89.3, 127, Math.toRadians(90));
-    protected static final Pose SHOOT_POSE_1_0 = new Pose(89.3, 123.5, Math.toRadians(90));
+    protected static final Pose SHOOT_POSE_1_0 = new Pose(89.3, 124.0, Math.toRadians(90));
     protected static final Pose SHOOT_POSE_1_1 = new Pose(85.3, 117, Math.toRadians(0));
 
     protected static final Pose INTAKE_POSE = new Pose(132.58898944193066, 128.5, Math.toRadians(0));

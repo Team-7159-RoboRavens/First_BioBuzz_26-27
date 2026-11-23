@@ -265,7 +265,7 @@ public class Robot {
         }
         //up
         else {
-            flowerServo.setPosition(0.50);
+            flowerServo.setPosition(0.40);
         }
     }
     public void setMacroState(boolean active) {

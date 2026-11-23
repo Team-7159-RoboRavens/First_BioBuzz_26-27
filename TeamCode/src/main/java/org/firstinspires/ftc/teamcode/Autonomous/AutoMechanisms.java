@@ -105,7 +105,7 @@ public class AutoMechanisms {
     }
 
     public void raiseFlower(){
-        flowerServo.setPosition(0.5);
+        flowerServo.setPosition(0.4);
     }
 
     public void resetFeeder() {

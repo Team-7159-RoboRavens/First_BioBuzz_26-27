@@ -6,7 +6,7 @@ import com.pedropathing.math.Pose;
 // Blue rotated 180 deg about (72, 72): x = 144 - x, y = 144 - y, heading + 180
 public abstract class ThreeCycleRedBase extends ThreeCycleAutoBase {
     protected static final Pose SHOOT_POSE_1 = new Pose(54.7, 17, Math.toRadians(270));
-    protected static final Pose SHOOT_POSE_1_0 = new Pose(54.7, 20.5, Math.toRadians(270));
+    protected static final Pose SHOOT_POSE_1_0 = new Pose(54.7, 20.0, Math.toRadians(270));
     protected static final Pose SHOOT_POSE_1_1 = new Pose(58.7, 27, Math.toRadians(180));
 
     protected static final Pose INTAKE_POSE = new Pose(11.91101055806934, 15.5, Math.toRadians(180));

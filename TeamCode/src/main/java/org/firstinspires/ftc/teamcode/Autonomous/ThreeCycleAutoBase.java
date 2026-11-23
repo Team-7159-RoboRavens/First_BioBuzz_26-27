@@ -50,18 +50,18 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     // Shooting timings (seconds)
     // Only the first volley waits for spin up, the flywheel then stays on for the whole auto
     // The first volley waits until the flywheel has held its target speed for SETTLE_TIME, so it doesn't fire on the spin up overshoot
-    protected static final double MIN_SPIN_UP_TIME = 2.7;
-    protected static final double MAX_SPIN_UP_TIME = 4.7;
+    protected static final double MIN_SPIN_UP_TIME = 4.7;
+    protected static final double MAX_SPIN_UP_TIME = 5.0;
     protected static final double RPM_TOLERANCE = 3;
     protected static final double SETTLE_TIME = 0.5;
     // How long each volley feeds
-    protected static final double FEED_TIME_1 = 3.8;
+    protected static final double FEED_TIME_1 = 4.4;
     protected static final double FEED_TIME_2 = 3.8;
-    protected static final double FEED_TIME_3 = 6.0;
+    protected static final double FEED_TIME_3 = 5.2;
 
     // Flywheel RPM, the preload volley shoots stronger so it gets less
-    protected static final double FIRST_SHOT_RPM = 183;
-    protected static final double SHOT_RPM = 185;
+    protected static final double FIRST_SHOT_RPM = 195;
+    protected static final double SHOT_RPM = 187;
 
     // Wait this long before trusting follower.isBusy() after starting a path
     protected static final double MIN_PATH_TIME = 0.1;
