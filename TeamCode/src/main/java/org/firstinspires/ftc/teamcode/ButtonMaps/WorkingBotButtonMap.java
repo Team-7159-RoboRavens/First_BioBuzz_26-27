@@ -15,7 +15,8 @@ import org.firstinspires.ftc.teamcode.TeleOp.TeleOpData;
 import java.util.Locale;
 
 // Gamepad 1: drive, hold LT to aim at our HIVE, hold RT to strafe along the shooting line while aiming,
-//            back = relocalize from the Limelight
+//            A = turn the intake to face the nearest flower, hold right bumper = wiggle side to side to free a stuck
+//            flower, left bumper = turn counterclockwise, back = relocalize from the Limelight
 // Gamepad 2: triggers intake, bumpers transfer, x flower, back = make the current facing forward,
 //            dpad up fixed RPM / down automatic RPM, dpad left automatic transfer on / right manual transfer only
 public class WorkingBotButtonMap extends PinpointBM {
@@ -52,6 +53,18 @@ public class WorkingBotButtonMap extends PinpointBM {
     public static double LINE_KP = 0.05;
     // Turns around this many inches before the end of the line (the robot slides a little while reversing)
     public static double END_TOLERANCE = 1.5;
+
+    // ---------------- Tuning: wiggle (right bumper) ----------------
+    // Goes this far right first, then twice this far left, then twice this far right, and so on (inches)
+    public static double WIGGLE_DISTANCE = 1.5;
+    // Power per inch from the wiggle target, the most and least power used. Raise the max for a harder shake
+    public static double WIGGLE_KP = 0.25;
+    public static double WIGGLE_MAX_POWER = 0.6;
+    public static double WIGGLE_MIN_POWER = 0.15;
+    // Turns around this close to the target, inches
+    public static double WIGGLE_TOLERANCE = 0.3;
+    // Turns around after this many seconds even if it didn't get there (stuck on the flower)
+    public static double WIGGLE_LEG_TIMEOUT = 0.5;
 
     // ---------------- Tuning: shooter ----------------
     // RPM used with dpad up (the old fixed value), and when the automatic RPM can't be worked out
@@ -104,6 +117,16 @@ public class WorkingBotButtonMap extends PinpointBM {
 
     // Smoothed field velocity (in/s) and acceleration (in/s^2)
     private double velX, velY, accelX, accelY;
+
+    // A: field heading the intake is turning to
+    private boolean flowerTurning = false;
+    private double flowerTargetHeading = 0;
+
+    // Right bumper wiggle: where it started, the robot's right at the start, and which side it is heading to
+    private boolean wiggling = false;
+    private double wiggleStartX, wiggleStartY, wiggleRightX, wiggleRightY;
+    private int wiggleSide = 1;
+    private long wiggleLegStartNanos = 0;
 
     private enum StrafeStage { APPROACH, STRAFE }
     private StrafeStage strafeStage = StrafeStage.APPROACH;
@@ -166,7 +189,8 @@ public class WorkingBotButtonMap extends PinpointBM {
         double[] stickMovement = getMovement(g1.left_stick_x, g1.left_stick_y);
         forward += stickMovement[0];
         right += stickMovement[1];
-        double driverRotate = getBumperRotateClockwise(g1.left_bumper, g1.right_bumper) + getRotation(g1.right_stick_x);
+        // Right bumper is the wiggle now, so only the left bumper turns
+        double driverRotate = getBumperRotateClockwise(g1.left_bumper, false) + getRotation(g1.right_stick_x);
         boolean driverTranslating = forward != 0 || right != 0;
         boolean driverRotating = driverRotate != 0;
 
@@ -184,12 +208,26 @@ public class WorkingBotButtonMap extends PinpointBM {
         double headingError = shotValid
                 ? Math.IEEEremainder(shot.heading - position.headingRadians, 2 * Math.PI) : 0;
 
-        // Rotation: the driver always wins, otherwise aim while a trigger is held
+        if (g1.aWasPressed() && fieldPoseKnown) {
+            flowerTurning = true;
+            flowerTargetHeading = getNearestFlowerHeading(position.xInches - 72, position.yInches - 72);
+        }
+        if (driverRotating) {
+            flowerTurning = false;
+        }
+
+        // Rotation: the driver always wins, then the A turn, otherwise aim while a trigger is held
         double rotate = driverRotate;
-        if (!driverRotating && aiming && shotValid) {
+        if (flowerTurning) {
+            double flowerError = Math.IEEEremainder(flowerTargetHeading - position.headingRadians, 2 * Math.PI);
+            rotate = getAimRotationPower(flowerError);
+            if (rotate == 0) {
+                flowerTurning = false;
+            }
+        } else if (!driverRotating && aiming && shotValid) {
             rotate = getAimRotationPower(headingError);
         }
-        onTarget = aiming && shotValid && !driverRotating
+        onTarget = aiming && shotValid && !driverRotating && !flowerTurning
                 && Math.abs(headingError) < Math.toRadians(AUTO_FEED_HEADING_TOLERANCE_DEG);
 
         telemetry.addData("Field pose", "known(%b) x(%.1f) y(%.1f) heading(%.1f deg)", fieldPoseKnown,
@@ -199,9 +237,18 @@ public class WorkingBotButtonMap extends PinpointBM {
         telemetry.addData("Modes", "rpm %s, transfer %s%s", automaticRPM ? "auto" : "fixed",
                 automaticFeed ? "auto+manual" : "manual", relocalizing ? ", RELOCALIZING" : "");
 
-        // Translation: the driver always wins, otherwise strafe while RT is held
-        if (strafeHeld && fieldPoseKnown && !driverTranslating) {
-            double[] fieldPower = getStrafeFieldPower(position);
+        // Translation: the driver always wins, then the wiggle, otherwise strafe while RT is held
+        boolean wiggleHeld = g1.right_bumper && !driverTranslating;
+        if (!wiggleHeld) {
+            wiggling = false;
+        }
+        double[] fieldPower = null;
+        if (wiggleHeld) {
+            fieldPower = getWiggleFieldPower(position);
+        } else if (strafeHeld && fieldPoseKnown && !driverTranslating) {
+            fieldPower = getStrafeFieldPower(position);
+        }
+        if (fieldPower != null) {
             double cos = Math.cos(position.headingRadians);
             double sin = Math.sin(position.headingRadians);
             double robotForward = fieldPower[0] * cos + fieldPower[1] * sin;
@@ -223,6 +270,42 @@ public class WorkingBotButtonMap extends PinpointBM {
         }
         // No field position yet: forward is the way the robot faced when teleop started
         return pinpointHeading - startPinpointHeading;
+    }
+
+    // The lines y = x and y = -x split the field into 4 quadrants with one flower each, at the wall on the +x, +y, -x
+    // or -y side. Returns the Pedro heading (intake end) that faces that wall
+    public static double getNearestFlowerHeading(double x, double y) {
+        if (Math.abs(x) > Math.abs(y)) {
+            return x > 0 ? 0 : Math.PI;
+        }
+        return y > 0 ? Math.PI / 2 : -Math.PI / 2;
+    }
+
+    // Field (x, y) power for the wiggle: right WIGGLE_DISTANCE from where it started, then back and forth
+    // between WIGGLE_DISTANCE left and right of that start. Works without a field position, it only needs to move
+    private double[] getWiggleFieldPower(KalmanPositionFilter.FieldPosition position) {
+        long now = System.nanoTime();
+        if (!wiggling) {
+            wiggling = true;
+            wiggleStartX = position.xInches;
+            wiggleStartY = position.yInches;
+            // Robot right is the heading turned 90 deg clockwise
+            wiggleRightX = Math.sin(position.headingRadians);
+            wiggleRightY = -Math.cos(position.headingRadians);
+            wiggleSide = 1;
+            wiggleLegStartNanos = now;
+        }
+        double along = (position.xInches - wiggleStartX) * wiggleRightX + (position.yInches - wiggleStartY) * wiggleRightY;
+        double error = wiggleSide * WIGGLE_DISTANCE - along;
+        boolean legTimedOut = (now - wiggleLegStartNanos) / 1_000_000_000.0 > WIGGLE_LEG_TIMEOUT;
+        if (Math.abs(error) < WIGGLE_TOLERANCE || legTimedOut) {
+            wiggleSide = -wiggleSide;
+            wiggleLegStartNanos = now;
+            error = wiggleSide * WIGGLE_DISTANCE - along;
+        }
+        double power = Math.max(WIGGLE_MIN_POWER, Math.min(WIGGLE_MAX_POWER, Math.abs(error) * WIGGLE_KP));
+        power = Math.copySign(power, error);
+        return new double[] {wiggleRightX * power, wiggleRightY * power};
     }
 
     private double getAimRotationPower(double error) {
