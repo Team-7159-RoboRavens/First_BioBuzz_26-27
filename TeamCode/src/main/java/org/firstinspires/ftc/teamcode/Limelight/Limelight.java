@@ -18,7 +18,13 @@ public class Limelight {
 
     public final Limelight3A limelight;
 
+    // How often the SDK asks the Limelight for a new result. It was 100, which is more traffic than needed
+    // (the camera only makes about 20 to 50 new frames a second). Lower = less load on the Control Hub connection
+    public static int POLL_RATE_HZ = 20;
+
     public LLResult latestResult;
+    // Limelight timestamp of the last frame isNewFrame() said yes to
+    private double lastFrameTimestamp = Double.NaN;
     private List<LLResultTypes.FiducialResult> fiducialResults = new ArrayList<>();
     private List<LLResultTypes.ColorResult> colorResults = new ArrayList<>();
 
@@ -30,7 +36,7 @@ public class Limelight {
         limelight = robot.getHardwareMap().get(Limelight3A.class, "limelight");
 
         // 1. CRITICAL MISSING STEP: Set the polling speed (100 times per second)
-        limelight.setPollRateHz(100);
+        limelight.setPollRateHz(POLL_RATE_HZ);
 
         limelight.pipelineSwitch(PIPELINE_APRILTAG);
         limelight.start();
@@ -57,6 +63,27 @@ public class Limelight {
             fiducialResults = new ArrayList<>();
             colorResults = new ArrayList<>();
         }
+    }
+
+    // True once per new camera frame with a valid result, the SDK hands back the same frame between new ones
+    public boolean isNewFrame() {
+        if (latestResult == null || !latestResult.isValid()) {
+            return false;
+        }
+        double timestamp = latestResult.getTimestamp();
+        if (timestamp == lastFrameTimestamp) {
+            return false;
+        }
+        lastFrameTimestamp = timestamp;
+        return true;
+    }
+
+    // Seconds from when the frame was taken until now
+    public double getLatencySeconds() {
+        if (latestResult == null) {
+            return 0;
+        }
+        return (latestResult.getCaptureLatency() + latestResult.getTargetingLatency() + latestResult.getStaleness()) / 1000.0;
     }
 
     // Switches to the color-blob detection pipeline.

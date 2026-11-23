@@ -49,19 +49,17 @@ public abstract class ThreeCycleAutoBase extends OpMode {
 
     // Shooting timings (seconds)
     // Only the first volley waits for spin up, the flywheel then stays on for the whole auto
-    // The first volley waits until the flywheel has held its target speed for SETTLE_TIME, so it doesn't fire on the spin up overshoot
-    protected static final double MIN_SPIN_UP_TIME = 4.7;
-    protected static final double MAX_SPIN_UP_TIME = 5.0;
-    protected static final double RPM_TOLERANCE = 3;
-    protected static final double SETTLE_TIME = 0.5;
+    // Fixed wait from auto start before the first volley feeds. The spin up ramp (Shooter/FlywheelSpinUp) keeps it
+    // from overshooting, so lower this until the first ball starts falling short
+    protected static final double SPIN_UP_TIME = 4.7;
     // How long each volley feeds
     protected static final double FEED_TIME_1 = 4.4;
     protected static final double FEED_TIME_2 = 3.8;
     protected static final double FEED_TIME_3 = 5.2;
 
-    // Flywheel RPM, the preload volley shoots stronger so it gets less
-    protected static final double FIRST_SHOT_RPM = 195;
-    protected static final double SHOT_RPM = 187;
+    // Flywheel RPM for the preload volley and the later volleys
+    protected static final double FIRST_SHOT_RPM = 192;
+    protected static final double SHOT_RPM = 192;
 
     // Wait this long before trusting follower.isBusy() after starting a path
     protected static final double MIN_PATH_TIME = 0.1;
@@ -90,9 +88,8 @@ public abstract class ThreeCycleAutoBase extends OpMode {
 
     // Path for this state already handed to the follower
     private boolean pathStarted = false;
-    // Volley state, reset on every state change: when feeding started and since when the flywheel has been at speed
+    // Volley state, reset on every state change: when feeding started
     private double feedStartTime = -1;
-    private double atSpeedSince = -1;
     private double lastLogTime = 0;
 
     // Numbers for each finished path, shown on telemetry
@@ -207,17 +204,11 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     protected boolean firstSpinUpDone() {
         double t = opModeTimer.seconds();
         mechanisms.startShoot(FIRST_SHOT_RPM);
-        double rpm = mechanisms.getFlywheelRPM();
-        if (Math.abs(rpm - FIRST_SHOT_RPM) <= RPM_TOLERANCE) {
-            if (atSpeedSince < 0) atSpeedSince = t;
-        } else {
-            atSpeedSince = -1;
-        }
-        boolean settled = atSpeedSince >= 0 && t - atSpeedSince >= SETTLE_TIME;
-        boolean done = (settled && t >= MIN_SPIN_UP_TIME) || t >= MAX_SPIN_UP_TIME;
+        boolean done = t >= SPIN_UP_TIME;
         if (done && pathState == PathState.SHOOT_PRELOAD1) {
             Log.i("ThreeCycleAutoBase", String.format(Locale.US, "%s feeding at %.1f rpm after %.2fs%s",
-                    pathState, rpm, t, settled ? "" : " (not settled)"));
+                    pathState, mechanisms.getFlywheelRPM(), t,
+                    mechanisms.isFlywheelRamping() ? " (still ramping)" : ""));
         }
         return done;
     }
@@ -394,7 +385,6 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     public void start() {
         opModeTimer.reset();
         lastLogTime = 0;
-        atSpeedSince = -1;
         pathReports.clear();
         setPathState(PathState.MOVE);
     }
@@ -403,6 +393,9 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     public void loop() {
         follower.update();
         statePathUpdate();
+        mechanisms.update();
+        // Kept up to date every loop so teleop gets the pose even if stop() is skipped
+        TeleOpData.autoEndPose = follower.pose();
 
         telemetry.addData("Path State", pathState.toString());
         telemetry.addData("Follower busy", follower.isBusy());

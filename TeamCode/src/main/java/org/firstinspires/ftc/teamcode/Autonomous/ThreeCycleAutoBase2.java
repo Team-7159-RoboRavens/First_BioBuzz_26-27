@@ -388,6 +388,7 @@ public abstract class ThreeCycleAutoBase2 extends OpMode {
     public void loop() {
         follower.update();
         statePathUpdate();
+        mechanisms.update();
 
         telemetry.addData("Path State", pathState.toString());
         telemetry.addData("Follower busy", follower.isBusy());

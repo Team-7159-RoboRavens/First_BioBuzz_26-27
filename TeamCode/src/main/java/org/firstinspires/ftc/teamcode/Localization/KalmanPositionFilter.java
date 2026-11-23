@@ -135,6 +135,19 @@ public final class KalmanPositionFilter {
         return hasFieldPose;
     }
 
+    // Moves the estimate by this much and trusts the result like a fresh Limelight pose, for a manual relocalize
+    public void shiftEstimate(double deltaX, double deltaY, double deltaHeading) {
+        applyCorrection(new PoseSample(elapsedSeconds, x, y, heading), deltaX, deltaY, normalizeRadians(deltaHeading));
+        setCovariance(LIMELIGHT_POSITION_VARIANCE, LIMELIGHT_HEADING_VARIANCE);
+        hasFieldPose = true;
+        rejectedPosesInARow = 0;
+    }
+
+    // Current estimate without a new measurement
+    public FieldPosition getPosition() {
+        return new FieldPosition(x, y, toPedroHeading(heading));
+    }
+
     // Call after the Pinpoint is reset, the next reading becomes the new reference instead of a jump
     public void resetPinpointReference() {
         hasPinpointMeasurement = false;

@@ -7,6 +7,7 @@ import com.pedropathing.utils.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.Autonomous.Essentials.Constants;
+import org.firstinspires.ftc.teamcode.TeleOp.TeleOpData;
 
 import static com.pedropathing.api.Paths.curve;
 import static com.pedropathing.api.Paths.line;
@@ -131,5 +132,11 @@ public abstract class OneCycleAutoBase extends OpMode {
         telemetry.addData("Path Time", pathTimer.seconds());
         telemetry.update();
         mechanisms.raiseFlower();
+    }
+
+    @Override
+    public void stop() {
+        // Teleop starts its field position from here
+        TeleOpData.autoEndPose = follower.pose();
     }
 }

@@ -12,7 +12,9 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.Autonomous.Essentials.Constants;
 import org.firstinspires.ftc.teamcode.ButtonMaps.Mechanumdrive;
+import org.firstinspires.ftc.teamcode.Shooter.FlywheelSpinUp;
 import org.firstinspires.ftc.teamcode.TeleOp.TeleOpData;
 
 import com.qualcomm.robotcore.hardware.VoltageSensor;
@@ -114,6 +116,12 @@ public class Robot {
             pinpoint.setOffsets(startPinpointX, startPinpointY, DistanceUnit.MM);
             pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
             pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
+            if (robotId == 10) {
+                // Same pod offsets as Pedro in auto. The old -155 / -60 mm had the forward pod's side flipped,
+                // which made the teleop position swing several inches every time the robot turned
+                pinpoint.setOffsets(Constants.localizerConfig.xPodOffset.get(),
+                        Constants.localizerConfig.yPodOffset.get(), Constants.localizerConfig.offsetUnits.get());
+            }
             pinpoint.resetPosAndIMU();
         }
 
@@ -149,6 +157,7 @@ public class Robot {
             leftBack.setDirection(DcMotor.Direction.FORWARD);
             rightBack.setDirection(DcMotor.Direction.REVERSE);
             shootMotor.setDirection(DcMotor.Direction.REVERSE);
+            shooterSpinUp = new FlywheelSpinUp(shootMotor, SHOOT_TICKS_PER_REV);
 
         }
 
@@ -199,6 +208,16 @@ public class Robot {
         }
     }
 
+    // Power ramp then RPM control (Shooter/FlywheelSpinUp), call every loop
+    private FlywheelSpinUp shooterSpinUp = null;
+    public void setShootRPMRamped(double RPM){
+        if (shooterSpinUp == null) {
+            setShootRPM(RPM);
+            return;
+        }
+        shooterSpinUp.setTargetRPM(RPM);
+    }
+
     public double getShootRPM(){
         if (shootMotor == null) {
             return 0;
@@ -242,6 +261,15 @@ public class Robot {
      */
     public double getPinpointY(){
         return pinpoint.getPosY(DistanceUnit.MM);
+    }
+
+    // Pinpoint velocity in its own frame, mm/s
+    public double getPinpointVelX() {
+        return pinpoint.getVelX(DistanceUnit.MM);
+    }
+
+    public double getPinpointVelY() {
+        return pinpoint.getVelY(DistanceUnit.MM);
     }
 
     // Must be called once per loop before reading any Pinpoint position/heading data.

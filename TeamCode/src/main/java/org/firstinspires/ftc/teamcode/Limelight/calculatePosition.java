@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.Limelight;
 
+import java.util.ArrayList;
 import java.util.List;
 import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
@@ -124,7 +125,19 @@ public abstract class calculatePosition {
         return new double[] {x, y, heading};
     }
 
-    //returns {x, y, heading} of the robot on the field (meters, meters, radians).
+    // ---------------- Position from tag clusters ----------------
+    // Every HIVE tag whose CELL state (up / down) is known has a known spot on the field. Instead of trusting each tag's
+    // own rotation (noisy on small tags), all visible tags are fit together as one rigid cluster: the camera pose that
+    // best lines up where the camera sees the tags with where they are on the field. Any 2+ tags work, so a partly
+    // hidden cluster is fine. With only 1 tag it falls back to that tag's own pose.
+    // Tags in a cluster have to be at least this far apart (meters), closer tags give a poor heading
+    final double CLUSTER_MIN_SPREAD = 0.1;
+    // A cluster fit whose average tag miss is above this (meters) is thrown out (a tag's CELL state was read wrong)
+    final double CLUSTER_MAX_RESIDUAL = 0.06;
+    // Pedro heading = the Limelight / shooter heading + this. The shooter and Limelight face the robot's back
+    public static final double PEDRO_HEADING_OFFSET = Math.PI;
+
+    //returns {x, y, heading} of the robot on the field (meters, meters, radians, heading is the shooter direction).
     //On failure returns a single element array with the fail type:
     //{0} no results list, {1} no tags visible, {2} no visible tag gave a usable position
     public double[] getPosition(){
@@ -135,6 +148,9 @@ public abstract class calculatePosition {
         if (limelightResults.isEmpty()) {
             return new double[]{1};
         }
+        // Cluster points: tag seen from the level camera (forward, left) and the tag on the field (x, y)
+        List<double[]> seen = new ArrayList<>();
+        List<double[]> field = new ArrayList<>();
         double sumX = 0;
         double sumY = 0;
         // headings are averaged as unit vectors so that +179 and -179 degrees average to 180 instead of 0
@@ -152,7 +168,16 @@ public abstract class calculatePosition {
                 countFail1++;
                 continue;
             }
-            double[] coordinate = getExpectedCoordinate(tag, tagZ == TAG_HEIGHT_HIGH_STATE);
+            boolean cellUp = tagZ == TAG_HEIGHT_HIGH_STATE;
+            Pose3D tagPoseCamera = tag.getTargetPoseCameraSpace();
+            if (tagPoseCamera != null) {
+                Position p = tagPoseCamera.getPosition();
+                double pitchRad = Math.toRadians(LIMELIGHT_PITCH);
+                double forward = p.z * Math.cos(pitchRad) + p.y * Math.sin(pitchRad);
+                seen.add(new double[] {forward, -p.x});
+                field.add(new double[] {getTagFieldX(tag.getFiducialId()), getTagFieldY(tag.getFiducialId(), cellUp)});
+            }
+            double[] coordinate = getExpectedCoordinate(tag, cellUp);
             if (coordinate == null) {
                 countFail2++;
                 continue;
@@ -163,8 +188,14 @@ public abstract class calculatePosition {
             sumSin += Math.sin(coordinate[2]);
             count++;
         }
-        telemetry.addData("caculate Position Fail Count 1: ", countFail1);
-        telemetry.addData("caculate Position Fail Count 2: ", countFail2);
+        if (telemetry != null) {
+            telemetry.addData("caculate Position Fail Count 1: ", countFail1);
+            telemetry.addData("caculate Position Fail Count 2: ", countFail2);
+        }
+        double[] cluster = fitCluster(seen, field);
+        if (cluster != null) {
+            return getRobotCoordinate(cluster[0], cluster[1], cluster[2]);
+        }
         if (count == 0) {
             return new double[]{2};
         }
@@ -172,6 +203,60 @@ public abstract class calculatePosition {
         double limelightY = sumY/count;
         double limelightAngle = Math.atan2(sumSin, sumCos);
         return getRobotCoordinate(limelightX, limelightY, limelightAngle);
+    }
+
+    // Best fit camera {x, y, heading} on the field for the cluster, or null with too few / too close tags or a bad fit
+    double[] fitCluster(List<double[]> seen, List<double[]> field) {
+        int n = seen.size();
+        if (n < 2) {
+            return null;
+        }
+        double seenX = 0, seenY = 0, fieldX = 0, fieldY = 0;
+        for (int i = 0; i < n; i++) {
+            seenX += seen.get(i)[0];
+            seenY += seen.get(i)[1];
+            fieldX += field.get(i)[0];
+            fieldY += field.get(i)[1];
+        }
+        seenX /= n;
+        seenY /= n;
+        fieldX /= n;
+        fieldY /= n;
+        double spread = 0;
+        double dot = 0;
+        double cross = 0;
+        for (int i = 0; i < n; i++) {
+            double ax = seen.get(i)[0] - seenX;
+            double ay = seen.get(i)[1] - seenY;
+            double bx = field.get(i)[0] - fieldX;
+            double by = field.get(i)[1] - fieldY;
+            spread = Math.max(spread, Math.hypot(bx, by));
+            dot += ax * bx + ay * by;
+            cross += ax * by - ay * bx;
+        }
+        // spread is the furthest tag from the middle, so the cluster is about twice that wide
+        if (2 * spread < CLUSTER_MIN_SPREAD) {
+            return null;
+        }
+        double heading = Math.atan2(cross, dot);
+        double cos = Math.cos(heading);
+        double sin = Math.sin(heading);
+        double cameraX = fieldX - (cos * seenX - sin * seenY);
+        double cameraY = fieldY - (sin * seenX + cos * seenY);
+        double residual = 0;
+        for (int i = 0; i < n; i++) {
+            double[] a = seen.get(i);
+            double[] b = field.get(i);
+            residual += Math.hypot(cameraX + cos * a[0] - sin * a[1] - b[0], cameraY + sin * a[0] + cos * a[1] - b[1]);
+        }
+        residual /= n;
+        if (telemetry != null) {
+            telemetry.addData("tag cluster", "%d tags, miss %.3f m", n, residual);
+        }
+        if (residual > CLUSTER_MAX_RESIDUAL) {
+            return null;
+        }
+        return new double[] {cameraX, cameraY, heading};
     }
 
     //returns the robot's pose in Pedro Pathing coordinates, or null if getPosition() failed
@@ -187,8 +272,8 @@ public abstract class calculatePosition {
         }
         double x = fieldPosition[0] / INCH + 72;
         double y = fieldPosition[1] / INCH + 72;
-        // Pedro headings go from 0 to 2PI
-        double heading = fieldPosition[2] % (2 * Math.PI);
+        // Pedro headings go from 0 to 2PI, and Pedro's front is the opposite end from the Limelight
+        double heading = (fieldPosition[2] + PEDRO_HEADING_OFFSET) % (2 * Math.PI);
         if (heading < 0) {
             heading += 2 * Math.PI;
         }
@@ -260,12 +345,13 @@ public abstract class calculatePosition {
         double limelightX = tagX + cameraInTag.x * rightX;
         double limelightY = tagY + cameraInTag.y * downY + cameraInTag.z * outY;
         double limelightZ = tagZ + cameraInTag.y * downZ + cameraInTag.z * outZ;
-        telemetry.addData("tag " + id + " limelight height: ", limelightZ);
         // The lens height is fixed, so a solved height far from it means the tag's rotation solve flipped or the HIVE
         // is not resting at its 30 degree tilt. getTagFieldZ() can't catch this because it only uses the tag's position.
         // This is the lens position, so it does not depend on LIMELIGHT_PITCH.
         if (Math.abs(limelightZ - LIMELIGHT_HEIGHT) > ACCEPTABLE_CAMERA_HEIGHT_OFFSET) {
-            telemetry.addData("tag " + id + " rejected, limelight height off by: ", limelightZ - LIMELIGHT_HEIGHT);
+            if (telemetry != null) {
+                telemetry.addData("tag " + id + " rejected, limelight height off by: ", limelightZ - LIMELIGHT_HEIGHT);
+            }
             return null;
         }
 
@@ -384,7 +470,6 @@ public abstract class calculatePosition {
         double distanceToLowState = Math.abs(calculatedTagFieldZ - TAG_HEIGHT_LOW_STATE);
         double distanceToHighState = Math.abs(calculatedTagFieldZ - TAG_HEIGHT_HIGH_STATE);
 
-        telemetry.addData("vertical height: ", calculatedTagFieldZ);
         if (distanceToLowState < distanceToHighState) {
             if (distanceToLowState > ACCEPTABLE_OFFSET){
                 return null;

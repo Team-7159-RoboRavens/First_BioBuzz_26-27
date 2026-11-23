@@ -12,7 +12,7 @@ import org.firstinspires.ftc.teamcode.Robot;
 public class ShootAndParkNoPedro extends LinearOpMode {
     private static final int ROBOT_ID = 10;
 
-    private static final double SHOOT_RPM = 200;
+    private static final double SHOOT_RPM = 192;
     private static final long SPIN_UP_MS = 2000;
 
     private static final long FEED_MS = 5000;

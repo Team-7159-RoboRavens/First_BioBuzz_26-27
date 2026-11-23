@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.TeleOp;
 
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
@@ -20,8 +19,8 @@ import com.qualcomm.robotcore.util.ReadWriteFile;
 
 import java.io.File;
 
-@TeleOp(name = "TeleOpWorkingBot")
-public class TeleOpWorkingBot extends OpMode{
+// TeleOpWorkingBotBlue / TeleOpWorkingBotRed pick the alliance
+public abstract class TeleOpWorkingBot extends OpMode{
 
     VoltageSensor controlHubVoltageSensor;
     public Robot robot;
@@ -36,10 +35,13 @@ public class TeleOpWorkingBot extends OpMode{
     MotorPowers mp;
     double[] vals;
 
+    // Which HIVE to aim at and which wall is the park wall
+    protected abstract boolean isRed();
+
     @Override
     public void init() {
         robot = new Robot(hardwareMap, 10);
-        bm = new WorkingBotButtonMap(this, robot);
+        bm = new WorkingBotButtonMap(this, robot, isRed());
         goToShoot = new GoToShoot(this);
         controlHubVoltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
     }
@@ -54,7 +56,7 @@ public class TeleOpWorkingBot extends OpMode{
             mp = bm.getPowers();
             robot.setPowers(mp);
             vals = bm.getState();
-            robot.setShootRPM(vals[0]);
+            robot.setShootRPMRamped(vals[0]);
             robot.setIntakePower(vals[1]);
             robot.setShootFeedPower(vals[2]);
             robot.setFlowerState(vals[3]);

@@ -10,6 +10,8 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.Shooter.FlywheelSpinUp;
+
 public class AutoMechanisms {
     public static final String FLYWHEEL_NAME = "shootMotor";
     public static final String INTAKE_MOTOR_NAME = "intakeMotor";
@@ -32,6 +34,8 @@ public class AutoMechanisms {
     public final DcMotorEx intakeMotor;
     private final CRServo shootFeedServo;
     private final CRServo intakeServoRight;
+    // Power ramp then RPM control, so the first shot doesn't overshoot
+    private final FlywheelSpinUp flywheelSpinUp;
 
     public Servo flowerServo;
 
@@ -47,14 +51,14 @@ public class AutoMechanisms {
                 DcMotor.RunMode.RUN_USING_ENCODER,
                 new PIDFCoefficients(FLYWHEEL_P, FLYWHEEL_I, FLYWHEEL_D, FLYWHEEL_F));
         flywheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        flywheelSpinUp = new FlywheelSpinUp(flywheel, FLYWHEEL_TICKS_PER_REV);
         intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         flowerServo = hardwareMap.get(Servo.class, "flowerServo");
         reset();
     }
 
     // Last commanded state, so the same hub command isn't sent every loop
-    // NaN so the first command always goes out
-    private double flywheelRPM = Double.NaN;
+    private double flywheelRPM = 0;
     private boolean feederOn = true;
 
     public void spinUpFlywheel(double rpm) {
@@ -62,10 +66,17 @@ public class AutoMechanisms {
     }
 
     private void setFlywheelRPM(double rpm) {
-        if (rpm != flywheelRPM) {
-            flywheel.setVelocity(rpm / 60.0 * FLYWHEEL_TICKS_PER_REV);
-            flywheelRPM = rpm;
-        }
+        flywheelRPM = rpm;
+        flywheelSpinUp.setTargetRPM(rpm);
+    }
+
+    // Call every loop, the spin up ramp changes its power as the flywheel speeds up
+    public void update() {
+        flywheelSpinUp.setTargetRPM(flywheelRPM);
+    }
+
+    public boolean isFlywheelRamping() {
+        return flywheelSpinUp.isRamping();
     }
 
     public void extendFeeder() {
@@ -97,7 +108,7 @@ public class AutoMechanisms {
     }
 
     public double getFlywheelRPM() {
-        return flywheel.getVelocity() / FLYWHEEL_TICKS_PER_REV * 60.0;
+        return flywheelSpinUp.getRPM();
     }
 
     public void lowerFlower(){
