@@ -16,7 +16,7 @@ import java.util.Locale;
 
 // Gamepad 1: drive, hold LT to aim at our HIVE, hold RT to strafe along the shooting line while aiming,
 //            A = turn the intake to face the nearest flower, hold right bumper = wiggle side to side to free a stuck
-//            flower, left bumper = turn counterclockwise, back = relocalize from the Limelight
+//            flower, back = relocalize from the Limelight
 // Gamepad 2: triggers intake, bumpers transfer, x flower, back = make the current facing forward,
 //            dpad up fixed RPM / down automatic RPM, dpad left automatic transfer on / right manual transfer only
 public class WorkingBotButtonMap extends PinpointBM {
@@ -189,8 +189,8 @@ public class WorkingBotButtonMap extends PinpointBM {
         double[] stickMovement = getMovement(g1.left_stick_x, g1.left_stick_y);
         forward += stickMovement[0];
         right += stickMovement[1];
-        // Right bumper is the wiggle now, so only the left bumper turns
-        double driverRotate = getBumperRotateClockwise(g1.left_bumper, false) + getRotation(g1.right_stick_x);
+        // Only the right stick turns, the bumpers don't
+        double driverRotate = getRotation(g1.right_stick_x);
         boolean driverTranslating = forward != 0 || right != 0;
         boolean driverRotating = driverRotate != 0;
 
