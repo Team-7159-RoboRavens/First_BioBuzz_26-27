@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
-
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
@@ -12,6 +10,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.Autonomous.Essentials.Constants;
 import org.firstinspires.ftc.teamcode.ButtonMaps.Mechanumdrive;
 import org.firstinspires.ftc.teamcode.Shooter.FlywheelSpinUp;
@@ -19,9 +18,7 @@ import org.firstinspires.ftc.teamcode.TeleOp.TeleOpData;
 
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
-import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import java.util.List;
@@ -34,7 +31,9 @@ public class Robot {
     DcMotorEx leftBack;
     DcMotorEx rightBack;
     public DcMotorEx shootMotor;
-    DcMotor intakeMotor1;
+    DcMotorEx intakeMotor1;
+    // Reverses the intake for a moment when it stalls, null on robots without the intake motor
+    public IntakeJamGuard intakeJamGuard = null;
     public CRServo shootFeedServo;
     public Servo flowerServo;
     public DcMotorEx flywheelMotor;
@@ -63,7 +62,6 @@ public class Robot {
 
     public boolean inputHandlingEnabled = false;
 
-    public boolean macroActive = false;
 
     /**
      * @param hmap hardware map used to look up the drivetrain motors, intake motor,
@@ -108,7 +106,7 @@ public class Robot {
         // Configure the Pinpoint with its physical offset from the robot's center
         // and the odometry pod type/direction, then zero out position and heading.
         if (robotId == 0 || robotId == 4) {
-            intakeMotor1 = hmap.get(DcMotor.class, "intakeMotor");
+            intakeMotor1 = hmap.get(DcMotorEx.class, "intakeMotor");
             intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         }
         if (robotId == 0 || robotId == 3 || robotId == 4 || robotId == 10) {
@@ -148,16 +146,18 @@ public class Robot {
             shootFeedServo = hardwareMap.get(CRServo.class, "transferServo");
             flowerServo = hardwareMap.get(Servo.class, "flowerServo");
             shootMotor = hmap.get(DcMotorEx.class, "shootMotor");
-            intakeMotor1 = hmap.get(DcMotor.class, "intakeMotor");
+            intakeMotor1 = hmap.get(DcMotorEx.class, "intakeMotor");
             shootFeedServo.setDirection(CRServo.Direction.REVERSE);
             intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
             intakeMotor1.setDirection(DcMotor.Direction.REVERSE);
+            intakeJamGuard = new IntakeJamGuard(intakeMotor1);
             leftFront.setDirection(DcMotor.Direction.REVERSE);
             rightFront.setDirection(DcMotor.Direction.FORWARD);
             leftBack.setDirection(DcMotor.Direction.FORWARD);
             rightBack.setDirection(DcMotor.Direction.REVERSE);
             shootMotor.setDirection(DcMotor.Direction.REVERSE);
-            shooterSpinUp = new FlywheelSpinUp(shootMotor, SHOOT_TICKS_PER_REV);
+            shooterSpinUp = new FlywheelSpinUp(shootMotor, SHOOT_TICKS_PER_REV, new PIDFCoefficients(P, I, D, F));
+            shooterSpinUp.setBatteryVoltage(voltageSensor.getVoltage());
 
         }
 
@@ -180,7 +180,8 @@ public class Robot {
      */
     public void setIntakePower(double power) {
         if (intakeMotor1 != null) {
-            intakeMotor1.setPower(power);
+            double out = intakeJamGuard != null ? intakeJamGuard.update(power) : power;
+            sentIntakePower = sendPower(intakeMotor1, sentIntakePower, out);
         }
         if (intakeServoRight != null && intakeServoLeft != null){
             intakeServoRight.setPower(-power);
@@ -188,9 +189,11 @@ public class Robot {
         }
     }
 
+    // Teleop calls this every loop, so the servo command is only sent when the power changes
     public void setShootFeedPower(double power){
-        if (shootFeedServo != null) {
+        if (shootFeedServo != null && power != sentShootFeedPower) {
             shootFeedServo.setPower(power);
+            sentShootFeedPower = power;
         }
     }
     public void setShootPower(double power){
@@ -218,6 +221,28 @@ public class Robot {
         shooterSpinUp.setTargetRPM(RPM);
     }
 
+    // Battery reading for the flywheel voltage compensation, call a few times a second
+    public void setShooterVoltage(double volts) {
+        if (shooterSpinUp != null) {
+            shooterSpinUp.setBatteryVoltage(volts);
+        }
+    }
+
+    // Intake motor speed, ticks per second (bulk cached), 0 without the intake motor
+    public double getIntakeVelocity() {
+        return intakeMotor1 != null ? intakeMotor1.getVelocity() : 0;
+    }
+
+    // True while the spin up is on its power ramp instead of the hub's RPM control
+    public boolean isShooterRamping() {
+        return shooterSpinUp != null && shooterSpinUp.isRamping();
+    }
+
+    // NOMINAL_VOLTAGE / battery, what F and the ramp are scaled by (1 without the spin up)
+    public double getShooterVoltageScale() {
+        return shooterSpinUp != null ? shooterSpinUp.getVoltageScale() : 1;
+    }
+
     public double getShootRPM(){
         if (shootMotor == null) {
             return 0;
@@ -225,21 +250,61 @@ public class Robot {
         return shootMotor.getVelocity() / SHOOT_TICKS_PER_REV * 60.0;
     }
 
-    public void tuneMotorPowers(MotorPowers mp){
-        if (inputHandler != null && inputHandlingEnabled) {
-            if (Math.max(Math.max(Math.abs(mp.lf), Math.abs(mp.rf)), Math.max(Math.abs(mp.lb), Math.abs(mp.rb))) > 1e-2) {
-                mp = inputHandler.getMotorPowers(mp);
-            }
+    // Runs the powers through InputHandling (heading hold), returns them unchanged when it is off
+    public MotorPowers tuneMotorPowers(MotorPowers mp){
+        if (inputHandler == null || !inputHandlingEnabled) {
+            return mp;
         }
+        if (Math.max(Math.max(Math.abs(mp.lf), Math.abs(mp.rf)), Math.max(Math.abs(mp.lb), Math.abs(mp.rb))) < 1e-2) {
+            // Sitting still, don't fight pushes, relock once it drives again
+            inputHandler.reset();
+            return mp;
+        }
+        return inputHandler.getMotorPowers(mp);
+    }
+
+    // lf, rf, lb, rb, same order as MotorPowers and InputHandling
+    public DcMotorEx[] getDriveMotors() {
+        return new DcMotorEx[]{leftFront, rightFront, leftBack, rightBack};
+    }
+
+    public double getBatteryVoltage() {
+        return voltageSensor.getVoltage();
+    }
+
+    public boolean isHeadingLocked() {
+        return inputHandler != null && inputHandler.isLocked();
     }
     /**
      * @param mp per-wheel motor powers to apply to the drivetrain
      */
     public void setPowers(MotorPowers mp) {
-        leftFront.setPower(mp.lf);
-        rightFront.setPower(mp.rf);
-        leftBack.setPower(mp.lb);
-        rightBack.setPower(mp.rb);
+        sentDrivePower[0] = sendPower(leftFront, sentDrivePower[0], mp.lf);
+        sentDrivePower[1] = sendPower(rightFront, sentDrivePower[1], mp.rf);
+        sentDrivePower[2] = sendPower(leftBack, sentDrivePower[2], mp.lb);
+        sentDrivePower[3] = sendPower(rightBack, sentDrivePower[3], mp.rb);
+    }
+
+    // Each motor power sent is its own hub command, so smaller changes than this are skipped (Pedro does the same).
+    // Stopping and changing direction are always sent. 0 sends every change
+    public double powerResendThreshold = 0.01;
+    // Last power sent to lf, rf, lb, rb, and the intake
+    private final double[] sentDrivePower = {Double.NaN, Double.NaN, Double.NaN, Double.NaN};
+    private double sentIntakePower = Double.NaN;
+    // Last transfer servo power and flower servo position sent, NaN so the first one always goes out
+    private double sentShootFeedPower = Double.NaN;
+    private double sentFlowerPosition = Double.NaN;
+
+    // Sends the power if it changed enough, returns the power the motor now has
+    private double sendPower(DcMotor motor, double sent, double power) {
+        boolean changed = Double.isNaN(sent)
+                || Math.abs(power - sent) >= powerResendThreshold
+                || Math.signum(power) != Math.signum(sent);
+        if (!changed) {
+            return sent;
+        }
+        motor.setPower(power);
+        return power;
     }
 
     /**
@@ -272,6 +337,11 @@ public class Robot {
         return pinpoint.getVelY(DistanceUnit.MM);
     }
 
+    // Pinpoint turn rate, rad/s counterclockwise
+    public double getPinpointHeadingVelocity() {
+        return pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS);
+    }
+
     // Must be called once per loop before reading any Pinpoint position/heading data.
     public void pinpointUpdate(){
         pinpoint.update();
@@ -284,19 +354,17 @@ public class Robot {
 
 
     public void setHeadingHold(boolean headingHold){
-        inputHandler.setLockHeading(headingHold);
+        if (inputHandler != null) {
+            inputHandler.setLockHeading(headingHold);
+        }
     }
+    // Teleop calls this every loop, so the servo command is only sent when the position changes
     public void setFlowerState(double val) {
-        //down
-        if (val == 1){
-            flowerServo.setPosition(0.90);
+        // 0.90 is down, 0.40 is up
+        double position = val == 1 ? 0.90 : 0.40;
+        if (position != sentFlowerPosition) {
+            flowerServo.setPosition(position);
+            sentFlowerPosition = position;
         }
-        //up
-        else {
-            flowerServo.setPosition(0.40);
-        }
-    }
-    public void setMacroState(boolean active) {
-        macroActive = active;
     }
 }

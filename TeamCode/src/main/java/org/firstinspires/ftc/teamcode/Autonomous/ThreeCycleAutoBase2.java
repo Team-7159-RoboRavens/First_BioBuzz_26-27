@@ -98,6 +98,9 @@ public abstract class ThreeCycleAutoBase2 extends OpMode {
     // Numbers for each finished path, shown on telemetry
     private final List<String> pathReports = new ArrayList<>();
     private double statLastTime, statDistance, statMaxSpeed, statTurnTime, statOffPathTime, statBrakeTime;
+    // Past this heading error Pedro turns before it drives
+    private static final double TURN_PRIORITY_ERROR = Math.toRadians(11.25);
+    private List<LynxModule> hubs;
 
     // Abstract pose getters to be implemented by Red/Blue subclasses
     protected abstract Pose getShootPose1();
@@ -183,7 +186,7 @@ public abstract class ThreeCycleAutoBase2 extends OpMode {
         if (follower.following() && follower.algorithm() instanceof Foresight) {
             Foresight foresight = (Foresight) follower.algorithm();
             // Past these errors Pedro spends power on turning / getting back on the path instead of driving
-            if (Math.abs(foresight.headingError()) > Math.toRadians(11.25)) statTurnTime += dt;
+            if (Math.abs(foresight.headingError()) > TURN_PRIORITY_ERROR) statTurnTime += dt;
             if (Math.abs(foresight.translationalError()) > 2.5) statOffPathTime += dt;
             if (foresight.isBraking()) statBrakeTime += dt;
         }
@@ -362,9 +365,10 @@ public abstract class ThreeCycleAutoBase2 extends OpMode {
     @Override
     public void init() {
         Log.i("ThreeCycleAutoBase", "init");
-        // Bulk caching to shorten loop time
-        for (LynxModule hub : hardwareMap.getAll(LynxModule.class)) {
-            hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
+        // MANUAL bulk caching, the flywheel RPM is read several times a loop and AUTO would bulk read again each time
+        hubs = hardwareMap.getAll(LynxModule.class);
+        for (LynxModule hub : hubs) {
+            hub.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
         }
 
         pathTimer = new Timer();
@@ -386,15 +390,19 @@ public abstract class ThreeCycleAutoBase2 extends OpMode {
 
     @Override
     public void loop() {
+        for (LynxModule hub : hubs) {
+            hub.clearBulkCache();
+        }
         follower.update();
         statePathUpdate();
         mechanisms.update();
 
+        Pose pose = follower.pose();
         telemetry.addData("Path State", pathState.toString());
         telemetry.addData("Follower busy", follower.isBusy());
-        telemetry.addData("x", follower.pose().x());
-        telemetry.addData("y", follower.pose().y());
-        telemetry.addData("Heading (deg)", Math.toDegrees(follower.pose().heading()));
+        telemetry.addData("x", pose.x());
+        telemetry.addData("y", pose.y());
+        telemetry.addData("Heading (deg)", Math.toDegrees(pose.heading()));
         telemetry.addData("Path Time", pathTimer.seconds());
         telemetry.addData("Auto Time", opModeTimer.seconds());
         telemetry.addData("intake motor", mechanisms.intakeMotor.getVelocity());
@@ -408,9 +416,9 @@ public abstract class ThreeCycleAutoBase2 extends OpMode {
         double now = opModeTimer.seconds();
         if (now - lastLogTime >= 0.25) {
             lastLogTime = now;
-            Log.i("loop", "state=" + pathState + " x=" + follower.pose().x()
-                    + " y=" + follower.pose().y()
-                    + " heading=" + follower.pose().heading()
+            Log.i("loop", "state=" + pathState + " x=" + pose.x()
+                    + " y=" + pose.y()
+                    + " heading=" + pose.heading()
                     + " pathTime=" + pathTimer.seconds()
                     + " busy=" + follower.isBusy());
         }

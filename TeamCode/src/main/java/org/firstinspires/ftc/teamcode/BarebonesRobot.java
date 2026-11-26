@@ -14,7 +14,7 @@ public class BarebonesRobot {
     DcMotor rightFront;
     DcMotor leftBack;
     DcMotor rightBack;
-    private GoBildaPinpointDriver pinpoint;
+    protected GoBildaPinpointDriver pinpoint;
 
 
     /**
@@ -22,13 +22,18 @@ public class BarebonesRobot {
      *             and Pinpoint odometry computer by configuration name
      */
     public BarebonesRobot(HardwareMap hmap) {
+        this(hmap, -155, -60);
+    }
+
+    // Pinpoint offsets from the robot center in mm, PPBot has its own
+    protected BarebonesRobot(HardwareMap hmap, int pinpointOffsetX, int pinpointOffsetY) {
         leftFront = hmap.get(DcMotor.class, "leftFront");
         rightFront = hmap.get(DcMotor.class, "rightFront");
         leftBack = hmap.get(DcMotor.class, "leftBack");
         rightBack = hmap.get(DcMotor.class, "rightBack");
         pinpoint = hmap.get(GoBildaPinpointDriver.class, "pinpoint");
 
-        pinpoint.setOffsets(-155, -60, DistanceUnit.MM);
+        pinpoint.setOffsets(pinpointOffsetX, pinpointOffsetY, DistanceUnit.MM);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED,
             GoBildaPinpointDriver.EncoderDirection.REVERSED);

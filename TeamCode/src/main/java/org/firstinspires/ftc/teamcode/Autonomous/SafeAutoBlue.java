@@ -21,6 +21,17 @@ public class SafeAutoBlue extends ThreeCycleBlueRightPark {
         }
     }
 
+    // Safe keeps its own park transfer and doesn't use the Limelight
+    @Override
+    protected boolean returnIfNotTipped() {
+        return false;
+    }
+
+    @Override
+    protected boolean usesLimelight() {
+        return false;
+    }
+
     @Override
     public void stop() {
         super.stop();

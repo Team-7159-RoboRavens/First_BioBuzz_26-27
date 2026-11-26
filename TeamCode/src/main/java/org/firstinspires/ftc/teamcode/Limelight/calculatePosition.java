@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.Limelight;
 
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
@@ -31,6 +32,10 @@ public abstract class calculatePosition {
 
     final double LIMELIGHT_PITCH = 45;
     final double LIMELIGHT_YAW = 0;
+    // Trig of the fixed mount angles, worked out once instead of per tag
+    private final double LIMELIGHT_PITCH_COS = Math.cos(Math.toRadians(LIMELIGHT_PITCH));
+    private final double LIMELIGHT_PITCH_SIN = Math.sin(Math.toRadians(LIMELIGHT_PITCH));
+    private final double LIMELIGHT_YAW_RAD = Math.toRadians(LIMELIGHT_YAW);
     final double shooter_offset_y = -0.07646;
     final double shooter_offset_x = 0.21139;
     final boolean TARGET_SPACE_X_IS_VIEWER_RIGHT = true;
@@ -56,7 +61,80 @@ public abstract class calculatePosition {
 
     //returns 0 for no targets detected 1 for moving 2 for down and 3 for up
     public abstract int enemyUp();
-    public abstract void updateTagPosition();
+
+    //state of one CELL of our HIVE: plusY true for the CELL at field y > 0 (Pedro y > 72), same numbers as friendlyUp()
+    public abstract int friendlyCellState(boolean plusY);
+
+    // ---------------- CELL state from the tags ----------------
+    public static final int STATE_NONE = 0;
+    public static final int STATE_MOVING = 1;
+    public static final int STATE_DOWN = 2;
+    public static final int STATE_UP = 3;
+
+    //index is tag id - 30, filled in by updateTagPosition()
+    boolean[] idVisible = new boolean[16];
+    //0 is moving, 1 is down, 2 is up
+    int[] idUp = new int[16];
+
+    //reads which HIVE tags are in view and whether their CELL is up, down or moving
+    public void updateTagPosition() {
+        List<LLResultTypes.FiducialResult> limelightResults = limelight.getFiducialResults();
+        if (limelightResults == null) {
+            limelightResults = Collections.emptyList();
+        }
+        for (int i = 0; i < 16; i++) {
+            idVisible[i] = false;
+        }
+        for (LLResultTypes.FiducialResult tag : limelightResults) {
+            int id = tag.getFiducialId();
+            if (!isHiveTag(id)) {
+                continue;
+            }
+            idVisible[id - 30] = true;
+            // 0 is moving, 1 is down, 2 is up
+            idUp[id - 30] = getTagHeightState(tag);
+        }
+    }
+
+    //true if any tag from firstId to lastId is in view
+    boolean canSeeTags(int firstId, int lastId) {
+        for (int id = firstId; id <= lastId; id++) {
+            if (idVisible[id - 30]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    //majority state of the visible tags from firstId to lastId, cellSide +1 / -1 keeps only that CELL, 0 keeps both
+    int tagState(int firstId, int lastId, int cellSide) {
+        int countUp = 0;
+        int countDown = 0;
+        int countMoving = 0;
+        for (int id = firstId; id <= lastId; id++) {
+            if (!idVisible[id - 30] || (cellSide != 0 && getCellSide(id) != cellSide)) {
+                continue;
+            }
+            if (idUp[id - 30] == 0) {
+                countMoving++;
+            } else if (idUp[id - 30] == 1) {
+                countDown++;
+            } else {
+                countUp++;
+            }
+        }
+        if (countUp + countDown + countMoving == 0) {
+            return STATE_NONE;
+        }
+        if (countUp > countDown && countUp > countMoving) {
+            return STATE_UP;
+        }
+        if (countDown > countUp && countDown > countMoving) {
+            return STATE_DOWN;
+        }
+        // a tie means the tags don't agree, so treat it as moving
+        return STATE_MOVING;
+    }
 
     //returs a 3 element array the first value x distance to target second one is y value to target and the third one is an angle relative to target
     public abstract double[] aimState(double[] botPose);
@@ -137,6 +215,14 @@ public abstract class calculatePosition {
     // Pedro heading = the Limelight / shooter heading + this. The shooter and Limelight face the robot's back
     public static final double PEDRO_HEADING_OFFSET = Math.PI;
 
+    // Cluster points reused by every getPosition() so a solve makes no garbage, they grow if more tags are seen
+    private double[] clusterSeenForward = new double[16];
+    private double[] clusterSeenLeft = new double[16];
+    private double[] clusterFieldX = new double[16];
+    private double[] clusterFieldY = new double[16];
+    // {x, y, heading} from the last getExpectedCoordinate() call
+    private final double[] expectedCoordinate = new double[3];
+
     //returns {x, y, heading} of the robot on the field (meters, meters, radians, heading is the shooter direction).
     //On failure returns a single element array with the fail type:
     //{0} no results list, {1} no tags visible, {2} no visible tag gave a usable position
@@ -149,8 +235,7 @@ public abstract class calculatePosition {
             return new double[]{1};
         }
         // Cluster points: tag seen from the level camera (forward, left) and the tag on the field (x, y)
-        List<double[]> seen = new ArrayList<>();
-        List<double[]> field = new ArrayList<>();
+        int clusterCount = 0;
         double sumX = 0;
         double sumY = 0;
         // headings are averaged as unit vectors so that +179 and -179 degrees average to 180 instead of 0
@@ -160,39 +245,44 @@ public abstract class calculatePosition {
         int countFail1 = 0;
         int countFail2 = 0;
         for (LLResultTypes.FiducialResult tag : limelightResults){
-            if (!isHiveTag(tag.getFiducialId())) {
+            int id = tag.getFiducialId();
+            if (!isHiveTag(id)) {
                 continue;
             }
-            Double tagZ = getTagFieldZ(tag);
-            if (tagZ == null) {
+            int heightState = getTagHeightState(tag);
+            if (heightState == 0) {
                 countFail1++;
                 continue;
             }
-            boolean cellUp = tagZ == TAG_HEIGHT_HIGH_STATE;
+            boolean cellUp = heightState == 2;
             Pose3D tagPoseCamera = tag.getTargetPoseCameraSpace();
             if (tagPoseCamera != null) {
                 Position p = tagPoseCamera.getPosition();
-                double pitchRad = Math.toRadians(LIMELIGHT_PITCH);
-                double forward = p.z * Math.cos(pitchRad) + p.y * Math.sin(pitchRad);
-                seen.add(new double[] {forward, -p.x});
-                field.add(new double[] {getTagFieldX(tag.getFiducialId()), getTagFieldY(tag.getFiducialId(), cellUp)});
+                double forward = p.z * LIMELIGHT_PITCH_COS + p.y * LIMELIGHT_PITCH_SIN;
+                if (clusterCount == clusterSeenForward.length) {
+                    growCluster();
+                }
+                clusterSeenForward[clusterCount] = forward;
+                clusterSeenLeft[clusterCount] = -p.x;
+                clusterFieldX[clusterCount] = getTagFieldX(id);
+                clusterFieldY[clusterCount] = getTagFieldY(id, cellUp);
+                clusterCount++;
             }
-            double[] coordinate = getExpectedCoordinate(tag, cellUp);
-            if (coordinate == null) {
+            if (!getExpectedCoordinate(tag, cellUp)) {
                 countFail2++;
                 continue;
             }
-            sumX += coordinate[0];
-            sumY += coordinate[1];
-            sumCos += Math.cos(coordinate[2]);
-            sumSin += Math.sin(coordinate[2]);
+            sumX += expectedCoordinate[0];
+            sumY += expectedCoordinate[1];
+            sumCos += Math.cos(expectedCoordinate[2]);
+            sumSin += Math.sin(expectedCoordinate[2]);
             count++;
         }
         if (telemetry != null) {
             telemetry.addData("caculate Position Fail Count 1: ", countFail1);
             telemetry.addData("caculate Position Fail Count 2: ", countFail2);
         }
-        double[] cluster = fitCluster(seen, field);
+        double[] cluster = fitCluster(clusterSeenForward, clusterSeenLeft, clusterFieldX, clusterFieldY, clusterCount);
         if (cluster != null) {
             return getRobotCoordinate(cluster[0], cluster[1], cluster[2]);
         }
@@ -208,15 +298,30 @@ public abstract class calculatePosition {
     // Best fit camera {x, y, heading} on the field for the cluster, or null with too few / too close tags or a bad fit
     double[] fitCluster(List<double[]> seen, List<double[]> field) {
         int n = seen.size();
+        double[] seenForward = new double[n];
+        double[] seenLeft = new double[n];
+        double[] tagX = new double[n];
+        double[] tagY = new double[n];
+        for (int i = 0; i < n; i++) {
+            seenForward[i] = seen.get(i)[0];
+            seenLeft[i] = seen.get(i)[1];
+            tagX[i] = field.get(i)[0];
+            tagY[i] = field.get(i)[1];
+        }
+        return fitCluster(seenForward, seenLeft, tagX, tagY, n);
+    }
+
+    // Same fit on the first n points of plain arrays, used by getPosition() so no lists are made
+    private double[] fitCluster(double[] seenForward, double[] seenLeft, double[] tagX, double[] tagY, int n) {
         if (n < 2) {
             return null;
         }
         double seenX = 0, seenY = 0, fieldX = 0, fieldY = 0;
         for (int i = 0; i < n; i++) {
-            seenX += seen.get(i)[0];
-            seenY += seen.get(i)[1];
-            fieldX += field.get(i)[0];
-            fieldY += field.get(i)[1];
+            seenX += seenForward[i];
+            seenY += seenLeft[i];
+            fieldX += tagX[i];
+            fieldY += tagY[i];
         }
         seenX /= n;
         seenY /= n;
@@ -226,10 +331,10 @@ public abstract class calculatePosition {
         double dot = 0;
         double cross = 0;
         for (int i = 0; i < n; i++) {
-            double ax = seen.get(i)[0] - seenX;
-            double ay = seen.get(i)[1] - seenY;
-            double bx = field.get(i)[0] - fieldX;
-            double by = field.get(i)[1] - fieldY;
+            double ax = seenForward[i] - seenX;
+            double ay = seenLeft[i] - seenY;
+            double bx = tagX[i] - fieldX;
+            double by = tagY[i] - fieldY;
             spread = Math.max(spread, Math.hypot(bx, by));
             dot += ax * bx + ay * by;
             cross += ax * by - ay * bx;
@@ -245,9 +350,9 @@ public abstract class calculatePosition {
         double cameraY = fieldY - (sin * seenX + cos * seenY);
         double residual = 0;
         for (int i = 0; i < n; i++) {
-            double[] a = seen.get(i);
-            double[] b = field.get(i);
-            residual += Math.hypot(cameraX + cos * a[0] - sin * a[1] - b[0], cameraY + sin * a[0] + cos * a[1] - b[1]);
+            double a0 = seenForward[i];
+            double a1 = seenLeft[i];
+            residual += Math.hypot(cameraX + cos * a0 - sin * a1 - tagX[i], cameraY + sin * a0 + cos * a1 - tagY[i]);
         }
         residual /= n;
         if (telemetry != null) {
@@ -257,6 +362,15 @@ public abstract class calculatePosition {
             return null;
         }
         return new double[] {cameraX, cameraY, heading};
+    }
+
+    // Doubles the cluster point arrays, only if the same tag shows up more than once in a frame
+    private void growCluster() {
+        int size = clusterSeenForward.length * 2;
+        clusterSeenForward = Arrays.copyOf(clusterSeenForward, size);
+        clusterSeenLeft = Arrays.copyOf(clusterSeenLeft, size);
+        clusterFieldX = Arrays.copyOf(clusterFieldX, size);
+        clusterFieldY = Arrays.copyOf(clusterFieldY, size);
     }
 
     //returns the robot's pose in Pedro Pathing coordinates, or null if getPosition() failed
@@ -282,7 +396,7 @@ public abstract class calculatePosition {
 
     //converts the limelight's field position/heading into the robot center's field position/heading
     private double[] getRobotCoordinate(double limelightX, double limelightY, double limelightAngle) {
-        double robotHeading = limelightAngle - Math.toRadians(LIMELIGHT_YAW);
+        double robotHeading = limelightAngle - LIMELIGHT_YAW_RAD;
         double cos = Math.cos(robotHeading);
         double sin = Math.sin(robotHeading);
         // rotate the robot-relative lens offset into the field frame and remove it
@@ -307,21 +421,21 @@ public abstract class calculatePosition {
         return id >= 30 && id <= 45;
     }
 
-    //returns the expected {x, y, heading} of the limelight on the field based on a specific april tag, or null if the pose is unavailable
-    //cellUp is true if the CELL this tag is on is the raised CELL of its HIVE
-    private double[] getExpectedCoordinate(LLResultTypes.FiducialResult tag, boolean cellUp){
+    //puts the expected {x, y, heading} of the limelight on the field based on a specific april tag in expectedCoordinate,
+    //returns false if the pose is unavailable. cellUp is true if the CELL this tag is on is the raised CELL of its HIVE
+    private boolean getExpectedCoordinate(LLResultTypes.FiducialResult tag, boolean cellUp){
         // Camera position in the tag's coordinate system (Limelight "target space"):
         // X is to the right when looking at the tag, Y is toward the bottom edge of the tag, Z points straight out of the tag face.
         Pose3D cameraPoseTag = tag.getCameraPoseTargetSpace();
         // Tag position in the camera's coordinate system: X is right, Y is down, Z is out of the lens.
         Pose3D tagPoseCamera = tag.getTargetPoseCameraSpace();
         if (cameraPoseTag == null || tagPoseCamera == null) {
-            return null;
+            return false;
         }
         Position cameraInTag = cameraPoseTag.getPosition();
         if (cameraInTag.z <= 0) {
             // camera can't be behind the tag; bad solve
-            return null;
+            return false;
         }
 
         int id = tag.getFiducialId();
@@ -332,13 +446,14 @@ public abstract class calculatePosition {
         // Directions of the tag's axes on the field. "side" is +1 for the CELL away from the audience and -1 for the
         // audience CELL, and tilt is how far the outer end of the CELL is raised (+30 deg up, -30 deg down).
         double side = getCellSide(id);
-        double tilt = cellUp ? Math.toRadians(HIVE_TILT) : -Math.toRadians(HIVE_TILT);
+        double tiltSin = cellUp ? TILT_UP_SIN : TILT_DOWN_SIN;
+        double tiltCos = cellUp ? TILT_UP_COS : TILT_DOWN_COS;
         // Z: out of the tag face, which is the bottom of the CELL (mostly down, leaning outward when up / inward when down)
-        double outY = side * Math.sin(tilt);
-        double outZ = -Math.cos(tilt);
+        double outY = side * tiltSin;
+        double outZ = -tiltCos;
         // Y: toward the bottom edge of the tag, which the manual says points toward the center of the field
-        double downY = -side * Math.cos(tilt);
-        double downZ = -Math.sin(tilt);
+        double downY = -side * tiltCos;
+        double downZ = -tiltSin;
         // X: the tag's right side for someone underneath looking up at it
         double rightX = TARGET_SPACE_X_IS_VIEWER_RIGHT ? -side : side;
 
@@ -352,21 +467,23 @@ public abstract class calculatePosition {
             if (telemetry != null) {
                 telemetry.addData("tag " + id + " rejected, limelight height off by: ", limelightZ - LIMELIGHT_HEIGHT);
             }
-            return null;
+            return false;
         }
 
         // Horizontal bearing to the tag as seen by the camera (positive = tag is to the right of center).
         // The camera's down/forward axes are tilted by the mount pitch, so level them before taking the angle.
         Position tagInCamera = tagPoseCamera.getPosition();
-        double pitchRad = Math.toRadians(LIMELIGHT_PITCH);
-        double forwardLevel = tagInCamera.z * Math.cos(pitchRad) + tagInCamera.y * Math.sin(pitchRad);
+        double forwardLevel = tagInCamera.z * LIMELIGHT_PITCH_COS + tagInCamera.y * LIMELIGHT_PITCH_SIN;
         double bearingRight = Math.atan2(tagInCamera.x, forwardLevel);
 
         // The camera is pointed bearingRight to the left of the line from the camera to the tag
         double headingToTag = Math.atan2(tagY - limelightY, tagX - limelightX);
         double cameraHeadingRad = headingToTag + bearingRight;
 
-        return new double[] {limelightX, limelightY, cameraHeadingRad};
+        expectedCoordinate[0] = limelightX;
+        expectedCoordinate[1] = limelightY;
+        expectedCoordinate[2] = cameraHeadingRad;
+        return true;
     }
 
     // ---------------- HIVE geometry (manual section 9.6 / 9.9) ----------------
@@ -393,6 +510,17 @@ public abstract class calculatePosition {
             - TAG_ALONG_HIVE * Math.sin(Math.toRadians(HIVE_TILT)) - TAG_BELOW_PIVOT * Math.cos(Math.toRadians(HIVE_TILT));
     final double TAG_HEIGHT_HIGH_STATE = PIVOT_HEIGHT
             + TAG_ALONG_HIVE * Math.sin(Math.toRadians(HIVE_TILT)) - TAG_BELOW_PIVOT * Math.cos(Math.toRadians(HIVE_TILT));
+
+    // Trig of the HIVE tilt for a raised / lowered CELL, worked out once instead of per tag
+    private final double TILT_UP_SIN = Math.sin(Math.toRadians(HIVE_TILT));
+    private final double TILT_UP_COS = Math.cos(Math.toRadians(HIVE_TILT));
+    private final double TILT_DOWN_SIN = Math.sin(-Math.toRadians(HIVE_TILT));
+    private final double TILT_DOWN_COS = Math.cos(-Math.toRadians(HIVE_TILT));
+    // How far the tags sit from the center line when their CELL is up / down, before the side sign
+    private final double TAG_ALONG_UP = TAG_ALONG_HIVE * Math.cos(Math.toRadians(HIVE_TILT))
+            + TAG_BELOW_PIVOT * Math.sin(Math.toRadians(HIVE_TILT));
+    private final double TAG_ALONG_DOWN = TAG_ALONG_HIVE * Math.cos(Math.toRadians(HIVE_TILT))
+            + (-TAG_BELOW_PIVOT) * Math.sin(Math.toRadians(HIVE_TILT));
 
     //+1 for the CELL on the side of the field away from the audience, -1 for the audience side CELL
     private double getCellSide(int id) {
@@ -438,10 +566,7 @@ public abstract class calculatePosition {
 
     //distance of the tag from the center line toward/away from the audience; the raised CELL's tags sit a little further out
     private double getTagFieldY(int id, boolean cellUp) {
-        double tilt = Math.toRadians(HIVE_TILT);
-        double along = TAG_ALONG_HIVE * Math.cos(tilt)
-                + (cellUp ? TAG_BELOW_PIVOT : -TAG_BELOW_PIVOT) * Math.sin(tilt);
-        return getCellSide(id) * along;
+        return getCellSide(id) * (cellUp ? TAG_ALONG_UP : TAG_ALONG_DOWN);
     }
 
     //in meters how far above or below limeight can think the target is from a stable state
@@ -454,16 +579,24 @@ public abstract class calculatePosition {
 
     //returns null if the tag is moving aka not in a stable state
     Double getTagFieldZ(LLResultTypes.FiducialResult limelightResults){
+        int state = getTagHeightState(limelightResults);
+        if (state == 0) {
+            return null;
+        }
+        return state == 2 ? TAG_HEIGHT_HIGH_STATE : TAG_HEIGHT_LOW_STATE;
+    }
+
+    //same check as getTagFieldZ() without boxing a Double: 0 if moving (or no pose), 1 if at the low height, 2 if high
+    private int getTagHeightState(LLResultTypes.FiducialResult limelightResults){
         // Tag position relative to the camera lens: X right, Y down, Z out of the lens
         Pose3D targetPoseRaw = limelightResults.getTargetPoseCameraSpace();
         if (targetPoseRaw == null){
-            return null;
+            return 0;
         }
         Position rawPosition = targetPoseRaw.getPosition();
 
         // The camera is tilted up by LIMELIGHT_PITCH, so straight up is a mix of the camera's -Y and +Z
-        double pitchRad = Math.toRadians(LIMELIGHT_PITCH);
-        double heightAboveCamera = -rawPosition.y * Math.cos(pitchRad) + rawPosition.z * Math.sin(pitchRad);
+        double heightAboveCamera = -rawPosition.y * LIMELIGHT_PITCH_COS + rawPosition.z * LIMELIGHT_PITCH_SIN;
         double calculatedTagFieldZ = LIMELIGHT_HEIGHT + heightAboveCamera;
 
         // Check which of the two stable states the measurement is closer to
@@ -472,14 +605,14 @@ public abstract class calculatePosition {
 
         if (distanceToLowState < distanceToHighState) {
             if (distanceToLowState > ACCEPTABLE_OFFSET){
-                return null;
+                return 0;
             }
-            return TAG_HEIGHT_LOW_STATE;
+            return 1;
         } else {
             if (distanceToHighState > ACCEPTABLE_OFFSET){
-                return null;
+                return 0;
             }
-            return TAG_HEIGHT_HIGH_STATE;
+            return 2;
         }
     }
 

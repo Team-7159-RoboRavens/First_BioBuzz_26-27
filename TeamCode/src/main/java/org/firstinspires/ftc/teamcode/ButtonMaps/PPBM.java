@@ -5,9 +5,7 @@ import static org.firstinspires.ftc.teamcode.ButtonMaps.BasicBM.getDpadForward;
 import static org.firstinspires.ftc.teamcode.ButtonMaps.BasicBM.getDpadRight;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.Gamepad;
 
-import org.firstinspires.ftc.teamcode.BarebonesRobot;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.PPBot;
 
@@ -26,6 +24,10 @@ public class PPBM extends BarebonesBM{
     public MotorPowers getPowers() {
         // Refresh odometry each loop before using any pinpoint-derived data.
         robot.pinpointUpdate();
+        // g1 back: the way the robot faces now becomes forward for the field oriented drive
+        if (g1.backWasPressed()) {
+            robot.resetPinpoint();
+        }
         double forward = getDpadForward(g1.dpad_up, g1.dpad_down);
         double right = getDpadRight(g1.dpad_left, g1.dpad_right);
         double rotateClockwise = getBumperRotateClockwise(g1.left_bumper, g1.right_bumper);
@@ -50,14 +52,14 @@ public class PPBM extends BarebonesBM{
      */
     public static double[] getMovement( double x, double y){
         y *= -1;
-        double leftStickDistance = Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
+        double leftStickDistance = Math.sqrt(y * y + x * x);
         if (leftStickDistance > 1.0) {
             leftStickDistance = 1.0;
         }
         if (leftStickDistance > LEFT_STICK_TRIGGER){
             double scaledDistance = leftStickDistance - LEFT_STICK_TRIGGER;
             scaledDistance /= 0.9;
-            scaledDistance = Math.pow(scaledDistance, 2);
+            scaledDistance *= scaledDistance;
             double forward = y * scaledDistance / leftStickDistance;
             double right = x * scaledDistance / leftStickDistance;
 
@@ -75,7 +77,7 @@ public class PPBM extends BarebonesBM{
         if (rightx > RIGHT_STICK_TRIGGER || rightx < -RIGHT_STICK_TRIGGER){
             double distance = Math.abs(rightx) - RIGHT_STICK_TRIGGER;
             distance /= 0.9;
-            distance = Math.pow(distance, 2);
+            distance *= distance;
             if (rightx < 0){
                 distance *= -1;
             }

@@ -9,36 +9,39 @@ import org.firstinspires.ftc.teamcode.Limelight.LimelightBlue;
 import org.firstinspires.ftc.teamcode.Localization.KalmanPositionFilter;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.BallCounter;
+import org.firstinspires.ftc.teamcode.IntakeBallDetector;
 import org.firstinspires.ftc.teamcode.Shooter.ShotCalculator;
+import org.firstinspires.ftc.teamcode.Shooter.ShotCounter;
 import org.firstinspires.ftc.teamcode.TeleOp.TeleOpData;
 
 import java.util.Locale;
 
-// Gamepad 1: drive, hold LT to aim at our HIVE, hold RT to strafe along the shooting line while aiming,
-//            A = turn the intake to face the nearest flower, hold right bumper = wiggle side to side to free a stuck
-//            flower, back = relocalize from the Limelight
+// Gamepad 1: drive, hold RT to aim at our HIVE, hold LT to strafe along the shooting line while aiming,
+//            A = turn the intake to face the nearest flower, hold left bumper = wiggle side to side to free a stuck
+//            flower, hold right bumper = shoot, back = relocalize from the Limelight
 // Gamepad 2: triggers intake, bumpers transfer, x flower, back = make the current facing forward,
-//            dpad up fixed RPM / down automatic RPM, dpad left automatic transfer on / right manual transfer only
+//            dpad up fixed RPM / down automatic RPM, ball count: dpad right +1, dpad left -1, B = 4, A = 0
 public class WorkingBotButtonMap extends PinpointBM {
     // ---------------- Tuning: turning to aim ----------------
     // Turn power per radian of aim error. Higher = snappier aim, too high wobbles around the target
     public static double ROTATE_KP = 1.2;
+    // Turn power taken off per rad/s of turning, slows the turn before it gets there so it doesn't swing past.
+    // Raise it if the aim still overshoots, then raise ROTATE_KP for a faster aim. 0 turns it off
+    public static double ROTATE_KD = 0.1;
     public static double ROTATE_MAX_POWER = 0.7;
     // Smallest turn power used outside the tolerance, so it doesn't stall just short of the target
     public static double ROTATE_MIN_POWER = 0.06;
     public static double ROTATE_TOLERANCE_DEG = 1;
 
-    // ---------------- Tuning: automatic transfer ----------------
-    // The transfer only runs on its own when the aim is within this many degrees...
-    public static double AUTO_FEED_HEADING_TOLERANCE_DEG = 3;
-    // ...and the flywheel is within this many RPM of its target
-    public static double AUTO_FEED_RPM_TOLERANCE = 6;
-    // Transfer and intake power while feeding on its own (same direction as the manual right bumper / right trigger)
-    public static double AUTO_FEED_POWER = 0.7;
-    public static double AUTO_FEED_INTAKE_POWER = 0.6;
+    // ---------------- Tuning: shooting (g1 right bumper) ----------------
+    // Transfer and intake power while g1 right bumper is held (same direction as g2 right bumper / right trigger)
+    public static double SHOOT_TRANSFER_POWER = 0.7;
+    public static double SHOOT_INTAKE_POWER = 0.6;
 
-    // ---------------- Tuning: strafing (RT) ----------------
-    // The strafe line runs along x, this many inches from the field center on the robot's side (auto shoots from about 55)
+    // ---------------- Tuning: strafing (LT) ----------------
+    // The strafe line runs along x, this many inches from the field center (along y) on the robot's side, measured
+    // to the robot's center. Bigger = strafes further from the HIVE. Auto shot 1 is at about 52
     public static double STRAFE_LINE_DISTANCE = 55;
     // How far the robot strafes to the left and to the right of our HIVE, as seen from the shooter looking at it, inches
     public static double STRAFE_LEFT = 12;
@@ -54,7 +57,7 @@ public class WorkingBotButtonMap extends PinpointBM {
     // Turns around this many inches before the end of the line (the robot slides a little while reversing)
     public static double END_TOLERANCE = 1.5;
 
-    // ---------------- Tuning: wiggle (right bumper) ----------------
+    // ---------------- Tuning: wiggle (left bumper) ----------------
     // Goes this far right first, then twice this far left, then twice this far right, and so on (inches)
     public static double WIGGLE_DISTANCE = 1.5;
     // Power per inch from the wiggle target, the most and least power used. Raise the max for a harder shake
@@ -79,9 +82,16 @@ public class WorkingBotButtonMap extends PinpointBM {
     public static boolean RELOCALIZE_HEADING = true;
 
     // ---------------- Tuning: speed estimate ----------------
-    // How much of each new reading goes into the smoothed speed / acceleration (1 = no smoothing, lower = smoother but slower)
-    public static double VELOCITY_SMOOTHING = 0.5;
-    public static double ACCELERATION_SMOOTHING = 0.2;
+    // Smoothing time for the speed / acceleration, seconds. Same at any loop time (0 = no smoothing, higher = smoother but slower)
+    // The old per loop values 0.5 / 0.2 were about these at 20 ms loops
+    public static double VELOCITY_SMOOTHING_TIME = 0.03;
+    public static double ACCELERATION_SMOOTHING_TIME = 0.09;
+
+    // ---------------- Tuning: ball count ----------------
+    // Count balls leaving from flywheel dips while the transfer feeds (ShotCounter has the thresholds)
+    public static boolean COUNT_SHOTS = true;
+    // Intake power above this counts as g2 intaking
+    public static double INTAKE_HELD_POWER = 0.05;
 
     private static final double TRIGGER_PRESSED = 0.3;
     private static final double MM_PER_INCH = 25.4;
@@ -95,6 +105,10 @@ public class WorkingBotButtonMap extends PinpointBM {
     private final KalmanPositionFilter positionFilter;
     private long previousUpdateNanos = System.nanoTime();
     private long lastSolveNanos = 0;
+    // Loop time for telemetry: this loop, a smoothed average and the slowest in the last second, seconds
+    private double loopSeconds = 0, averageLoopSeconds = 0, maxLoopSeconds = 0, shownMaxLoopSeconds = 0;
+    private long maxLoopWindowStartNanos = System.nanoTime();
+    private boolean firstLoop = true;
 
     // Last finite Pinpoint reading (mm, mm, radians, mm/s)
     private double pinpointX = 0;
@@ -102,6 +116,7 @@ public class WorkingBotButtonMap extends PinpointBM {
     private double pinpointHeading = 0;
     private double pinpointVelX = 0;
     private double pinpointVelY = 0;
+    private double pinpointTurnRate = 0;
     private boolean havePinpointReading = false;
     private double startPinpointHeading = 0;
 
@@ -117,12 +132,14 @@ public class WorkingBotButtonMap extends PinpointBM {
 
     // Smoothed field velocity (in/s) and acceleration (in/s^2)
     private double velX, velY, accelX, accelY;
+    // Smoothed turn rate, rad/s counterclockwise
+    private double turnRate;
 
     // A: field heading the intake is turning to
     private boolean flowerTurning = false;
     private double flowerTargetHeading = 0;
 
-    // Right bumper wiggle: where it started, the robot's right at the start, and which side it is heading to
+    // Left bumper wiggle: where it started, the robot's right at the start, and which side it is heading to
     private boolean wiggling = false;
     private double wiggleStartX, wiggleStartY, wiggleRightX, wiggleRightY;
     private int wiggleSide = 1;
@@ -135,11 +152,21 @@ public class WorkingBotButtonMap extends PinpointBM {
 
     // Shooter modes, kept until the other button is pressed
     private boolean automaticRPM = true;
-    private boolean automaticFeed = true;
+
+    // Balls in the robot, see BallCounter
+    private final BallCounter ballCounter;
+    private final IntakeBallDetector intakeBallDetector = new IntakeBallDetector();
+    private final ShotCounter shotCounter = new ShotCounter();
+    private int lastShots = 0;
 
     // Results of this loop's getPowers(), used by getState()
     private ShotCalculator.Shot shot = null;
-    private boolean onTarget = false;
+
+    // Reused every loop so getPowers() / getState() don't make new objects
+    private final MotorPowers drivePowers = new MotorPowers();
+    private final double[] state = new double[4];
+    // Field (x, y) power set by the wiggle / strafe
+    private double fieldPowerX, fieldPowerY;
 
     public WorkingBotButtonMap(OpMode op, Robot r, boolean red) {
         super(op, r);
@@ -155,6 +182,7 @@ public class WorkingBotButtonMap extends PinpointBM {
             telemetry.addLine("Limelight not found, running without it");
         }
         limelight = ll;
+        ballCounter = new BallCounter(g1, g2);
         limelightPosition = new LimelightBlue(limelight, telemetry);
         // Starts from where the auto ended. Without an auto the first Limelight pose sets the field position
         Pose autoEndPose = TeleOpData.autoEndPose;
@@ -186,7 +214,7 @@ public class WorkingBotButtonMap extends PinpointBM {
 
         double forward = getDpadForward(g1.dpad_up, g1.dpad_down);
         double right = getDpadRight(g1.dpad_left, g1.dpad_right);
-        double[] stickMovement = getMovement(g1.left_stick_x, g1.left_stick_y);
+        getMovement(g1.left_stick_x, g1.left_stick_y, stickMovement);
         forward += stickMovement[0];
         right += stickMovement[1];
         // Only the right stick turns, the bumpers don't
@@ -194,8 +222,8 @@ public class WorkingBotButtonMap extends PinpointBM {
         boolean driverTranslating = forward != 0 || right != 0;
         boolean driverRotating = driverRotate != 0;
 
-        boolean strafeHeld = g1.right_trigger > TRIGGER_PRESSED;
-        boolean aimHeld = g1.left_trigger > TRIGGER_PRESSED;
+        boolean strafeHeld = g1.left_trigger > TRIGGER_PRESSED;
+        boolean aimHeld = g1.right_trigger > TRIGGER_PRESSED;
         boolean aiming = (strafeHeld || aimHeld) && fieldPoseKnown;
         if (!strafeHeld || driverTranslating) {
             // Getting back onto the line first once the trigger is held again or the driver lets go
@@ -203,7 +231,7 @@ public class WorkingBotButtonMap extends PinpointBM {
         }
 
         shot = fieldPoseKnown ? ShotCalculator.solve(position.xInches, position.yInches, position.headingRadians,
-                velX, velY, accelX, accelY, red) : null;
+                velX, velY, accelX, accelY, turnRate, red) : null;
         boolean shotValid = shot != null && shot.valid;
         double headingError = shotValid
                 ? Math.IEEEremainder(shot.heading - position.headingRadians, 2 * Math.PI) : 0;
@@ -227,43 +255,50 @@ public class WorkingBotButtonMap extends PinpointBM {
         } else if (!driverRotating && aiming && shotValid) {
             rotate = getAimRotationPower(headingError);
         }
-        onTarget = aiming && shotValid && !driverRotating && !flowerTurning
-                && Math.abs(headingError) < Math.toRadians(AUTO_FEED_HEADING_TOLERANCE_DEG);
 
         telemetry.addData("Field pose", "known(%b) x(%.1f) y(%.1f) heading(%.1f deg)", fieldPoseKnown,
                 position.xInches, position.yInches, Math.toDegrees(position.headingRadians));
-        telemetry.addData("Shot", shotValid ? String.format(Locale.US, "dist %.1f in, rpm %.0f, aim err %.1f deg",
-                shot.distance, shot.rpm, Math.toDegrees(headingError)) : "none");
-        telemetry.addData("Modes", "rpm %s, transfer %s%s", automaticRPM ? "auto" : "fixed",
-                automaticFeed ? "auto+manual" : "manual", relocalizing ? ", RELOCALIZING" : "");
+        if (shotValid) {
+            telemetry.addData("Shot", "dist %.1f in, rpm %.0f, aim err %.1f deg",
+                    shot.distance, shot.rpm, Math.toDegrees(headingError));
+        } else {
+            telemetry.addData("Shot", "none");
+        }
+        telemetry.addData("Modes", "rpm %s%s", getRPMModeName(),
+                relocalizing ? ", RELOCALIZING" : "");
+        telemetry.addData("Loop", "%.1f ms, avg %.1f ms, max %.1f ms",
+                loopSeconds * 1000, averageLoopSeconds * 1000, shownMaxLoopSeconds * 1000);
 
-        // Translation: the driver always wins, then the wiggle, otherwise strafe while RT is held
-        boolean wiggleHeld = g1.right_bumper && !driverTranslating;
+        // Translation: the driver always wins, then the wiggle, otherwise strafe while LT is held
+        boolean wiggleHeld = g1.left_bumper && !driverTranslating;
         if (!wiggleHeld) {
             wiggling = false;
         }
-        double[] fieldPower = null;
+        boolean useFieldPower = false;
         if (wiggleHeld) {
-            fieldPower = getWiggleFieldPower(position);
+            setWiggleFieldPower(position);
+            useFieldPower = true;
         } else if (strafeHeld && fieldPoseKnown && !driverTranslating) {
-            fieldPower = getStrafeFieldPower(position);
+            setStrafeFieldPower(position);
+            useFieldPower = true;
         }
-        if (fieldPower != null) {
+        if (useFieldPower) {
             double cos = Math.cos(position.headingRadians);
             double sin = Math.sin(position.headingRadians);
-            double robotForward = fieldPower[0] * cos + fieldPower[1] * sin;
-            double robotRight = fieldPower[0] * sin - fieldPower[1] * cos;
-            return Mechanumdrive.setMotorPowers(robotForward, robotRight, rotate);
+            double robotForward = fieldPowerX * cos + fieldPowerY * sin;
+            double robotRight = fieldPowerX * sin - fieldPowerY * cos;
+            return Mechanumdrive.setMotorPowers(robotForward, robotRight, rotate, drivePowers);
         }
-        return Mechanumdrive.fieldOrientedDrive(forward, right, rotate, Math.PI / 2 + getDriveHeading(position));
+        return Mechanumdrive.fieldOrientedDrive(forward, right, rotate,
+                Math.PI / 2 + getDriveHeading(position, fieldPoseKnown), drivePowers);
     }
 
     // Robot heading measured from the driving forward direction, radians
-    private double getDriveHeading(KalmanPositionFilter.FieldPosition position) {
+    private double getDriveHeading(KalmanPositionFilter.FieldPosition position, boolean fieldPoseKnown) {
         if (customForward) {
             return pinpointHeading - customForwardPinpointHeading;
         }
-        if (positionFilter.hasFieldPose()) {
+        if (fieldPoseKnown) {
             // Blue parks on the x = 144 wall so forward is -x, red parks on the x = 0 wall so forward is +x
             double forwardHeading = red ? 0 : Math.PI;
             return position.headingRadians - forwardHeading;
@@ -281,9 +316,9 @@ public class WorkingBotButtonMap extends PinpointBM {
         return y > 0 ? Math.PI / 2 : -Math.PI / 2;
     }
 
-    // Field (x, y) power for the wiggle: right WIGGLE_DISTANCE from where it started, then back and forth
+    // Sets the field (x, y) power for the wiggle: right WIGGLE_DISTANCE from where it started, then back and forth
     // between WIGGLE_DISTANCE left and right of that start. Works without a field position, it only needs to move
-    private double[] getWiggleFieldPower(KalmanPositionFilter.FieldPosition position) {
+    private void setWiggleFieldPower(KalmanPositionFilter.FieldPosition position) {
         long now = System.nanoTime();
         if (!wiggling) {
             wiggling = true;
@@ -305,20 +340,28 @@ public class WorkingBotButtonMap extends PinpointBM {
         }
         double power = Math.max(WIGGLE_MIN_POWER, Math.min(WIGGLE_MAX_POWER, Math.abs(error) * WIGGLE_KP));
         power = Math.copySign(power, error);
-        return new double[] {wiggleRightX * power, wiggleRightY * power};
+        fieldPowerX = wiggleRightX * power;
+        fieldPowerY = wiggleRightY * power;
     }
 
     private double getAimRotationPower(double error) {
         if (Math.abs(error) < Math.toRadians(ROTATE_TOLERANCE_DEG)) {
             return 0;
         }
-        double power = Math.max(ROTATE_MIN_POWER, Math.min(ROTATE_MAX_POWER, Math.abs(error) * ROTATE_KP));
+        // Counterclockwise power: toward the target, minus some for how fast it already turns
+        double ccw = error * ROTATE_KP - turnRate * ROTATE_KD;
+        if (Math.signum(ccw) == Math.signum(error)) {
+            // Still pushing toward the target, keep at least the min power so it doesn't stall
+            ccw = Math.signum(error) * Math.max(ROTATE_MIN_POWER, Math.abs(ccw));
+        }
+        // Pushing the other way means it comes in too fast, that brakes it
+        ccw = Math.max(-ROTATE_MAX_POWER, Math.min(ROTATE_MAX_POWER, ccw));
         // Headings grow counterclockwise and rotation power is clockwise
-        return error > 0 ? -power : power;
+        return -ccw;
     }
 
-    // Field (x, y) power: get onto the strafe line as fast as possible, then go back and forth along it
-    private double[] getStrafeFieldPower(KalmanPositionFilter.FieldPosition position) {
+    // Sets the field (x, y) power: get onto the strafe line as fast as possible, then go back and forth along it
+    private void setStrafeFieldPower(KalmanPositionFilter.FieldPosition position) {
         double hiveX = 72 + (red ? -ShotCalculator.HIVE_X_FROM_CENTER : ShotCalculator.HIVE_X_FROM_CENTER);
         double side = position.yInches >= 72 ? 1 : -1;
         double lineY = 72 + side * STRAFE_LINE_DISTANCE;
@@ -335,7 +378,9 @@ public class WorkingBotButtonMap extends PinpointBM {
             double distance = Math.hypot(errorX, errorY);
             if (distance > APPROACH_TOLERANCE) {
                 double power = Math.min(APPROACH_MAX_POWER, distance * APPROACH_KP);
-                return new double[] {errorX / distance * power, errorY / distance * power};
+                fieldPowerX = errorX / distance * power;
+                fieldPowerY = errorY / distance * power;
+                return;
             }
             strafeStage = StrafeStage.STRAFE;
             // Head for the far end first so the first sweep is a full one
@@ -346,8 +391,8 @@ public class WorkingBotButtonMap extends PinpointBM {
         } else if (strafeDirection < 0 && position.xInches <= minX + END_TOLERANCE) {
             strafeDirection = 1;
         }
-        double holdLine = Math.max(-0.5, Math.min(0.5, (lineY - position.yInches) * LINE_KP));
-        return new double[] {strafeDirection * STRAFE_POWER, holdLine};
+        fieldPowerX = strafeDirection * STRAFE_POWER;
+        fieldPowerY = Math.max(-0.5, Math.min(0.5, (lineY - position.yInches) * LINE_KP));
     }
 
     // Keeps the last good reading, a NaN from the Pinpoint would throw in the filter and stop the op mode
@@ -370,6 +415,10 @@ public class WorkingBotButtonMap extends PinpointBM {
             pinpointVelX = vx;
             pinpointVelY = vy;
         }
+        double w = robot.getPinpointHeadingVelocity();
+        if (Double.isFinite(w)) {
+            pinpointTurnRate = w;
+        }
     }
 
     // Runs the filter on this loop's Pinpoint reading plus a Limelight pose when there is a new one
@@ -377,6 +426,7 @@ public class WorkingBotButtonMap extends PinpointBM {
         long now = System.nanoTime();
         double deltaTimeSeconds = (now - previousUpdateNanos) / 1_000_000_000.0;
         previousUpdateNanos = now;
+        updateLoopTime(deltaTimeSeconds, now);
 
         Pose limelightPose = null;
         double latency = 0;
@@ -430,50 +480,122 @@ public class WorkingBotButtonMap extends PinpointBM {
         double sin = Math.sin(rotation);
         double fieldVx = (pinpointVelX * cos - pinpointVelY * sin) / MM_PER_INCH;
         double fieldVy = (pinpointVelX * sin + pinpointVelY * cos) / MM_PER_INCH;
-        double newVelX = velX + VELOCITY_SMOOTHING * (fieldVx - velX);
-        double newVelY = velY + VELOCITY_SMOOTHING * (fieldVy - velY);
+        // Share of the new reading to use, from this loop's real time, so a slow loop weighs in more
+        double velocityBlend = getBlend(deltaTimeSeconds, VELOCITY_SMOOTHING_TIME);
+        double accelBlend = getBlend(deltaTimeSeconds, ACCELERATION_SMOOTHING_TIME);
+        double newVelX = velX + velocityBlend * (fieldVx - velX);
+        double newVelY = velY + velocityBlend * (fieldVy - velY);
         if (deltaTimeSeconds > 1e-3) {
-            accelX += ACCELERATION_SMOOTHING * ((newVelX - velX) / deltaTimeSeconds - accelX);
-            accelY += ACCELERATION_SMOOTHING * ((newVelY - velY) / deltaTimeSeconds - accelY);
+            accelX += accelBlend * ((newVelX - velX) / deltaTimeSeconds - accelX);
+            accelY += accelBlend * ((newVelY - velY) / deltaTimeSeconds - accelY);
         }
+        turnRate += velocityBlend * (pinpointTurnRate - turnRate);
         velX = newVelX;
         velY = newVelY;
     }
 
-    // {shooter RPM, intake power, transfer power, flower (1 = down)}, call after getPowers()
-    public double[] getState() {
+    // The first loop's time includes init, so it is skipped
+    private void updateLoopTime(double deltaTimeSeconds, long now) {
+        if (firstLoop) {
+            firstLoop = false;
+            maxLoopWindowStartNanos = now;
+            return;
+        }
+        loopSeconds = deltaTimeSeconds;
+        averageLoopSeconds = averageLoopSeconds == 0 ? loopSeconds : averageLoopSeconds + 0.05 * (loopSeconds - averageLoopSeconds);
+        maxLoopSeconds = Math.max(maxLoopSeconds, loopSeconds);
+        if (now - maxLoopWindowStartNanos >= 1_000_000_000L) {
+            shownMaxLoopSeconds = maxLoopSeconds;
+            maxLoopSeconds = 0;
+            maxLoopWindowStartNanos = now;
+        }
+    }
+
+    // 0 to 1, how much of a new reading to blend in after this much time for this smoothing time
+    private static double getBlend(double deltaTimeSeconds, double smoothingTime) {
+        if (smoothingTime <= 0) {
+            return 1;
+        }
+        return 1 - Math.exp(-Math.max(0, deltaTimeSeconds) / smoothingTime);
+    }
+
+    // This loop's shot, null without a field position
+    protected ShotCalculator.Shot getShot() {
+        return shot;
+    }
+
+    // Shown on the Modes line
+    protected String getRPMModeName() {
+        return automaticRPM ? "auto" : "fixed";
+    }
+
+    // g2 dpad up = fixed RPM, down = automatic RPM. ShootTestButtonMap replaces this
+    protected double getShooterRPM() {
         if (g2.dpadUpWasPressed()) {
             automaticRPM = false;
         }
         if (g2.dpadDownWasPressed()) {
             automaticRPM = true;
         }
-        if (g2.dpadLeftWasPressed()) {
-            automaticFeed = true;
-        }
-        if (g2.dpadRightWasPressed()) {
-            automaticFeed = false;
-        }
-
-        double[] vals = new double[4];
         boolean shotValid = shot != null && shot.valid;
-        vals[0] = automaticRPM && shotValid ? shot.rpm : FIXED_RPM;
+        return automaticRPM && shotValid ? shot.rpm : FIXED_RPM;
+    }
 
-        boolean autoFeeding = automaticFeed && onTarget
-                && Math.abs(robot.getShootRPM() - vals[0]) < AUTO_FEED_RPM_TOLERANCE;
-        telemetry.addData("Auto transfer", autoFeeding);
+    // ShootTestButtonMap uses g2's dpad left / right for the RPM, so it turns the hand count buttons off
+    protected boolean ballCountButtonsEnabled() {
+        return true;
+    }
 
-        vals[1] = getIntakePower();
-        if (vals[1] == 0 && autoFeeding) {
-            vals[1] = AUTO_FEED_INTAKE_POWER;
+    public int getBallCount() {
+        return ballCounter.getCount();
+    }
+
+    // Runs the ball detectors on this loop's readings (from last loop's powers) and updates the count
+    private void updateBallCount(double requestedIntake, double targetRPM, double transferPower) {
+        double now = System.nanoTime() / 1e9;
+        boolean reversing = robot.intakeJamGuard != null && robot.intakeJamGuard.isReversing();
+        boolean ballEntered = intakeBallDetector.update(lastIntakePower, robot.getIntakeVelocity(), reversing, now);
+        int ballsShot = 0;
+        if (COUNT_SHOTS) {
+            // Only while the transfer feeds forward, atSpeed false also keeps the next dip from counting
+            boolean feeding = transferPower > 0 && !robot.isShooterRamping();
+            shotCounter.update(robot.getShootRPM(), targetRPM, now, feeding);
+            int shots = shotCounter.getShots();
+            ballsShot = shots - lastShots;
+            lastShots = shots;
         }
-        // Manual transfer always works and wins over the automatic one
+        ballCounter.update(requestedIntake > INTAKE_HELD_POWER, ballEntered, ballsShot, ballCountButtonsEnabled());
+        telemetry.addData("Balls", "%d%s%s", ballCounter.getCount(), ballCounter.isCapRemoved() ? " (no limit)" : "",
+                ballCounter.isIntakeLocked() ? ", FULL, intake stopped (let go of intake to run it)" : "");
+    }
+
+    // {shooter RPM, intake power, transfer power, flower (1 = down)}, call after getPowers(), refills the same array
+    public double[] getState() {
+        double[] vals = state;
+        vals[2] = 0;
+        vals[3] = 0;
+        vals[0] = getShooterRPM();
+
+        // g1 right bumper shoots: transfer plus intake to push the balls through
+        boolean shooting = g1.right_bumper;
+
+        // g2's bumpers win over g1's shoot button
         if (g2.left_bumper) {
             vals[2] = -0.7;
         } else if (g2.right_bumper) {
             vals[2] = 0.7;
-        } else if (autoFeeding) {
-            vals[2] = AUTO_FEED_POWER;
+        } else if (shooting) {
+            vals[2] = SHOOT_TRANSFER_POWER;
+        }
+
+        double requestedIntake = getIntakePower();
+        updateBallCount(requestedIntake, vals[0], vals[2]);
+        // Full from intaking: intaking stops, outtaking still works
+        vals[1] = ballCounter.isIntakeLocked() && requestedIntake > 0 ? 0 : requestedIntake;
+        // Balls pushed through by the shoot button aren't new balls, so only g2's intaking is watched
+        lastIntakePower = vals[1];
+        if (vals[1] == 0 && shooting) {
+            vals[1] = SHOOT_INTAKE_POWER;
         }
         // Hold x to lower the flower
         if (g2.x) {
@@ -481,4 +603,7 @@ public class WorkingBotButtonMap extends PinpointBM {
         }
         return vals;
     }
+
+    // g2's intake power sent last loop, the intake speed read this loop comes from it
+    private double lastIntakePower = 0;
 }

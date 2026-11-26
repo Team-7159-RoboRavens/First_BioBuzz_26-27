@@ -3,8 +3,6 @@ package org.firstinspires.ftc.teamcode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.BarebonesRobot;
-import org.firstinspires.ftc.teamcode.ButtonMaps.BarebonesBM;
 import org.firstinspires.ftc.teamcode.ButtonMaps.PPBM;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.PPBot;

@@ -8,35 +8,55 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.teamcode.Autonomous.Essentials.Constants;
 import org.firstinspires.ftc.teamcode.TeleOp.TeleOpData;
 
+import java.util.List;
+
 import static com.pedropathing.api.Paths.line;
 
-// Starts in the corner next to the park wall facing away from it, then strafes right into the park
+// Starts in the corner of the park wall and the side wall facing away from the park wall,
+// then drives in a straight line to a park spot PARK_OFF_WALL in off the park wall
 public abstract class SimpleParkBase extends OpMode {
-    // How far the robot strafes right, inches
-    protected static final double RIGHT_DISTANCE = 6.5;
     // Robot is square, 2.5 in under the 18 in max
     protected static final double ROBOT_SIZE = 18 - 2.5;
-    // How far the robot is pushed forward off the park wall at the start, inches
-    protected static final double START_OFF_WALL = 3;
     // Inner walls are about 141 in apart, centered in Pedro's 144 in grid, so each wall is 1.5 in in from the grid edge
     protected static final double WALL_INSET = 1.5;
+    // Gap between the robot and the park wall once parked, inches
+    protected static final double PARK_OFF_WALL = 3;
+    // Park spots along the park wall, same y as the Blue three cycle park poses
+    protected static final double LEFT_PARK_Y = 15.5;
+    protected static final double RIGHT_PARK_Y = 45.2051282051282;
 
     // Blue starts in the corner of the x = 144 (park) wall and the y = 0 wall, facing -x
     protected static final Pose BLUE_START = new Pose(
-            144 - WALL_INSET - ROBOT_SIZE / 2 - START_OFF_WALL,
+            144 - WALL_INSET - ROBOT_SIZE / 2,
             WALL_INSET + ROBOT_SIZE / 2,
             Math.toRadians(180));
+    protected static final Pose BLUE_LEFT_PARK = bluePark(LEFT_PARK_Y);
+    protected static final Pose BLUE_RIGHT_PARK = bluePark(RIGHT_PARK_Y);
     // Red is Blue rotated 180 deg about (72, 72)
-    protected static final Pose RED_START = new Pose(144 - BLUE_START.x(), 144 - BLUE_START.y(), 0);
+    protected static final Pose RED_START = toRed(BLUE_START);
+    protected static final Pose RED_LEFT_PARK = toRed(BLUE_LEFT_PARK);
+    protected static final Pose RED_RIGHT_PARK = toRed(BLUE_RIGHT_PARK);
+
+    private static Pose bluePark(double y) {
+        return new Pose(144 - WALL_INSET - ROBOT_SIZE / 2 - PARK_OFF_WALL, y, Math.toRadians(180));
+    }
+
+    private static Pose toRed(Pose p) {
+        return new Pose(144 - p.x(), 144 - p.y(), p.heading() - Math.PI);
+    }
 
     private Follower follower;
+    private List<LynxModule> hubs;
 
     protected abstract Pose getStartPose();
+    protected abstract Pose getParkPose();
 
     @Override
     public void init() {
-        for (LynxModule hub : hardwareMap.getAll(LynxModule.class)) {
-            hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
+        // MANUAL bulk caching, cleared once at the top of every loop
+        hubs = hardwareMap.getAll(LynxModule.class);
+        for (LynxModule hub : hubs) {
+            hub.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
         }
         follower = Constants.createFollower(hardwareMap);
         follower.setPose(getStartPose());
@@ -46,23 +66,21 @@ public abstract class SimpleParkBase extends OpMode {
     @Override
     public void start() {
         Pose start = getStartPose();
-        // Robot right is the heading turned 90 deg clockwise
-        double heading = start.heading();
-        Pose end = new Pose(
-                start.x() + Math.sin(heading) * RIGHT_DISTANCE,
-                start.y() - Math.cos(heading) * RIGHT_DISTANCE,
-                heading);
-        follower.follow(line(start, end).constant(heading));
+        follower.follow(line(start, getParkPose()).constant(start.heading()));
     }
 
     @Override
     public void loop() {
+        for (LynxModule hub : hubs) {
+            hub.clearBulkCache();
+        }
         follower.update();
-        TeleOpData.autoEndPose = follower.pose();
+        Pose pose = follower.pose();
+        TeleOpData.autoEndPose = pose;
         telemetry.addData("busy", follower.isBusy());
-        telemetry.addData("x", follower.pose().x());
-        telemetry.addData("y", follower.pose().y());
-        telemetry.addData("Heading (deg)", Math.toDegrees(follower.pose().heading()));
+        telemetry.addData("x", pose.x());
+        telemetry.addData("y", pose.y());
+        telemetry.addData("Heading (deg)", Math.toDegrees(pose.heading()));
         telemetry.update();
     }
 

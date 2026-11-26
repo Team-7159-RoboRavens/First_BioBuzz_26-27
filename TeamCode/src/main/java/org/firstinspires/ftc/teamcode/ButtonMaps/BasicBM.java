@@ -132,14 +132,14 @@ public class BasicBM {
      */
     public static double[] getMovement( double x, double y){
         y *= -1;
-        double leftStickDistance = Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
+        double leftStickDistance = Math.sqrt(y * y + x * x);
         if (leftStickDistance > 1.0) {
             leftStickDistance = 1.0;
         }
         if (leftStickDistance > LEFT_STICK_TRIGGER){
             double scaledDistance = leftStickDistance - LEFT_STICK_TRIGGER;
             scaledDistance /= 0.9;
-            scaledDistance = Math.pow(scaledDistance, 2);
+            scaledDistance *= scaledDistance;
             double forward = y * scaledDistance / leftStickDistance;
             double right = x * scaledDistance / leftStickDistance;
 
@@ -157,7 +157,7 @@ public class BasicBM {
         if (rightx > RIGHT_STICK_TRIGGER || rightx < - RIGHT_STICK_TRIGGER){
             double distance = Math.abs(rightx) - RIGHT_STICK_TRIGGER;
             distance /= 0.9;
-            distance = Math.pow(distance, 2);
+            distance *= distance;
             if (rightx < 0){
                 distance *= -1;
             }

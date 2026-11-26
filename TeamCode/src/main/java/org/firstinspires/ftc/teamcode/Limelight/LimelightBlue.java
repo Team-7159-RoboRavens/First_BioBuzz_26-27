@@ -1,147 +1,55 @@
 package org.firstinspires.ftc.teamcode.Limelight;
 
-import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class LimelightBlue extends calculatePosition{
-
-    boolean[] idVisible = new boolean[16];
-    int[] idUp = new int[16];
+    // Field y of the target CELL center from the center line, meters
+    private static final double TARGET_OFFSET_Y = 0.3370036948997776 - 0.075;
 
     public LimelightBlue(Limelight ll, Telemetry t) {
         super(ll, t);
     }
 
+    // Our HIVE's tags are 38-45, the other HIVE's are 30-37
     @Override
     public boolean canSeeTargetFriendly() {
-        for (int i = 8; i < 16; i++) {
-            if (idVisible[i]) {
-                return true;
-            }
-        }
-        return false;
+        return canSeeTags(38, 45);
     }
 
     @Override
     public boolean canSeeTargetEnemy() {
-        for (int i = 0; i < 8; i++) {
-            if (idVisible[i]) {
-                return true;
-            }
-        }
-        return false;
+        return canSeeTags(30, 37);
     }
 
-
-    //returns 0 for no targets detected 1 for moving 2 for down and 3 for up
+    //returns 0 for no targets detected 1 for moving 2 for down and 3 for up, both CELLs together
     @Override
     public int friendlyUp() {
-        if (!canSeeTargetFriendly()){
-            return 0;
-        }
-        int countUp = 0;
-        int countDown = 0;
-        int countMoving = 0;
-        for (int i = 8; i < 16; i++){
-            if (idVisible[i]) {
-                if (idUp[i] == 0) {
-                    countMoving++;
-                }
-                else if (idUp[i] == 1) {
-                    countDown++;
-                }
-                else {
-                    countUp++;
-                }
-            }
-        }
-        if (countUp > countDown && countUp > countMoving){
-            return 3;
-        }
-        if (countDown > countMoving){
-            return 2;
-        }
-        return 1;
+        return tagState(38, 45, 0);
     }
 
     @Override
     public int enemyUp() {
-        if (!canSeeTargetEnemy()){
-            return 0;
-        }
-        int countUp = 0;
-        int countDown = 0;
-        int countMoving = 0;
-        for (int i = 0; i < 8; i++){
-            if (idVisible[i]) {
-                if (idUp[i] == 0) {
-                    countMoving++;
-                }
-                else if (idUp[i] == 1) {
-                    countDown++;
-                }
-                else {
-                    countUp++;
-                }
-            }
-        }
-        if (countUp > countDown && countUp > countMoving){
-            return 3;
-        }
-        if (countDown > countMoving){
-            return 2;
-        }
-        return 1;
+        return tagState(30, 37, 0);
     }
 
     @Override
-    public void updateTagPosition() {
-        List<LLResultTypes.FiducialResult> limelightResults = limelight.getFiducialResults();
-        if (limelightResults == null) {
-            limelightResults = new ArrayList<>();
-        }
-        int[] ids = getVisibleIds(limelightResults);
-        for (int i = 0; i < 16; i ++){
-            idVisible[i] = false;
-        }
-        for (int id : ids){
-            if (isHiveTag(id)) {
-                idVisible[id - 30] = true;
-            }
-        }
-        for (LLResultTypes.FiducialResult tag : limelightResults){
-            if (!isHiveTag(tag.getFiducialId())) {
-                continue;
-            }
-            Double up = getTagFieldZ(tag);
-            int val = 0;// 0 is moving
-            if (up != null){
-                val = 1;// 1 is down
-                if (up == TAG_HEIGHT_HIGH_STATE){
-                    val = 2;// 2 is up
-                }
-            }
-            idUp[tag.getFiducialId()-30] = val;
-        }
+    public int friendlyCellState(boolean plusY) {
+        return tagState(38, 45, plusY ? 1 : -1);
     }
 
     @Override
     public double[] aimState(double[] botPose) {
-        if (friendlyUp() != 3) {
+        if (friendlyCellState(botPose[1] > 0) != STATE_UP) {
             return null;
         }
         double x, y, angle;
-        double targetOffsetY = 0.3370036948997776 - 0.075;
         if (botPose[1] < 0){
             y = botPose[1] * -1;
         }
         else{
             y = botPose[1];
         }
-        y -= targetOffsetY;
+        y -= TARGET_OFFSET_Y;
         if (botPose[1] > 0){
             x = HIVE_CENTER_X - botPose[0];
         }
@@ -160,8 +68,7 @@ public class LimelightBlue extends calculatePosition{
 
     //the target is the CELL on the same side of the center line as the robot
     private double getTargetY(double[] botPose) {
-        double targetOffsetY = 0.3370036948997776 - 0.075;
-        return botPose[1] > 0 ? targetOffsetY : -targetOffsetY;
+        return botPose[1] > 0 ? TARGET_OFFSET_Y : -TARGET_OFFSET_Y;
     }
 
     /**
@@ -182,7 +89,7 @@ public class LimelightBlue extends calculatePosition{
      * @return {x, y, heading} (meters, meters, radians), or null if the target can't be aimed at
      */
     public double[] getShootPose(double[] botPose, boolean requireTargetUp) {
-        if (requireTargetUp && friendlyUp() != 3) {
+        if (requireTargetUp && friendlyCellState(botPose[1] > 0) != STATE_UP) {
             return null;
         }
         return getShootPose(botPose, HIVE_CENTER_X, getTargetY(botPose));

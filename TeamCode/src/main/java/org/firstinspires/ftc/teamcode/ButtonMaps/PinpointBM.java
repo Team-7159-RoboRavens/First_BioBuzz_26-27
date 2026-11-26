@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.ButtonMaps;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
-//import org.firstinspires.ftc.teamcode.Helpers.HeadingHelper;
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
 
@@ -13,21 +12,19 @@ public class PinpointBM {
     // Deadzone thresholds below which stick input is ignored.
     public static final double LEFT_STICK_TRIGGER = 0.1;
     public static final double RIGHT_STICK_TRIGGER = 0.1;
-    private OpMode opmode;
-    private Robot robot;
+    private final Robot robot;
     public Gamepad g1;
     public Gamepad g2;
-//    private HeadingHelper h;
+    // Reused by getPowers() so it doesn't make a new array every loop
+    protected final double[] stickMovement = new double[2];
     /**
      * @param op running op mode, used to read gamepad state
      * @param r robot instance this button map drives
      */
     public PinpointBM(OpMode op, Robot r) {
-        opmode = op;
         robot = r;
-        g1 = opmode.gamepad1;
-        g2 = opmode.gamepad2;
-//        h = new HeadingHelper(r);
+        g1 = op.gamepad1;
+        g2 = op.gamepad2;
     }
     /**
      * @return intake motor power for gamepad1's current right trigger value, in [0, 1]
@@ -118,12 +115,11 @@ public class PinpointBM {
     public MotorPowers getPowers() {
         // Refresh odometry each loop before using any pinpoint-derived data.
         robot.pinpointUpdate();
-//        h.update();
         double forward = getDpadForward(g1.dpad_up, g1.dpad_down);
         double right = getDpadRight(g1.dpad_left, g1.dpad_right);
         double rotateClockwise = getBumperRotateClockwise(g1.left_bumper, g1.right_bumper);
 
-        double[] stickMovement = getMovement(g1.left_stick_x, g1.left_stick_y);
+        getMovement(g1.left_stick_x, g1.left_stick_y, stickMovement);
         forward += stickMovement[0];
         right += stickMovement[1];
 
@@ -151,21 +147,27 @@ public class PinpointBM {
      * @return {forward, right} power components
      */
     public static double[] getMovement( double x, double y){
+        return getMovement(x, y, new double[2]);
+    }
+
+    // Same as getMovement, but fills movement ({forward, right}) instead of making a new array
+    public static double[] getMovement(double x, double y, double[] movement){
         y *= -1;
-        double leftStickDistance = Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
+        double leftStickDistance = Math.sqrt(y * y + x * x);
         if (leftStickDistance > 1.0) {
             leftStickDistance = 1.0;
         }
         if (leftStickDistance > LEFT_STICK_TRIGGER){
             double scaledDistance = leftStickDistance - LEFT_STICK_TRIGGER;
             scaledDistance /= 0.9;
-            scaledDistance = Math.pow(scaledDistance, 2);
-            double forward = y * scaledDistance / leftStickDistance;
-            double right = x * scaledDistance / leftStickDistance;
-
-            return new double[]{forward, right};
+            scaledDistance = scaledDistance * scaledDistance;
+            movement[0] = y * scaledDistance / leftStickDistance;
+            movement[1] = x * scaledDistance / leftStickDistance;
+            return movement;
         }
-        return new double[]{0, 0};
+        movement[0] = 0;
+        movement[1] = 0;
+        return movement;
     }
     /**
      * Right stick x controls rotation, using the same deadzone/rescale/square curve as translation.
@@ -177,7 +179,7 @@ public class PinpointBM {
         if (rightx > RIGHT_STICK_TRIGGER || rightx < -RIGHT_STICK_TRIGGER){
             double distance = Math.abs(rightx) - RIGHT_STICK_TRIGGER;
             distance /= 0.9;
-            distance = Math.pow(distance, 2);
+            distance = distance * distance;
             if (rightx < 0){
                 distance *= -1;
             }
@@ -187,7 +189,4 @@ public class PinpointBM {
         return 0;
     }
 
-    public void checkMacro() {
-        robot.setMacroState(g1.back);
-    }
 }

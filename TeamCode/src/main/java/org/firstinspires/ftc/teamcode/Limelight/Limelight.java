@@ -3,11 +3,13 @@ package org.firstinspires.ftc.teamcode.Limelight;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.teamcode.Robot;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 // Wraps a Limelight3A vision sensor, exposing pipeline switching and simple
@@ -33,7 +35,11 @@ public class Limelight {
      *              (device must be configured with the name "limelight")
      */
     public Limelight(Robot robot) {
-        limelight = robot.getHardwareMap().get(Limelight3A.class, "limelight");
+        this(robot.getHardwareMap());
+    }
+
+    public Limelight(HardwareMap hardwareMap) {
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
 
         // 1. CRITICAL MISSING STEP: Set the polling speed (100 times per second)
         limelight.setPollRateHz(POLL_RATE_HZ);
@@ -60,8 +66,9 @@ public class Limelight {
             fiducialResults = latestResult.getFiducialResults();
             colorResults = latestResult.getColorResults();
         } else {
-            fiducialResults = new ArrayList<>();
-            colorResults = new ArrayList<>();
+            // shared empty lists, so a loop with no result makes no garbage
+            fiducialResults = Collections.emptyList();
+            colorResults = Collections.emptyList();
         }
     }
 

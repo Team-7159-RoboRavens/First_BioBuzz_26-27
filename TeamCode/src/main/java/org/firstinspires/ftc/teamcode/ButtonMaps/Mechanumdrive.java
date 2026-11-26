@@ -28,9 +28,20 @@ public class Mechanumdrive {
      * @return per-wheel motor powers, scaled down if necessary to stay within [-1, 1]
      */
     public static MotorPowers fieldOrientedDrive(double forward, double right, double r, double angle){
-        double y = Math.sin(angle) * forward + Math.cos(angle) * right;
-        double x = Math.sin(angle) * right - Math.cos(angle) * forward;
-        MotorPowers motorPower = new MotorPowers();
+        return fieldOrientedDrive(forward, right, r, angle, new MotorPowers());
+    }
+
+    // Same as setMotorPowers, but fills motorPower instead of making a new one
+    public static MotorPowers setMotorPowers(double y, double x, double clockWise, MotorPowers motorPower){
+        return fieldOrientedDrive(y, x, clockWise, Math.PI/2, motorPower);
+    }
+
+    // Same as fieldOrientedDrive, but fills motorPower instead of making a new one
+    public static MotorPowers fieldOrientedDrive(double forward, double right, double r, double angle, MotorPowers motorPower){
+        double sin = Math.sin(angle);
+        double cos = Math.cos(angle);
+        double y = sin * forward + cos * right;
+        double x = sin * right - cos * forward;
         double max = Math.max(Math.max(Math.abs(y + x + r), Math.abs(y - x - r)), Math.max(Math.abs(y - x + r), Math.abs(y + x - r)));
         if (max > 1){
             y /= max;

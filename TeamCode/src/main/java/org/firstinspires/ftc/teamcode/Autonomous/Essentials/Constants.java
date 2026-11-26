@@ -47,10 +47,12 @@ public class Constants {
     });
 
     public static final ForesightConfig foresightConfig = new ForesightConfig(c -> {
+        // Power per inch off the path: the first two over 2.5 in off, the Secondary ones under 2.5 in.
+        // Secondary was 0.1, too weak to push out the last inch or so. Lower them back if the robot wobbles at the end
         Controller forward = Controller.proportional(0.3);
-        Controller forwardSecondary = Controller.proportional(0.1);
+        Controller forwardSecondary = Controller.proportional(0.15);
         Controller strafe = Controller.proportional(0.3);
-        Controller strafeSecondary = Controller.proportional(0.1);
+        Controller strafeSecondary = Controller.proportional(0.15);
 
         c.forwardTranslational.set(Controller.piecewise(forwardSecondary).put(2.5, forward));
         c.strafeTranslational.set(Controller.piecewise(strafeSecondary).put(2.5, strafe));

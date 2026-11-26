@@ -6,8 +6,8 @@ public class ShotCalculator {
     // ---------------- Tuning: ball flight ----------------
     // Angle the ball leaves the shooter at, degrees up from flat. Steeper = higher arc and needs more speed for the same distance
     public static double LAUNCH_ANGLE_DEG = 70;
-    // Height the ball leaves the shooter, inches off the floor. Measure on the robot
-    public static double SHOOTER_HEIGHT = 14;
+    // Height the ball leaves the shooter, inches off the floor (measured)
+    public static double SHOOTER_HEIGHT = 6;
     // Height of the middle of the CELL opening the ball goes into, inches off the floor. Measure on the field.
     // Raising it asks for more RPM at long range than at short range
     public static double TARGET_HEIGHT = 50;
@@ -47,9 +47,14 @@ public class ShotCalculator {
     public static double VELOCITY_COMPENSATION = 1.0;
     // How much of the robot's acceleration is used for the RELEASE_DELAY prediction (0 to ignore it)
     public static double ACCELERATION_COMPENSATION = 1.0;
+    // How much of the extra shooter speed from the robot turning is aimed against (0 to ignore it). The shooter is
+    // off the robot's center, so while turning it moves sideways even when the center stands still
+    public static double ROTATION_COMPENSATION = 1.0;
 
     // ---------------- Robot geometry ----------------
-    // Shooter position from the robot center, in the direction the shooter points: forward and to the left, inches
+    // Shooter position from the robot center, measured in the direction the shooter points: forward and to the
+    // left, inches. The shooter faces the robot's back, so this is 8.32 in toward the back and 3.01 in to the robot's
+    // left (looking from the intake end). Measure it to where the ball leaves
     public static double SHOOTER_FORWARD = 8.32;
     public static double SHOOTER_LEFT = -3.01;
     // Pedro heading = shooter heading + this, the shooter points out the back of the robot
@@ -57,13 +62,19 @@ public class ShotCalculator {
 
     private static final double GRAVITY = 386.09; // in/s^2
 
+    // cos and tan of LAUNCH_ANGLE_DEG, only redone when it changes
+    private static double cachedAngleDeg = Double.NaN;
+    private static double launchCos, launchTan;
+
     public static class Shot {
         public boolean valid;
         // Pedro heading the robot should face, radians
         public double heading;
         public double rpm;
-        // Flat distance from the shooter to the aim point, inches
+        // Flat distance from the shooter to the aim point, inches (the aim point moves with the robot's speed)
         public double distance;
+        // Flat distance from the shooter to the opening itself, inches
+        public double openingDistance;
         public double aimX;
         public double aimY;
     }
@@ -73,10 +84,11 @@ public class ShotCalculator {
      * @param heading current Pedro heading, radians
      * @param vx robot field velocity, in/s
      * @param ax robot field acceleration, in/s^2
+     * @param omega robot turn rate, rad/s counterclockwise
      * @param red true to aim at the red HIVE
      */
     public static Shot solve(double x, double y, double heading,
-                             double vx, double vy, double ax, double ay, boolean red) {
+                             double vx, double vy, double ax, double ay, double omega, boolean red) {
         Shot shot = new Shot();
         double delay = RELEASE_DELAY;
         double accelX = ax * ACCELERATION_COMPENSATION;
@@ -84,27 +96,37 @@ public class ShotCalculator {
         // Where the robot is and how fast it goes when the ball leaves
         double releaseX = x + vx * delay + 0.5 * accelX * delay * delay;
         double releaseY = y + vy * delay + 0.5 * accelY * delay * delay;
-        double releaseVx = (vx + accelX * delay) * VELOCITY_COMPENSATION;
-        double releaseVy = (vy + accelY * delay) * VELOCITY_COMPENSATION;
+        double centerVx = (vx + accelX * delay) * VELOCITY_COMPENSATION;
+        double centerVy = (vy + accelY * delay) * VELOCITY_COMPENSATION;
+        double releaseHeading = heading + omega * delay;
 
         double targetX = 72 + (red ? -HIVE_X_FROM_CENTER : HIVE_X_FROM_CENTER);
         double side = releaseY >= 72 ? 1 : -1;
         double targetY = 72 + side * CELL_Y_FROM_CENTER;
 
-        // Shooter position with the current heading, close enough for the side shift
-        double shooterHeading = heading - PEDRO_HEADING_OFFSET;
-        double shooterX = releaseX + SHOOTER_FORWARD * Math.cos(shooterHeading) - SHOOTER_LEFT * Math.sin(shooterHeading);
-        double shooterY = releaseY + SHOOTER_FORWARD * Math.sin(shooterHeading) + SHOOTER_LEFT * Math.cos(shooterHeading);
+        // Shooter position when the ball leaves
+        double shooterHeading = releaseHeading - PEDRO_HEADING_OFFSET;
+        double cos = Math.cos(shooterHeading);
+        double sin = Math.sin(shooterHeading);
+        double offsetX = SHOOTER_FORWARD * cos - SHOOTER_LEFT * sin;
+        double offsetY = SHOOTER_FORWARD * sin + SHOOTER_LEFT * cos;
+        double shooterX = releaseX + offsetX;
+        double shooterY = releaseY + offsetY;
+        // The ball gets the shooter's speed, not the center's: turning swings the shooter around the center
+        double spin = omega * ROTATION_COMPENSATION;
+        double releaseVx = centerVx - spin * offsetY;
+        double releaseVy = centerVy + spin * offsetX;
         double tanOffAngle = (shooterX - targetX) / Math.max(1, Math.abs(shooterY - targetY));
         double shift = Math.max(-MAX_OPENING_SHIFT, Math.min(MAX_OPENING_SHIFT, OPENING_SHIFT * tanOffAngle));
         double openingX = targetX - shift;
+        shot.openingDistance = length(openingX - shooterX, targetY - shooterY);
 
-        // The ball keeps the robot's speed, so aim at where the opening seems to be from the moving robot
+        // The ball keeps the shooter's speed, so aim at where the opening seems to be from the moving shooter
         double aimX = openingX;
         double aimY = targetY;
         double distance = 0;
         for (int i = 0; i < 4; i++) {
-            distance = Math.hypot(aimX - shooterX, aimY - shooterY);
+            distance = length(aimX - shooterX, aimY - shooterY);
             double flightTime = flightTime(distance);
             if (Double.isNaN(flightTime)) {
                 shot.valid = false;
@@ -117,7 +139,7 @@ public class ShotCalculator {
         // Turn so the shooter (off to the side of the center) lines up with the aim point
         double centerDx = aimX - releaseX;
         double centerDy = aimY - releaseY;
-        double centerDistance = Math.hypot(centerDx, centerDy);
+        double centerDistance = length(centerDx, centerDy);
         if (centerDistance <= Math.abs(SHOOTER_LEFT) + 1) {
             shot.valid = false;
             return shot;
@@ -142,10 +164,10 @@ public class ShotCalculator {
 
     // Ball speed needed to reach the opening height at this flat distance, in/s, NaN if the arc can't get there
     public static double exitSpeed(double distance) {
-        double angle = Math.toRadians(LAUNCH_ANGLE_DEG);
+        updateLaunchAngle();
         double rise = TARGET_HEIGHT - SHOOTER_HEIGHT;
-        double cos = Math.cos(angle);
-        double drop = distance * Math.tan(angle) - rise;
+        double cos = launchCos;
+        double drop = distance * launchTan - rise;
         if (distance <= 0 || drop <= 0) {
             return Double.NaN;
         }
@@ -158,6 +180,22 @@ public class ShotCalculator {
         if (Double.isNaN(speed)) {
             return Double.NaN;
         }
-        return distance / (speed * Math.cos(Math.toRadians(LAUNCH_ANGLE_DEG)));
+        return distance / (speed * launchCos);
+    }
+
+    // Trig of the launch angle once instead of every call, still picks up a changed LAUNCH_ANGLE_DEG
+    private static void updateLaunchAngle() {
+        double deg = LAUNCH_ANGLE_DEG;
+        if (deg != cachedAngleDeg) {
+            double angle = Math.toRadians(deg);
+            launchCos = Math.cos(angle);
+            launchTan = Math.tan(angle);
+            cachedAngleDeg = deg;
+        }
+    }
+
+    // Same as Math.hypot without its slow overflow handling, these are field distances in inches
+    private static double length(double dx, double dy) {
+        return Math.sqrt(dx * dx + dy * dy);
     }
 }

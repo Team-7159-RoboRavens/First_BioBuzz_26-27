@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode.Autonomous;
 
 import com.pedropathing.math.Pose;
 
-// Shared poses for every Red auto (Left Park, Right Park, Safe), only the park pose is set per auto
+// Shared poses for every Red auto (three cycle, ExtraLoad, Safe, BackSide, GardenCycle), only the park pose is set per auto
 // Blue rotated 180 deg about (72, 72): x = 144 - x, y = 144 - y, heading + 180
 public abstract class ThreeCycleRedBase extends ThreeCycleAutoBase {
     protected static final Pose SHOOT_POSE_1 = new Pose(54.7, 17, Math.toRadians(270));
@@ -13,10 +13,19 @@ public abstract class ThreeCycleRedBase extends ThreeCycleAutoBase {
     protected static final Pose INTAKE_CONTROL = new Pose(47.7, 9.71);
     // Pre-shoot 2 and shoot 2 moved 3.5 in toward the wall to match where the robot actually ends up, then pre-shoot 2 back out 1.5 in
     protected static final Pose PRE_SHOOT_POSE_2 = new Pose(52.80090497737557, 129.70221530920061, Math.toRadians(100));
+    // RPM for volleys 2 and 3 from the teleop RPM math (Shooter/ShotCalculator) at these two poses,
+    // 39.5 in and 44.9 in from the opening. Redo them with that math if the poses move
+    protected static final double SHOT_2_RPM = 195;
+    protected static final double SHOT_3_RPM = 200;
     protected static final Pose SHOOT_POSE_2 = new Pose(51.80090497737557, 135.0, Math.toRadians(100));
     protected static final Pose SHOOT_2_CONTROL = new Pose(28.8815987933635, 99.970588235294116);
     protected static final Pose SHOOT_2_CONTROL_2 = new Pose(28.8815987933635, 99.970588235294116);
     protected static final Pose PARK_CONTROL = new Pose(36.91779788838613, 85.50075414781297);
+
+    // Extra flower on the park wall, set by hand so the 3.5 in shoot 2 shift doesn't push the pickup into the wall
+    protected static final Pose EXTRA_APPROACH_POSE = new Pose(16.29778469079939, 52.80090497737557, Math.toRadians(190));
+    protected static final Pose EXTRA_INTAKE_END_POSE = new Pose(12.5, 51.80090497737557, Math.toRadians(190));
+    protected static final Pose EXTRA_PARK_CONTROL = new Pose(24, 76);
 
     @Override protected Pose getShootPose1() { return SHOOT_POSE_1; }
     @Override protected Pose getShootPose1_0() { return SHOOT_POSE_1_0; }
@@ -28,4 +37,10 @@ public abstract class ThreeCycleRedBase extends ThreeCycleAutoBase {
     @Override protected Pose getShoot2Control() { return SHOOT_2_CONTROL; }
     @Override protected Pose getShoot2Control2() { return SHOOT_2_CONTROL_2; }
     @Override protected Pose getParkControl() { return PARK_CONTROL; }
+    @Override protected double getShot2RPM() { return SHOT_2_RPM; }
+    @Override protected double getShot3RPM() { return SHOT_3_RPM; }
+    @Override protected Pose getExtraApproachPose() { return EXTRA_APPROACH_POSE; }
+    @Override protected Pose getExtraIntakeEndPose() { return EXTRA_INTAKE_END_POSE; }
+    @Override protected Pose getExtraParkControl() { return EXTRA_PARK_CONTROL; }
+    @Override protected boolean isRed() { return true; }
 }

@@ -2,24 +2,17 @@ package org.firstinspires.ftc.teamcode.TeleOp;
 
 import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.hardware.limelightvision.LLResultTypes;
-import com.qualcomm.hardware.limelightvision.LLStatus;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.ButtonMaps.BasicBM;
 import org.firstinspires.ftc.teamcode.ButtonMaps.WheelTestBM;
 import org.firstinspires.ftc.teamcode.Limelight.Limelight;
 import org.firstinspires.ftc.teamcode.Limelight.LimelightBlue;
-import org.firstinspires.ftc.teamcode.Limelight.calculatePosition;
-import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
 import com.qualcomm.hardware.lynx.LynxModule;
 
 import com.qualcomm.robotcore.util.ElapsedTime;
-
-import java.util.List;
 
 
 // TeleOp op mode using the Pinpoint-aware button map, with odometry telemetry.
@@ -56,8 +49,8 @@ public class limelightTest extends OpMode {
             hub.clearBulkCache();
         }
         double time = lastFrameTime.milliseconds();
-        time *= 1000000;
-        if (time < 0.5) {
+        // Milliseconds, the long gap from init to start is left out of the average
+        if (time < 500) {
             averageFrameTime = averageFrameTime * frameCount + time;
             averageFrameTime /= frameCount + 1;
             frameCount++;
@@ -94,9 +87,8 @@ public class limelightTest extends OpMode {
                 telemetry.addData("Limelight PedrX: ", pedroPos.x());
                 telemetry.addData("Limelight PedroY: ", pedroPos.y());
                 telemetry.addData("Limelight PedroOrientation: ", pedroPos.heading());
-                Pose pedroPose = calculatePosition.toPedroPose(botPos);
                 telemetry.addData("Pedro pose", "x: %.1f in, y: %.1f in, heading: %.1f deg",
-                        pedroPose.x(), pedroPose.y(), Math.toDegrees(pedroPose.heading()));
+                        pedroPos.x(), pedroPos.y(), Math.toDegrees(pedroPos.heading()));
             }
             if (canSeeFriendly) {
                 int isUp = llB.friendlyUp();

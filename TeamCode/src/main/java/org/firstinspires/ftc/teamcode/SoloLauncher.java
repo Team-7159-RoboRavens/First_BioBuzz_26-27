@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class SoloLauncher {
@@ -14,6 +16,10 @@ public class SoloLauncher {
     public SoloLauncher(HardwareMap hmap) {
         hardwareMap = hmap;
         shootMotor = hardwareMap.get(DcMotorEx.class, "shootMotor");
+        // Same setup as the working bot's shoot motor in Robot, setVelocity needs RUN_USING_ENCODER
+        shootMotor.setDirection(DcMotor.Direction.REVERSE);
+        shootMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        shootMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(P, I, D, F));
     }
 
     public void setShootPower(double power){

@@ -19,6 +19,9 @@ public class TeleOpLauncher extends OpMode {
 
     @Override
     public void loop() {
-        launcher.setShootPower(buttonMap.getState());
+        // getState() is an RPM, setShootPower() only takes -1 to 1
+        double rpm = buttonMap.getState();
+        launcher.setShootRPM(rpm);
+        telemetry.addData("Shooter", "target %.0f rpm, actual %.0f rpm", rpm, launcher.getShootRPM());
     }
 }

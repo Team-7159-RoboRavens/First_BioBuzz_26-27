@@ -69,7 +69,7 @@ public class BarebonesBM {
         if (leftStickDistance > LEFT_STICK_TRIGGER){
             leftStickDistance -= LEFT_STICK_TRIGGER;
             leftStickDistance /= 0.9;
-            leftStickDistance = Math.pow(leftStickDistance, 2);
+            leftStickDistance *= leftStickDistance;
             double angle = Math.atan(-g1.left_stick_y/g1.left_stick_x);
             if (g1.left_stick_x < 0){
                 angle += Math.PI;
@@ -79,9 +79,10 @@ public class BarebonesBM {
         }
         // Right stick x controls rotation, using the same deadzone/rescale/square curve.
         if (g1.right_stick_x > RIGHT_STICK_TRIGGER || g1.right_stick_x < -RIGHT_STICK_TRIGGER){
-            double distance = g1.right_stick_x - LEFT_STICK_TRIGGER;
+            // Same size dead zone both ways, so left and right turns match
+            double distance = Math.abs(g1.right_stick_x) - RIGHT_STICK_TRIGGER;
             distance /= 0.9;
-            distance = Math.pow(distance, 2);
+            distance *= distance;
             if (g1.right_stick_x < 0){
                 distance *= -1;
             }
