@@ -163,7 +163,8 @@ public abstract class ThreeCycleAutoBase extends OpMode {
     private double feedStartTime = -1;
     // Auto time the flywheel got within RPM_TOLERANCE of its target, -1 while it isn't
     private double atSpeedSince = -1;
-    private final ShotCounter shotCounter = new ShotCounter();
+    // Made once the mechanisms exist, it reads the flywheel current
+    private ShotCounter shotCounter;
     // Jiggle state for the current volley, jiggleStartTime < 0 until it starts
     private double jiggleStartTime = -1;
     private double jiggleMoveTime;
@@ -934,6 +935,7 @@ public abstract class ThreeCycleAutoBase extends OpMode {
         opModeTimer = new Timer();
         follower = Constants.createFollower(hardwareMap);
         mechanisms = new AutoMechanisms(hardwareMap);
+        shotCounter = new ShotCounter(mechanisms.getFlywheel());
         follower.setPose(getStartPose());
         here = getStartPose();
         mechanisms.raiseFlower();

@@ -13,6 +13,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.Autonomous.Essentials.Constants;
 import org.firstinspires.ftc.teamcode.ButtonMaps.Mechanumdrive;
+import org.firstinspires.ftc.teamcode.Shooter.CustomFlywheel;
 import org.firstinspires.ftc.teamcode.Shooter.FlywheelSpinUp;
 import org.firstinspires.ftc.teamcode.TeleOp.TeleOpData;
 
@@ -34,7 +35,7 @@ public class Robot {
     DcMotorEx intakeMotor1;
     // Reverses the intake for a moment when it stalls, null on robots without the intake motor
     public IntakeJamGuard intakeJamGuard = null;
-    public CRServo shootFeedServo;
+    public CRServo transferServo;
     public Servo flowerServo;
     public DcMotorEx flywheelMotor;
     public double F = 12;
@@ -84,7 +85,7 @@ public class Robot {
         rightFront = hmap.get(DcMotorEx.class, "rightFront");
         leftBack = hmap.get(DcMotorEx.class, "leftBack");
         rightBack = hmap.get(DcMotorEx.class, "rightBack");
-        shootFeedServo = hmap.get(CRServo.class, "shootFeedServo");
+        transferServo = hmap.get(CRServo.class, "transferServo");
 
         pinpoint = hmap.get(GoBildaPinpointDriver.class, "pinpoint");
 
@@ -128,7 +129,7 @@ public class Robot {
         }
 
         if (robotId == 4){
-            shootFeedServo = hardwareMap.get(CRServo.class, "shootFeedServo");
+            transferServo = hardwareMap.get(CRServo.class, "transferServo");
             intakeServoRight = hardwareMap.get(CRServo.class, "intakeServoRight");
             intakeServoLeft = hardwareMap.get(CRServo.class, "intakeServoLeft");
             shootMotor = hmap.get(DcMotorEx.class, "shootMotor");
@@ -143,11 +144,11 @@ public class Robot {
             rightBack.setDirection(DcMotor.Direction.FORWARD);
         }
         if (robotId == 10){
-            shootFeedServo = hardwareMap.get(CRServo.class, "transferServo");
+            transferServo = hardwareMap.get(CRServo.class, "transferServo");
             flowerServo = hardwareMap.get(Servo.class, "flowerServo");
             shootMotor = hmap.get(DcMotorEx.class, "shootMotor");
             intakeMotor1 = hmap.get(DcMotorEx.class, "intakeMotor");
-            shootFeedServo.setDirection(CRServo.Direction.REVERSE);
+            transferServo.setDirection(CRServo.Direction.REVERSE);
             intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
             intakeMotor1.setDirection(DcMotor.Direction.REVERSE);
             intakeJamGuard = new IntakeJamGuard(intakeMotor1);
@@ -191,8 +192,8 @@ public class Robot {
 
     // Teleop calls this every loop, so the servo command is only sent when the power changes
     public void setShootFeedPower(double power){
-        if (shootFeedServo != null && power != sentShootFeedPower) {
-            shootFeedServo.setPower(power);
+        if (transferServo != null && power != sentShootFeedPower) {
+            transferServo.setPower(power);
             sentShootFeedPower = power;
         }
     }
@@ -213,7 +214,33 @@ public class Robot {
 
     // Power ramp then RPM control (Shooter/FlywheelSpinUp), call every loop
     private FlywheelSpinUp shooterSpinUp = null;
+    // True = CustomFlywheel (own feedforward + recovery control) instead of the hub's PID, in teleop and auto
+    // (AutoMechanisms reads this too). FlywheelControlTest 2026-11-27: 20 of 20 shots back in 0.17 s with no real
+    // overshoot, the hub PID took 0.27 s and overshot 10-21 RPM. False = back to the hub PID
+    public static boolean USE_CUSTOM_FLYWHEEL = true;
+    private CustomFlywheel customFlywheel = null;
+    private boolean customFlywheelRunning = false;
+
     public void setShootRPMRamped(double RPM){
+        if (USE_CUSTOM_FLYWHEEL && shootMotor != null) {
+            if (customFlywheel == null) {
+                customFlywheel = new CustomFlywheel(shootMotor, SHOOT_TICKS_PER_REV);
+                customFlywheel.setBatteryVoltage(voltageSensor.getVoltage());
+            }
+            if (!customFlywheelRunning) {
+                customFlywheel.reset();
+                customFlywheelRunning = true;
+            }
+            customFlywheel.update(RPM);
+            return;
+        }
+        if (customFlywheelRunning) {
+            // Switched back, the spin up has to set the hub mode again
+            customFlywheelRunning = false;
+            if (shooterSpinUp != null) {
+                shooterSpinUp.forgetMode();
+            }
+        }
         if (shooterSpinUp == null) {
             setShootRPM(RPM);
             return;
@@ -226,6 +253,27 @@ public class Robot {
         if (shooterSpinUp != null) {
             shooterSpinUp.setBatteryVoltage(volts);
         }
+        if (customFlywheel != null) {
+            customFlywheel.setBatteryVoltage(volts);
+        }
+    }
+
+    // Null until USE_CUSTOM_FLYWHEEL has run it once
+    public CustomFlywheel getCustomFlywheel() {
+        return customFlywheel;
+    }
+
+    // Makes the next intake, transfer and flywheel calls send their command even if it didn't change.
+    // Commands are normally sent once, so one the hub dropped would never come back
+    public void resendShooterOutputs() {
+        sentIntakePower = Double.NaN;
+        sentShootFeedPower = Double.NaN;
+        if (shooterSpinUp != null) {
+            shooterSpinUp.resend();
+        }
+        if (customFlywheel != null) {
+            customFlywheel.resend();
+        }
     }
 
     // Intake motor speed, ticks per second (bulk cached), 0 without the intake motor
@@ -235,6 +283,9 @@ public class Robot {
 
     // True while the spin up is on its power ramp instead of the hub's RPM control
     public boolean isShooterRamping() {
+        if (customFlywheelRunning) {
+            return customFlywheel.isSpinningUp();
+        }
         return shooterSpinUp != null && shooterSpinUp.isRamping();
     }
 

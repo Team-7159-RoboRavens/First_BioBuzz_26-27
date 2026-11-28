@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 // Three cycle plus an extra pickup from the park wall flower before parking right, poses are in ThreeCycleBlueBase
 @Autonomous(name = "ExtraLoadAutoBlue")
 public class ExtraLoadAutoBlue extends ThreeCycleBlueBase {
-    private final Pose parkPose = new Pose(131.5075414781297, 45.2051282051282, Math.toRadians(180));
+    private final Pose parkPose = new Pose(130.9674, 50.5607, Math.toRadians(180));
 
     @Override protected Pose getParkPose() { return parkPose; }
 

@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.TeleOp;
 
+import android.util.Log;
+
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -8,6 +10,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.MotorPowers;
 import org.firstinspires.ftc.teamcode.Robot;
+
+import java.util.Locale;
 
 // Measures KS for InputHandling: the volts each drive wheel needs to start moving, with the robot on the field tiles.
 // Ramps all wheels forward slowly, then backward, and records the volts when each wheel starts turning.
@@ -37,6 +41,11 @@ public class DriveFeedforwardTest extends LinearOpMode {
         sleep(500);
         double[] backward = ramp(robot, motors, -1);
         robot.setPowers(new MotorPowers());
+        // Also in the robot log (tag DriveKS), so the numbers aren't only on the driver station
+        for (int i = 0; i < 4; i++) {
+            Log.i("DriveKS", String.format(Locale.US, "%s forward %.3f backward %.3f average %.3f V",
+                    NAMES[i], forward[i], backward[i], (forward[i] + backward[i]) / 2));
+        }
 
         while (opModeIsActive()) {
             telemetry.addLine("KS in volts, forward / backward / average");

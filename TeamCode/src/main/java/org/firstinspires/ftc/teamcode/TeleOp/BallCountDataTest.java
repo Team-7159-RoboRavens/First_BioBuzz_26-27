@@ -5,6 +5,7 @@ import android.util.Log;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.ReadWriteFile;
@@ -45,6 +46,23 @@ public class BallCountDataTest extends LinearOpMode {
     public static double SETTLE_TIME = 1.0;
     // Target slope that counts as rising / falling, RPM per second
     public static double SLOPE_RPM_PER_S = 2;
+    // Flywheel, intake and transfer commands are sent again this often, so a dropped one comes back
+    public static double RESEND_SECONDS = 0.1;
+    // The flywheel target never goes below this while the test runs
+    public static double MIN_TARGET_RPM = FIXED_RPM;
+    // Flywheel told to spin but drawing less than this many amps for NO_POWER_SECONDS = no power reaching it
+    public static double NO_POWER_AMPS = 0.8;
+    public static double NO_POWER_SECONDS = 0.5;
+    // Intake holds a constant speed with the hub's velocity control instead of a fixed power (no jam reversing).
+    // INTAKE_TPS 0 = INTAKE_POWER times the motor's top speed
+    public static boolean INTAKE_VELOCITY_CONTROL = true;
+    public static double INTAKE_TPS = 0;
+    // Intake encoder reading under this for INTAKE_NO_ENCODER_SECONDS = no encoder, goes back to plain power
+    public static double INTAKE_NO_ENCODER_TPS = 20;
+    public static double INTAKE_NO_ENCODER_SECONDS = 1.0;
+    // How much of each new aim turn rate is used for the pretend robot, like teleop's filtered turn rate.
+    // The raw per-loop turn rate fed back into the shot math and pinned the target at MAX_RPM
+    public static double SIM_TURN_BLEND = 0.2;
     // ----------------------------------------
 
     private static final String HEADER = "t,dt_ms,trial,balls,in_trial,mode,target,rpm,err,ramping,shoot_pos,"
@@ -84,6 +102,7 @@ public class BallCountDataTest extends LinearOpMode {
     // Pretend strafe along the blue strafe line
     private double simX, simVx, simAx, simHeading, simTurnRate;
     private int simDirection = 1;
+    private double simTarget = FIXED_RPM;
     private boolean strafeMode = true;
 
     // Trials
@@ -92,7 +111,7 @@ public class BallCountDataTest extends LinearOpMode {
     private boolean inTrial = false;
     private double trialStart = 0;
     private final int[] trialsDone = new int[5];
-    private final ShotCounter shotCounter = new ShotCounter();
+    private ShotCounter shotCounter;
     private ErrorStats trialStats = new ErrorStats();
     private String lastTrialSummary = "none yet";
 
@@ -108,9 +127,16 @@ public class BallCountDataTest extends LinearOpMode {
     public void runOpMode() {
         robot = new Robot(hardwareMap, 10);
         shootMotor = robot.shootMotor;
+        shotCounter = new ShotCounter(shootMotor);
         intakeMotor = hardwareMap.get(DcMotorEx.class, "intakeMotor");
-        // Jam reverses would mess up the intake data
+        // No jam reversing, the intake runs one way the whole test
         robot.intakeJamGuard = null;
+        double intakeTps = INTAKE_TPS > 0 ? INTAKE_TPS
+                : INTAKE_POWER * intakeMotor.getMotorType().getAchieveableMaxTicksPerSecond();
+        boolean intakeVelocity = INTAKE_VELOCITY_CONTROL;
+        if (intakeVelocity) {
+            intakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
 
         double hiveX = 72 + ShotCalculator.HIVE_X_FROM_CENTER;
         double lineY = 72 + WorkingBotButtonMap.STRAFE_LINE_DISTANCE;
@@ -130,8 +156,14 @@ public class BallCountDataTest extends LinearOpMode {
                 minX, maxX, lineY, SIM_STRAFE_SPEED, SIM_STRAFE_ACCEL));
         file.append(HEADER).append('\n');
         robot.setPowers(new MotorPowers());
+        // Flower up like teleop. The transfer servo's port turns on with its first setPower
+        robot.setFlowerState(0);
+        double intakeSlowSince = -1;
         ElapsedTime clock = new ElapsedTime();
         ElapsedTime voltageTimer = new ElapsedTime();
+        ElapsedTime resendTimer = new ElapsedTime();
+        double noPowerSince = -1;
+        boolean noPowerLogged = false;
         double volts = robot.getBatteryVoltage();
         robot.setShooterVoltage(volts);
         double lastTime = 0;
@@ -157,11 +189,39 @@ public class BallCountDataTest extends LinearOpMode {
             } else {
                 target = FIXED_RPM;
             }
+            target = Math.max(MIN_TARGET_RPM, target);
             double slope = Double.isNaN(lastTarget) ? 0 : (target - lastTarget) / dt;
             lastTarget = target;
 
+            boolean resend = resendTimer.seconds() >= RESEND_SECONDS;
+            if (resend) {
+                robot.resendShooterOutputs();
+                resendTimer.reset();
+            }
             robot.setShootRPMRamped(target);
-            robot.setIntakePower(INTAKE_POWER);
+            if (intakeVelocity) {
+                if (resend || t < 0.05) {
+                    intakeMotor.setVelocity(intakeTps);
+                }
+                // No encoder: velocity control would just run full power, so go back to plain power
+                if (Math.abs(intakeMotor.getVelocity()) < INTAKE_NO_ENCODER_TPS) {
+                    if (intakeSlowSince < 0) {
+                        intakeSlowSince = t;
+                    }
+                    if (t - intakeSlowSince >= INTAKE_NO_ENCODER_SECONDS) {
+                        intakeVelocity = false;
+                        intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                        robot.resendShooterOutputs();
+                        Log.w("BallEvent", String.format(Locale.US,
+                                "t=%.3f intake encoder reads 0, using plain power %.2f", t, INTAKE_POWER));
+                    }
+                } else {
+                    intakeSlowSince = -1;
+                }
+            }
+            if (!intakeVelocity) {
+                robot.setIntakePower(INTAKE_POWER);
+            }
             robot.setShootFeedPower(TRANSFER_POWER);
             if (voltageTimer.seconds() >= VOLTAGE_READ_SECONDS) {
                 volts = robot.getBatteryVoltage();
@@ -181,6 +241,20 @@ public class BallCountDataTest extends LinearOpMode {
             if (READ_CURRENTS) {
                 shootAmps = shootMotor.getCurrent(CurrentUnit.AMPS);
                 intakeAmps = intakeMotor.getCurrent(CurrentUnit.AMPS);
+                // Last test the flywheel drew 0 A after the first 0.2 s and coasted to 0 while still commanded
+                if (shootAmps < NO_POWER_AMPS && rpm < target * 0.5) {
+                    if (noPowerSince < 0) {
+                        noPowerSince = t;
+                    }
+                } else {
+                    noPowerSince = -1;
+                    noPowerLogged = false;
+                }
+                if (noPowerSince >= 0 && t - noPowerSince >= NO_POWER_SECONDS && !noPowerLogged) {
+                    Log.w("BallEvent", String.format(Locale.US, "t=%.3f flywheel has no power: %.2f A at %.1f of %.1f rpm, %.2f V",
+                            t, shootAmps, rpm, target, volts));
+                    noPowerLogged = true;
+                }
             }
             shotCounter.update(rpm, target, t, !ramping);
             if (settled) {
@@ -227,10 +301,15 @@ public class BallCountDataTest extends LinearOpMode {
             telemetry.addData("Done", "1:%d 2:%d 3:%d 4:%d", trialsDone[1], trialsDone[2], trialsDone[3], trialsDone[4]);
             telemetry.addData("Flywheel", "%s target %.1f rpm %.1f err %.1f%s", strafeMode ? "strafe" : "fixed",
                     target, rpm, err, ramping ? " RAMPING" : "");
+            if (noPowerLogged) {
+                telemetry.addLine("FLYWHEEL GETS NO POWER - check the hub battery cable, motor cable and switch");
+            }
             telemetry.addData("Strafe range", "%.1f..%.1f rpm", simMin, simMax);
             telemetry.addData("Shots counted", "%d", shotCounter.getShots());
-            telemetry.addData("Intake", "%.0f tps %.2f A, flywheel %.2f A, %.2f V",
-                    intakeMotor.getVelocity(), intakeAmps, shootAmps, volts);
+            telemetry.addData("Intake", "%.0f tps (%s) %.2f A, flywheel %.2f A, %.2f V",
+                    intakeMotor.getVelocity(), intakeVelocity ? String.format(Locale.US, "holding %.0f", intakeTps)
+                            : "plain power, no encoder", intakeAmps, shootAmps, volts);
+            telemetry.addData("Transfer", "%.2f power", TRANSFER_POWER);
             telemetry.addData("Last trial", lastTrialSummary);
             telemetry.addData("No-ball error", quietAll.describe());
             telemetry.update();
@@ -240,6 +319,9 @@ public class BallCountDataTest extends LinearOpMode {
             endTrial(lastTime);
         }
         robot.setShootRPMRamped(0);
+        intakeMotor.setVelocity(0);
+        intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.resendShooterOutputs();
         robot.setIntakePower(0);
         robot.setShootFeedPower(0);
         Log.i("BallSummary", String.format(Locale.US, "strafe target range %.1f..%.1f rpm", simMin, simMax));
@@ -268,15 +350,20 @@ public class BallCountDataTest extends LinearOpMode {
         simAx = dv / dt;
         simVx += dv;
         simX += simVx * dt;
-        ShotCalculator.Shot shot = ShotCalculator.solve(simX, lineY, simHeading, simVx, 0, simAx, 0, simTurnRate, false);
-        if (!shot.valid) {
-            return FIXED_RPM;
+        // Robot is assumed to be aimed, so it turns with the aim heading (worked out without turning)
+        ShotCalculator.Shot aim = ShotCalculator.solve(simX, lineY, simHeading, simVx, 0, simAx, 0, 0, false);
+        if (aim.valid) {
+            double turn = Math.IEEEremainder(aim.heading - simHeading, 2 * Math.PI);
+            // The first loop can be 2 ms, which made a huge turn rate and a 320 RPM target
+            simTurnRate += SIM_TURN_BLEND * (turn / Math.max(0.01, dt) - simTurnRate);
+            simHeading = aim.heading;
         }
-        // Robot is assumed to be aimed, so it turns with the aim heading
-        double turn = Math.IEEEremainder(shot.heading - simHeading, 2 * Math.PI);
-        simTurnRate = turn / dt;
-        simHeading = shot.heading;
-        return shot.rpm;
+        ShotCalculator.Shot shot = ShotCalculator.solve(simX, lineY, simHeading, simVx, 0, simAx, 0, simTurnRate, false);
+        if (shot.valid) {
+            // Keeps the last target on a bad solve, dropping to FIXED_RPM for one loop restarted the ramp
+            simTarget = shot.rpm;
+        }
+        return simTarget;
     }
 
     private void handleButtons(double t) {

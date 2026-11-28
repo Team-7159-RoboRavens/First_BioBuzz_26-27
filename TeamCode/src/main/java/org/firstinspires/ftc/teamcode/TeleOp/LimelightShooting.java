@@ -35,9 +35,9 @@ public class LimelightShooting extends OpMode {
 //            robot.flywheelMotor.setVelocity(0);
 //        }
 //        if (gamepad1.b) {
-//            robot.shootFeedServo.setPower(servoPower);
+//            robot.transferServo.setPower(servoPower);
 //        } else {
-//            robot.shootFeedServo.setPower(0);
+//            robot.transferServo.setPower(0);
 //        }
 //        if (gamepad1.y) {
 //            servoPower += 0.01;

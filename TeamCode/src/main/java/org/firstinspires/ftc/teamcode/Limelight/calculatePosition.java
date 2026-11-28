@@ -141,8 +141,8 @@ public abstract class calculatePosition {
 
     // ---------------- Shooter aiming ----------------
 
-    // Field walls are 72in from the center of the field
-    final double FIELD_WALL = 72 * INCH;
+    // Field walls are 141.233 in apart, centered on the field center
+    final double FIELD_WALL = 141.233 / 2 * INCH;
     // Max robot size (18in). The shooting distance is measured with the robot's back flat on the wall, facing the
     // target, with the shooter on the front of the robot lined up with the center of the target
     final double MAX_ROBOT_SIZE = 18 * INCH;

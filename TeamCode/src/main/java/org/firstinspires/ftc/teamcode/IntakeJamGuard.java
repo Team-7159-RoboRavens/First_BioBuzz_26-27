@@ -9,11 +9,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 public class IntakeJamGuard {
     // ---------------- Tuning ----------------
     public static boolean ENABLED = true;
-    // Current that counts as stalled, amps. Watch "Intake" on teleop telemetry: set this between the normal running
-    // current and the current when a ball is stuck
-    public static double JAM_CURRENT_AMPS = 6.0;
-    // The current has to stay above JAM_CURRENT_AMPS this long to count as a jam, seconds
-    public static double JAM_TIME = 0.25;
+    // Current that counts as stalled, amps, and how long it has to stay above it, seconds. From BallCountDataTest
+    // 2026-11-27: stuck balls held 4.5-5 A, above 4.0 A for 0.6-4 s at a time. Normal 1-4 ball feeds peaked at
+    // 4.25 A and were never above 4.0 A for more than 0.1 s. The old 6 A was never reached, so it never reversed
+    public static double JAM_CURRENT_AMPS = 4.0;
+    public static double JAM_TIME = 0.4;
     // How long and how hard it runs backwards
     public static double REVERSE_TIME = 0.25;
     public static double REVERSE_POWER = 0.6;

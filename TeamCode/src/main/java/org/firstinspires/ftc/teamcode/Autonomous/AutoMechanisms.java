@@ -11,6 +11,8 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.IntakeJamGuard;
+import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.Shooter.CustomFlywheel;
 import org.firstinspires.ftc.teamcode.Shooter.FlywheelSpinUp;
 
 public class AutoMechanisms {
@@ -33,10 +35,13 @@ public class AutoMechanisms {
 
     private final DcMotorEx flywheel;
     public final DcMotorEx intakeMotor;
-    private final CRServo shootFeedServo;
+    private final CRServo transferServo;
     private final CRServo intakeServoRight;
     // Power ramp then RPM control, so the first shot doesn't overshoot
     private final FlywheelSpinUp flywheelSpinUp;
+    // Own feedforward + recovery control, used instead of the spin up when Robot.USE_CUSTOM_FLYWHEEL is on
+    private final CustomFlywheel customFlywheel;
+    private final boolean useCustom;
     // Reverses the intake for a moment when it stalls
     public final IntakeJamGuard intakeJamGuard;
     // Wanted intake power and the last power sent
@@ -54,7 +59,7 @@ public class AutoMechanisms {
         flywheel = hardwareMap.get(DcMotorEx.class, FLYWHEEL_NAME);
         flywheel.setDirection(DcMotorSimple.Direction.REVERSE);
         intakeMotor = hardwareMap.get(DcMotorEx.class, INTAKE_MOTOR_NAME);
-        shootFeedServo = hardwareMap.get(CRServo.class, SHOOT_FEED_SERVO_NAME);
+        transferServo = hardwareMap.get(CRServo.class, SHOOT_FEED_SERVO_NAME);
         intakeServoRight = hardwareMap.get(CRServo.class, INTAKE_SERVO_RIGHT_NAME);
 
         flywheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -66,6 +71,9 @@ public class AutoMechanisms {
                 new PIDFCoefficients(FLYWHEEL_P, FLYWHEEL_I, FLYWHEEL_D, FLYWHEEL_F));
         voltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
         flywheelSpinUp.setBatteryVoltage(voltageSensor.getVoltage());
+        useCustom = Robot.USE_CUSTOM_FLYWHEEL;
+        customFlywheel = new CustomFlywheel(flywheel, FLYWHEEL_TICKS_PER_REV);
+        customFlywheel.setBatteryVoltage(voltageSensor.getVoltage());
         intakeJamGuard = new IntakeJamGuard(intakeMotor);
         intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         flowerServo = hardwareMap.get(Servo.class, "flowerServo");
@@ -85,16 +93,26 @@ public class AutoMechanisms {
 
     private void setFlywheelRPM(double rpm) {
         flywheelRPM = rpm;
-        flywheelSpinUp.setTargetRPM(rpm);
+        sendFlywheel();
+    }
+
+    private void sendFlywheel() {
+        if (useCustom) {
+            customFlywheel.update(flywheelRPM);
+        } else {
+            flywheelSpinUp.setTargetRPM(flywheelRPM);
+        }
     }
 
     // Call every loop, the spin up ramp changes its power as the flywheel speeds up
     public void update() {
         if (voltageTimer.seconds() >= VOLTAGE_READ_SECONDS) {
             voltageTimer.reset();
-            flywheelSpinUp.setBatteryVoltage(voltageSensor.getVoltage());
+            double volts = voltageSensor.getVoltage();
+            flywheelSpinUp.setBatteryVoltage(volts);
+            customFlywheel.setBatteryVoltage(volts);
         }
-        flywheelSpinUp.setTargetRPM(flywheelRPM);
+        sendFlywheel();
         applyIntake();
     }
 
@@ -113,12 +131,15 @@ public class AutoMechanisms {
     }
 
     public boolean isFlywheelRamping() {
+        if (useCustom) {
+            return customFlywheel.isSpinningUp();
+        }
         return flywheelSpinUp.isRamping();
     }
 
     public void extendFeeder() {
         if (!feederOn) {
-            shootFeedServo.setPower(SHOOT_FEED_POWER);
+            transferServo.setPower(SHOOT_FEED_POWER);
             feederOn = true;
         }
     }
@@ -148,6 +169,11 @@ public class AutoMechanisms {
         return flywheelSpinUp.getRPM();
     }
 
+    // For the shot counter's current check
+    public DcMotorEx getFlywheel() {
+        return flywheel;
+    }
+
     public void lowerFlower(){
         setFlower(0.90);
     }
@@ -166,7 +192,7 @@ public class AutoMechanisms {
 
     public void resetFeeder() {
         if (feederOn) {
-            shootFeedServo.setPower(0.0);
+            transferServo.setPower(0.0);
             feederOn = false;
         }
     }

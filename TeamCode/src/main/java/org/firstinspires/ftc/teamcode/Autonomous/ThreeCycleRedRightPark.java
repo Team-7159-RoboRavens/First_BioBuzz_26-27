@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 // All other poses are in ThreeCycleRedBase
 @Autonomous(name = "ThreeCycleRedRightPark")
 public class ThreeCycleRedRightPark extends ThreeCycleRedBase {
-    private final Pose parkPose = new Pose(12.4924585218703, 98.7948717948718, Math.toRadians(0));
+    private final Pose parkPose = new Pose(13.0326, 93.4393, Math.toRadians(0));
 
     @Override protected Pose getParkPose() { return parkPose; }
 }

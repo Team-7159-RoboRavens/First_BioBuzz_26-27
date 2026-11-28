@@ -15,30 +15,32 @@ import static com.pedropathing.api.Paths.line;
 // Starts in the corner of the park wall and the side wall facing away from the park wall,
 // then drives in a straight line to a park spot PARK_OFF_WALL in off the park wall
 public abstract class SimpleParkBase extends OpMode {
-    // Robot is square, 2.5 in under the 18 in max
-    protected static final double ROBOT_SIZE = 18 - 2.5;
-    // Inner walls are about 141 in apart, centered in Pedro's 144 in grid, so each wall is 1.5 in in from the grid edge
-    protected static final double WALL_INSET = 1.5;
+    // Measured robot size, inches. The center is 68.627 mm closer to the back than the front
+    protected static final double ROBOT_WIDTH = 453.977 / 25.4;
+    protected static final double ROBOT_FRONT = (452.627 + 68.62673) / 2 / 25.4;
+    protected static final double ROBOT_BACK = (452.627 - 68.62673) / 2 / 25.4;
+    // Inner walls are 141.233 in apart, centered in Pedro's 144 in grid
+    protected static final double WALL_INSET = (144 - 141.233) / 2;
     // Gap between the robot and the park wall once parked, inches
     protected static final double PARK_OFF_WALL = 3;
-    // Park spots along the park wall, same y as the Blue three cycle park poses
-    protected static final double LEFT_PARK_Y = 15.5;
-    protected static final double RIGHT_PARK_Y = 45.2051282051282;
+    // Park spots along the park wall, measured from the start y
+    protected static final double LEFT_PARK_FROM_START = 6.25;
+    protected static final double RIGHT_PARK_FROM_START = 35.9551282051282;
 
-    // Blue starts in the corner of the x = 144 (park) wall and the y = 0 wall, facing -x
+    // Blue starts with its back on the x = 144 (park) wall and its side on the y = 0 wall, facing -x
     protected static final Pose BLUE_START = new Pose(
-            144 - WALL_INSET - ROBOT_SIZE / 2,
-            WALL_INSET + ROBOT_SIZE / 2,
+            144 - WALL_INSET - ROBOT_BACK,
+            WALL_INSET + ROBOT_WIDTH / 2,
             Math.toRadians(180));
-    protected static final Pose BLUE_LEFT_PARK = bluePark(LEFT_PARK_Y);
-    protected static final Pose BLUE_RIGHT_PARK = bluePark(RIGHT_PARK_Y);
+    protected static final Pose BLUE_LEFT_PARK = bluePark(BLUE_START.y() + LEFT_PARK_FROM_START);
+    protected static final Pose BLUE_RIGHT_PARK = bluePark(BLUE_START.y() + RIGHT_PARK_FROM_START);
     // Red is Blue rotated 180 deg about (72, 72)
     protected static final Pose RED_START = toRed(BLUE_START);
     protected static final Pose RED_LEFT_PARK = toRed(BLUE_LEFT_PARK);
     protected static final Pose RED_RIGHT_PARK = toRed(BLUE_RIGHT_PARK);
 
     private static Pose bluePark(double y) {
-        return new Pose(144 - WALL_INSET - ROBOT_SIZE / 2 - PARK_OFF_WALL, y, Math.toRadians(180));
+        return new Pose(BLUE_START.x() - PARK_OFF_WALL, y, Math.toRadians(180));
     }
 
     private static Pose toRed(Pose p) {

@@ -4,24 +4,20 @@ package org.firstinspires.ftc.teamcode.Shooter;
 // including while the robot is moving. Everything is in Pedro coordinates: inches from the corner, (72, 72) is the center.
 public class ShotCalculator {
     // ---------------- Tuning: ball flight ----------------
-    // Angle the ball leaves the shooter at, degrees up from flat. Steeper = higher arc and needs more speed for the same distance
+    // Angle the ball leaves the shooter at, degrees up from flat
     public static double LAUNCH_ANGLE_DEG = 70;
-    // Height the ball leaves the shooter, inches off the floor (measured)
-    public static double SHOOTER_HEIGHT = 6;
-    // Height of the middle of the CELL opening the ball goes into, inches off the floor. Measure on the field.
-    // Raising it asks for more RPM at long range than at short range
-    public static double TARGET_HEIGHT = 50;
+    // Ball speed leaving the shooter for each shooter RPM, in/s. Sets the flight time for moving shots: at 1.13 the
+    // ball is in the air about 0.43 s at 32.7 in and 0.61 s at 46.2 in, and close shots go in near the top of the arc.
+    // Lower it if moving shots land behind the opening (in the direction the robot moves), raise it if they land past it
+    public static double BALL_SPEED_PER_RPM = 1.13;
 
     // ---------------- Tuning: RPM ----------------
-    // An RPM known to score from REFERENCE_DISTANCE (shooter to opening, flat distance, inches). This is the auto's
-    // first shot, 192 RPM from SHOOT_POSE_1_0, which is 33.4 in from the opening. Every other distance is scaled from
-    // this with the ball flight math above. If SHOOT_POSE_1_0 moves, update the distance (shown as "dist" in teleop telemetry)
-    public static double REFERENCE_RPM = 192;
-    public static double REFERENCE_DISTANCE = 33.4;
+    // Tested shots: distance ("dist" in teleop telemetry, inches) and the RPM that scored. Keep sorted by distance.
+    // RPM is a straight line between the two nearest points, past the ends it follows the end slope
+    public static double[] RPM_TABLE_DISTANCE = {32.7, 34.9, 46.2};
+    public static double[] RPM_TABLE_RPM = {189, 191, 195};
     // Added to every shot. Raise if every shot lands short, lower if every shot goes long
     public static double RPM_OFFSET = 0;
-    // Extra RPM per inch past REFERENCE_DISTANCE (negative closer in). Raise if far shots land short but close shots are fine
-    public static double RPM_PER_INCH = 0;
     public static double MIN_RPM = 120;
     public static double MAX_RPM = 320;
 
@@ -37,7 +33,8 @@ public class ShotCalculator {
     // Largest aim shift from the opening, inches
     public static double MAX_OPENING_SHIFT = 3;
     // Turns every shot this many degrees counterclockwise, for a shooter that pulls to one side
-    public static double AIM_TRIM_DEG = 0;
+    // 5.71 deg = 5 in left at 50 in (atan(5 / 50)), shots were landing right
+    public static double AIM_TRIM_DEG = 5.71;
 
     // ---------------- Tuning: shooting while moving ----------------
     // Seconds from deciding to shoot until the ball leaves. The robot's position and speed are predicted this far ahead
@@ -60,12 +57,6 @@ public class ShotCalculator {
     // Pedro heading = shooter heading + this, the shooter points out the back of the robot
     public static double PEDRO_HEADING_OFFSET = Math.PI;
 
-    private static final double GRAVITY = 386.09; // in/s^2
-
-    // cos and tan of LAUNCH_ANGLE_DEG, only redone when it changes
-    private static double cachedAngleDeg = Double.NaN;
-    private static double launchCos, launchTan;
-
     public static class Shot {
         public boolean valid;
         // Pedro heading the robot should face, radians
@@ -77,6 +68,10 @@ public class ShotCalculator {
         public double openingDistance;
         public double aimX;
         public double aimY;
+        // Seconds the ball is expected to be in the air
+        public double flightTime;
+        // How fast the aim heading changes as the robot moves, rad/s counterclockwise, for the turn feedforward
+        public double headingRate;
     }
 
     /**
@@ -121,13 +116,16 @@ public class ShotCalculator {
         double openingX = targetX - shift;
         shot.openingDistance = length(openingX - shooterX, targetY - shooterY);
 
-        // The ball keeps the shooter's speed, so aim at where the opening seems to be from the moving shooter
+        // The ball keeps the shooter's speed, so aim at where the opening seems to be from the moving shooter.
+        // Speed toward the HIVE shortens that distance, sideways speed moves the aim to the side. The RPM for the
+        // shortened distance comes from the table, then the flight time from that RPM, repeated until they agree
         double aimX = openingX;
         double aimY = targetY;
         double distance = 0;
-        for (int i = 0; i < 4; i++) {
+        double flightTime = 0;
+        for (int i = 0; i < 10; i++) {
             distance = length(aimX - shooterX, aimY - shooterY);
-            double flightTime = flightTime(distance);
+            flightTime = flightTime(distance);
             if (Double.isNaN(flightTime)) {
                 shot.valid = false;
                 return shot;
@@ -135,6 +133,7 @@ public class ShotCalculator {
             aimX = openingX - releaseVx * flightTime;
             aimY = targetY - releaseVy * flightTime;
         }
+        distance = length(aimX - shooterX, aimY - shooterY);
 
         // Turn so the shooter (off to the side of the center) lines up with the aim point
         double centerDx = aimX - releaseX;
@@ -146,52 +145,52 @@ public class ShotCalculator {
         }
         double aimShooterHeading = Math.atan2(centerDy, centerDx) - Math.asin(SHOOTER_LEFT / centerDistance);
         shot.heading = aimShooterHeading + PEDRO_HEADING_OFFSET + Math.toRadians(AIM_TRIM_DEG);
+        // The aim point stays put in the field while the speed holds, so the heading to it turns at this rate
+        double moveVx = vx + accelX * delay;
+        double moveVy = vy + accelY * delay;
+        shot.headingRate = (centerDy * moveVx - centerDx * moveVy) / (centerDistance * centerDistance);
 
-        double speed = exitSpeed(distance);
-        double referenceSpeed = exitSpeed(REFERENCE_DISTANCE);
-        if (Double.isNaN(speed) || Double.isNaN(referenceSpeed)) {
-            shot.valid = false;
-            return shot;
-        }
-        double rpm = REFERENCE_RPM * speed / referenceSpeed + RPM_OFFSET + RPM_PER_INCH * (distance - REFERENCE_DISTANCE);
+        double rpm = tableRPM(distance) + RPM_OFFSET;
         shot.rpm = Math.max(MIN_RPM, Math.min(MAX_RPM, rpm));
         shot.distance = distance;
+        shot.flightTime = flightTime;
         shot.aimX = aimX;
         shot.aimY = aimY;
         shot.valid = true;
         return shot;
     }
 
-    // Ball speed needed to reach the opening height at this flat distance, in/s, NaN if the arc can't get there
-    public static double exitSpeed(double distance) {
-        updateLaunchAngle();
-        double rise = TARGET_HEIGHT - SHOOTER_HEIGHT;
-        double cos = launchCos;
-        double drop = distance * launchTan - rise;
-        if (distance <= 0 || drop <= 0) {
-            return Double.NaN;
+    // RPM from the tested shots table for this distance
+    public static double tableRPM(double distance) {
+        double[] d = RPM_TABLE_DISTANCE;
+        double[] r = RPM_TABLE_RPM;
+        int n = Math.min(d.length, r.length);
+        if (n == 0) {
+            return MIN_RPM;
         }
-        return Math.sqrt(GRAVITY * distance * distance / (2 * cos * cos * drop));
+        if (n == 1) {
+            return r[0];
+        }
+        // Segment to use, the end ones are extended past the table
+        int i = 0;
+        while (i < n - 2 && distance > d[i + 1]) {
+            i++;
+        }
+        double span = d[i + 1] - d[i];
+        if (span == 0) {
+            return r[i];
+        }
+        return r[i] + (r[i + 1] - r[i]) * (distance - d[i]) / span;
     }
 
-    // Seconds the ball is in the air for this flat distance, NaN if the arc can't get there
+    // Seconds the ball is in the air for this flat distance when shot at the table RPM, NaN if it can't be worked out
     public static double flightTime(double distance) {
-        double speed = exitSpeed(distance);
-        if (Double.isNaN(speed)) {
+        double rpm = Math.max(MIN_RPM, Math.min(MAX_RPM, tableRPM(distance) + RPM_OFFSET));
+        double flatSpeed = BALL_SPEED_PER_RPM * rpm * Math.cos(Math.toRadians(LAUNCH_ANGLE_DEG));
+        if (distance <= 0 || flatSpeed <= 0) {
             return Double.NaN;
         }
-        return distance / (speed * launchCos);
-    }
-
-    // Trig of the launch angle once instead of every call, still picks up a changed LAUNCH_ANGLE_DEG
-    private static void updateLaunchAngle() {
-        double deg = LAUNCH_ANGLE_DEG;
-        if (deg != cachedAngleDeg) {
-            double angle = Math.toRadians(deg);
-            launchCos = Math.cos(angle);
-            launchTan = Math.tan(angle);
-            cachedAngleDeg = deg;
-        }
+        return distance / flatSpeed;
     }
 
     // Same as Math.hypot without its slow overflow handling, these are field distances in inches

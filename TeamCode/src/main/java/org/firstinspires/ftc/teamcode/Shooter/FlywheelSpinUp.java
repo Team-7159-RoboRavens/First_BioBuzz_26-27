@@ -96,6 +96,20 @@ public class FlywheelSpinUp {
         return ramping;
     }
 
+    // Something else ran the motor (CustomFlywheel), so the next call sets the mode again
+    public void forgetMode() {
+        currentMode = null;
+        ramping = false;
+        targetRPM = 0;
+        resend();
+    }
+
+    // Next setTargetRPM sends its power / velocity even if it didn't change
+    public void resend() {
+        lastPower = Double.NaN;
+        lastVelocity = Double.NaN;
+    }
+
     // Call every loop with the wanted RPM
     public void setTargetRPM(double rpm) {
         double current = getRPM();
